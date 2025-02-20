@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .glass-effect {
+    @apply backdrop-blur-lg bg-opacity-70 shadow-lg;
+  }
+
+  .dark .glass-effect {
+    @apply bg-gray-800/30 border-gray-700/30;
+  }
+
+  .light .glass-effect {
+    @apply bg-white/70 border-white/30;
+  }
+}
+
+/* Replace the existing scrollbar related CSS with this updated version */
+
+/* Global scrollbar hiding */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+*::-webkit-scrollbar {
+  display: none;
+}
+
+/* Specific styling for task columns if needed */
+.task-column {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.task-column::-webkit-scrollbar {
+  display: none;
+}
+
+/* Gradient Animations */
+.gradient-animate {
+  background-size: 400% 400%;
+  animation: gradient 15s ease infinite;
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Add smooth transitions */
+* {
+  @apply transition-colors duration-200;
+}
