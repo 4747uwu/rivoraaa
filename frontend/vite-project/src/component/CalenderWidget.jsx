@@ -9,6 +9,9 @@ const CalendarWidget = ({ darkMode, glassCard, textClass, subTextClass }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [hoveredDay, setHoveredDay] = useState(null);
 
+  const backendUrl = import.meta.env.VITE_API_URL;
+
+
   const fetchCalendars = async () => {
     try {
       const response = await fetch(`${backendUrl}/api/calendars`, { credentials: 'include' });
