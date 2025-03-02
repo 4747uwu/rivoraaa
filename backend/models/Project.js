@@ -30,6 +30,7 @@ const projectSchema = new mongoose.Schema(
     // AI-Powered Features
     aiInsights: {
       workloadAnalysis: { type: String, default: "" }, // AI's workload & efficiency suggestions
+      recommendation: { type: String, default: "" },
       recommendedTasks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Task" }], // AI suggested tasks
       predictedDeadline: { type: Date }, // AI's estimated completion date
       riskAnalysis: { type: String, default: "" }, // AI-generated risk analysis
@@ -93,6 +94,8 @@ const projectSchema = new mongoose.Schema(
       },
     ],
 
+    aiInsightsRequested: { type: Boolean, default: false },
+
       aiRecommendations: [{
       type: { type: String, enum: ['workload', 'risk', 'performance', 'resource'] },
       priority: { type: String, enum: ['low', 'medium', 'high'] },
@@ -110,11 +113,16 @@ const projectSchema = new mongoose.Schema(
         complianceStatus: { type: String, enum: ["pass", "warning", "fail"], default: "pass" },
       },
     ],
+     groups: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Group"
+    }],
 
     lastUpdated: { type: Date, default: Date.now },
     starredBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Users who starred this project
   },
   { timestamps: true }
 );
+projectSchema.index({ groups: 1 });
 
 export default mongoose.model("Project", projectSchema);

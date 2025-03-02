@@ -1,118 +1,156 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
+import { 
+  useQuery, 
+  useMutation, 
+  useQueryClient,
+  QueryClient,
+  QueryClientProvider 
+} from '@tanstack/react-query';
 import API from '../api/api';
-import { set } from 'mongoose';
+import { useAuth } from './authContext';
 
 const ProjectContext = createContext();
 
 export const ProjectProvider = ({ children }) => {
-  const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const queryClient = useQueryClient();
   const [selectedProject, setSelectedProject] = useState(null);
+  const {user} = useAuth();
 
-  const fetchProjects = useCallback(async () => {
-    try {
-      setLoading(true);
+
+  // Fetch all projects query
+  const {
+    data: projects = [],
+    isLoading: projectsLoading,
+    error: projectsError,
+    refetch
+  } = useQuery({
+    queryKey: ['projects', user?._id],
+    queryFn: async () => {
       const response = await API.get('/api/projects');
       console.log('Projects fetched:', response.data.projects);
-      setProjects(response.data.projects);
-      setError(null);
-    } catch (err) {
-      setError('Failed to fetch projects');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return response.data.projects;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!user?._id,
+  });
 
-  const fetchProjectById = useCallback(async (projectId) => {
+  // Create compatible fetchProjects function matching original API
+  const fetchProjects = async () => {
+    try {
+      const data = await refetch();
+      return data.data;
+    } catch (err) {
+      console.error('Failed to fetch projects', err);
+      throw err;
+    }
+  };
+
+  // Create compatible fetchProjectById function matching original API
+  const fetchProjectById = async (projectId) => {
     if (!projectId) return null;
     
     try {
-      setLoading(true);
-      const response = await API.get(`/api/projects/${projectId}`);
-      const project = response.data.project;
+      const data = await queryClient.fetchQuery({
+        queryKey: ['project', projectId],
+        queryFn: async () => {
+          const response = await API.get(`/api/projects/${projectId}`);
+          const project = response.data.project;
+          
+          if (!project) {
+            throw new Error('Project not found');
+          }
+          return project;
+        },
+      });
       
-      if (!project) {
-        throw new Error('Project not found');
-      }
-
-      // Set the project state
-      setSelectedProject(project);
-      
-      // Return the project data
-      return project;
+      // Set selected project to maintain compatibility
+      setSelectedProject(data);
+      return data;
     } catch (error) {
-      setError(error.message);
+      console.error('Error fetching project by id', error);
       throw error;
-    } finally {
-      setLoading(false);
     }
-  }, []);
+  };
 
-  const createProject = async (projectData) => {
-    try {
-      setLoading(true);
+  // Create project mutation
+  const createProjectMutation = useMutation({
+    mutationFn: async (projectData) => {
       const response = await API.post('/api/projects', projectData, {
         headers: { 
           'Content-Type': 'application/json'
         },
         withCredentials: true
       });
-      
-      setProjects(prev => [...prev, response.data.project]);
       return response.data.project;
-    } catch (err) {
-      console.error('Project creation error:', err);
-      setError(err.response?.data?.message || 'Failed to create project');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    onSuccess: (newProject) => {
+      queryClient.invalidateQueries(['projects']);
+      queryClient.setQueryData(['projects'], (oldData = []) => [...oldData, newProject]);
+    },
+  });
 
-  const updateProject = async (projectId, updateData) => {
-    try {
-      setLoading(true);
+  // Update project mutation
+  const updateProjectMutation = useMutation({
+    mutationFn: async ({ projectId, updateData }) => {
       const response = await API.put(`/api/projects/${projectId}`, updateData);
-      setProjects(prev => 
-        prev.map(p => p._id === projectId ? response.data.project : p)
-      );
       return response.data.project;
-    } catch (err) {
-      setError('Failed to update project');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    onSuccess: (updatedProject) => {
+      queryClient.invalidateQueries(['project', updatedProject._id]);
+      queryClient.setQueryData(['projects'], (oldData = []) => 
+        oldData.map(p => p._id === updatedProject._id ? updatedProject : p)
+      );
+      
+      // Update selectedProject if it's the one being updated
+      if (selectedProject && selectedProject._id === updatedProject._id) {
+        setSelectedProject(updatedProject);
+      }
+    },
+  });
 
-  const deleteProject = async (projectId) => {
-    try {
-      setLoading(true);
+  // Delete project mutation
+  const deleteProjectMutation = useMutation({
+    mutationFn: async (projectId) => {
       await API.delete(`/api/projects/${projectId}`, {
         withCredentials: true
       });
-      setProjects(prev => prev.filter(p => p._id !== projectId));
-    } catch (err) {
-      setError('Failed to delete project');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
+      return projectId;
+    },
+    onSuccess: (projectId) => {
+      queryClient.invalidateQueries(['projects']);
+      queryClient.removeQueries(['project', projectId]);
+      queryClient.setQueryData(['projects'], (oldData = []) => 
+        oldData.filter(p => p._id !== projectId)
+      );
+      
+      // Clear selectedProject if it's the one being deleted
+      if (selectedProject && selectedProject._id === projectId) {
+        setSelectedProject(null);
+      }
+    },
+  });
+
+  // Create compatible API functions with original signatures
+  const createProject = async (projectData) => {
+    return await createProjectMutation.mutateAsync(projectData);
   };
 
-  useEffect(() => {
-    if (selectedProject) {
-      console.log('Selected Project Updated:', selectedProject);
-    }
-  }, [selectedProject]);
+  const updateProject = async (projectId, updateData) => {
+    return await updateProjectMutation.mutateAsync({ projectId, updateData });
+  };
+
+  const deleteProject = async (projectId) => {
+    return await deleteProjectMutation.mutateAsync(projectId);
+  };
 
   return (
     <ProjectContext.Provider value={{
+      // Original API properties and functions
       projects,
-      loading,
-      error,
-      selectedProject, // Add this
+      loading: projectsLoading || createProjectMutation.isPending || 
+               updateProjectMutation.isPending || deleteProjectMutation.isPending,
+      error: projectsError,
+      selectedProject,
       fetchProjects,
       fetchProjectById,
       createProject,
@@ -126,4 +164,23 @@ export const ProjectProvider = ({ children }) => {
 
 export const useProjects = () => useContext(ProjectContext);
 
+// Create this wrapper component to provide QueryClient
+export const ProjectQueryProvider = ({ children }) => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        refetchOnWindowFocus: false,
+        retry: 1,
+        cacheTime: 1000 * 60 * 5, // Cache for 5 minutes
+        staleTime: 1000 * 60 * 2, // Consider data stale after 2 minutes
+        enabled: false, 
+      },
+    },
+  });
 
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ProjectProvider>{children}</ProjectProvider>
+    </QueryClientProvider>
+  );
+};

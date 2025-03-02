@@ -55,7 +55,7 @@ const authMiddlewareHybrid = async (req, res, next) => {
         return res.status(401).json({
             success: false,
             message: "Invalid or expired token",
-            error: process.env.NODE_ENV === "development" ? err.message : undefined
+            // error: process.env.NODE_ENV === "development" ? err.message : undefined
         });
     }
 };

@@ -15,11 +15,12 @@ const CalendarManagement = () => {
     end: ''
   });
   const [isAddingEvent, setIsAddingEvent] = useState(false);
+  const backendUrl = import.meta.env.VITE_API_URL;
 
   const fetchCalendars = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:4000/api/calendars', {
+      const response = await fetch(`${backendUrl}/api/calendars`, {
         credentials: 'include'
       });
       const data = await response.json();
@@ -45,7 +46,7 @@ const CalendarManagement = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:4000/api/events?calendarId=${calendarId}&timeMin=${timeMin.toISOString()}&timeMax=${timeMax.toISOString()}`,
+        `${backendUrl}/api/events?calendarId=${calendarId}&timeMin=${timeMin.toISOString()}&timeMax=${timeMax.toISOString()}`,
         { credentials: 'include' }
       );
       const data = await response.json();
@@ -81,7 +82,7 @@ const CalendarManagement = () => {
 
     setLoading(true);
     try {
-        const response = await fetch('http://localhost:4000/api/events', {
+        const response = await fetch(`${backendUrl}/api/events`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -114,7 +115,7 @@ const CalendarManagement = () => {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:4000/api/events/${eventId}?calendarId=${selectedCalendar}`,
+        `${backendUrl}api/events/${eventId}?calendarId=${selectedCalendar}`,
         {
           method: 'DELETE',
           credentials: 'include'

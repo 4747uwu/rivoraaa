@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext } from 'react';
 import axios from 'axios';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 const AuthContext = createContext(null);
 
@@ -9,223 +10,170 @@ export const useAuth = () => {
         throw new Error('useAuth must be used within an AuthProvider');
     }
     return context;
-};
+}
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [isRefreshing, setIsRefreshing] = useState(false); 
-
-    // Configure axios defaults
-      useEffect(() => {
-        axios.defaults.baseURL = import.meta.env.VITE_API_URL;
-        axios.defaults.withCredentials = true; // Important for cookies
-        axios.defaults.headers.common['Content-Type'] = 'application/json';
-        
-        // Initial auth check
-        checkAuth();
-    }, []);
-
-    // Initialize auth state
-    // useEffect(() => {
-    //     checkAuth();
-    // }, []);
+    const queryClient = useQueryClient();
+    axios.defaults.baseURL = import.meta.env.VITE_API_URL;
+    axios.defaults.withCredentials = true;
+    axios.defaults.headers.common['Content-Type'] = 'application/json';
 
     // Check if user is authenticated
-const checkAuth = async () => {
-   
-    
-    try {
-        const { data } = await axios.get('/api/auth/user', {
-            withCredentials: true,
-          
-        });
-        console.log('Auth check response:', data);
-        
-        if (data.user) {
-            setUser(data.user);
-            console.log('User set:', data.user);
-        } else {
-            setUser(null);
-            localStorage.removeItem('accessToken');
-            console.log('No user data received');
+    const { data: user, isLoading } = useQuery({
+        queryKey: ['authUser'], // Fixed: queryKey instead of querykey
+        queryFn: async () => {
+            const { data } = await axios.get('/api/auth/user');
+            return data.user; // Extract user from response
+        },
+        retry: false,
+        staleTime: 1000 * 60 * 5,
+        onError: (error) => {
+            console.error('Auth check error:', error);
+            // Handle authentication errors gracefully
         }
+    });
+        console.log(user);
+
+
+    // Register mutation
+    const registerMutation = useMutation({
+        mutationFn: async ({ username, name, email, password }) => {
+            const { data } = await axios.post('/api/auth/register', {
+                username,
+                name,
+                email,
+                password
+            });
+            return data;
+        },
+        onSuccess: (data) => {
+            localStorage.setItem('accessToken', data.accessToken);
+            queryClient.invalidateQueries(['authUser']);
+        }
+    });
+
+    // Login mutation
+    const loginMutation = useMutation({
+        mutationFn: async ({ email, password }) => {
+            const { data } = await axios.post('/api/auth/login', { email, password });
+            return data;
+        },
+        onSuccess: (data) => {
+            localStorage.setItem('accessToken', data.accessToken);
+            queryClient.invalidateQueries(['authUser']);
+            queryClient.clear(); // Clear all queries on login
+        }
+    });
+
+    // Google login function (define this based on your implementation)
+   const googleLogin = async () => {
+    try {
+        // Clear any existing cache before Google login
+        queryClient.clear();
+        localStorage.clear();
+        sessionStorage.clear();
+
+        // Clear cookies
+        // document.cookie.split(";").forEach((cookie) => {
+        //     const eqPos = cookie.indexOf("=");
+        //     const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+        //     document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+        // });
+
+        // Store the return URL in sessionStorage
+        sessionStorage.setItem('returnUrl', window.location.href);
+
+        // Redirect to Google OAuth endpoint
+        window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/google`;
     } catch (error) {
-        console.error('Auth check failed:', error.response?.data || error.message);
-        setUser(null);
-        localStorage.removeItem('accessToken');
-    } finally {
-        setLoading(false);
+        console.error('Google login error:', error);
+        // Handle error appropriately
+        throw new Error('Failed to initiate Google login');
     }
 };
 
+    // Logout mutation
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+        const userId = user?._id;
+        await axios.post('/api/auth/logout', { userId });
+        
+        // Clear all storage mechanisms
+        localStorage.clear(); // Clear localStorage
+        sessionStorage.clear(); // Clear sessionStorage
+        
+        // Clear cookies
+        document.cookie.split(";").forEach((cookie) => {
+            const eqPos = cookie.indexOf("=");
+            const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+        });
 
-    // Register new user
-    const register = async (userData) => {
-        try {
-            const { data } = await axios.post('/api/auth/register', userData);
-            setError(null);
-            return data;
-        } catch (error) {
-            setError(error.response?.data?.message || 'Registration failed');
-            throw error;
-        }
-    };
-
-    // Login user
-    const login = async (credentials) => {
-        try {
-            const { data } = await axios.post('/api/auth/login', credentials);
-            console.log(data);
-            setUser(data.user);
-            localStorage.setItem('accessToken', data.accessToken);
-            const token = localStorage.getItem('accessToken');
-            console.log(token);
-            setError(null);
-            await checkAuth();
-            return data;
-              // Refresh user data
-        } catch (error) {
-            setError(error.response?.data?.message || 'Login failed');
-            throw error;
-        }
-    };
-
-    // Google OAuth login
-    const googleLogin = () => {
-        window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/google`;
-    };
-
-    // Logout user
-    const logout = async () => {
-        try {
-            setIsRefreshing(true); // Prevent refresh attempts
-            await axios.post('/api/auth/logout', {}, { 
-                withCredentials: true,
-            });
-            
-            // Clear all auth state
-            localStorage.clear();
-            delete axios.defaults.headers.common['Authorization'];
-            setUser(null);
-            setError(null);
-            
-            // Clear cookies
-            document.cookie.split(";").forEach((c) => {
-                document.cookie = c
-                    .replace(/^ +/, "")
-                    .replace(/=.*/, `=;expires=${new Date().toUTCString()};path=/`);
-            });
-            
-            window.location.href = '/';
-        } catch (error) {
-            console.error('Logout failed:', error);
-            setError(error.response?.data?.message || 'Logout failed');
-        }
-    };
+        // Remove axios default headers
+        delete axios.defaults.headers.common['Authorization'];
+    },
+    onSuccess: () => {
+        // Clear React Query cache
+        queryClient.clear();
+        queryClient.removeQueries(); // Remove all queries from cache
+        queryClient.invalidateQueries(); // Invalidate all queries
+        
+        // Force reload to clear any remaining state
+        window.location.href = '/login';
+    },
+    onError: (error) => {
+        console.error('Logout failed:', error);
+        // Still attempt to clear frontend state even if logout request fails
+        localStorage.clear();
+        sessionStorage.clear();
+        queryClient.clear();
+    }
+});
 
     // Forgot password
-    const forgotPassword = async (email) => {
-        try {
-            const { data } = await axios.post('/api/auth/forgot-password', { email });
-            setError(null);
-            return data;
-        } catch (error) {
-            setError(error.response?.data?.message || 'Failed to send reset email');
-            throw error;
-        }
-    };
+    const forgotPasswordMutation = useMutation({
+        mutationFn: (email) => axios.post('/api/auth/forgot-password', { email })
+    });
 
     // Reset password
-    const resetPassword = async (token, newPassword) => {
+    const resetPasswordMutation = useMutation({
+    mutationFn: async ({ token, newPassword }) => {
         try {
             const { data } = await axios.post('/api/auth/reset-password', {
                 token,
                 newPassword
             });
-            setError(null);
             return data;
         } catch (error) {
-            setError(error.response?.data?.message || 'Password reset failed');
+            console.error('Password reset error:', error.response?.data?.message || 'Reset failed');
             throw error;
         }
-    };
+    }
+});
 
     // Verify email
-    const verifyEmail = async (token) => {
-        try {
-            const { data } = await axios.post('/api/auth/verify-email', { token });
-            setError(null);
-            return data;
-        } catch (error) {
-            setError(error.response?.data?.message || 'Email verification failed');
-            throw error;
-        }
-    };
-
-    // Setup axios interceptor for token refresh
-// useEffect(() => {
-//     const interceptor = axios.interceptors.response.use(
-//         (response) => response,
-//         async (error) => {
-//             // Only attempt refresh if 401 and not already refreshing
-//             if (error.response?.status === 401 && !isRefreshing) {
-//                 try {
-//                     setIsRefreshing(true); // Prevent multiple refresh attempts
-                    
-//                     // Call refresh endpoint with withCredentials for cookies
-//                     const { data } = await axios.post('/api/auth/refresh', {}, {
-//                         withCredentials: true
-//                     });
-
-//                     if (data.accessToken) {
-//                         // Update localStorage and axios headers
-//                         localStorage.setItem('accessToken', data.accessToken);
-//                         axios.defaults.headers.common['Authorization'] = `Bearer ${data.accessToken}`;
-
-//                         // Retry the original request with new token
-//                         const newConfig = {
-//                             ...error.config,
-//                             headers: {
-//                                 ...error.config.headers,
-//                                 Authorization: `Bearer ${data.accessToken}`
-//                             }
-//                         };
-//                         return axios(newConfig);
-//                     }
-//                 } catch (refreshError) {
-//                     // Handle refresh failure
-//                     console.error('Token refresh failed:', refreshError);
-//                     setUser(null);
-//                     localStorage.clear();
-//                     window.location.replace('/');
-//                 } finally {
-//                     setIsRefreshing(false);
-//                 }
-//             }
-//             return Promise.reject(error);
-//         }
-//     );
-
-//     return () => {
-//         axios.interceptors.response.eject(interceptor);
-//     };
-// }, [isRefreshing]);
+    const verifyEmailMutation = useMutation({
+        mutationFn: (token) => axios.post('/api/auth/verify-email', { token })
+    });
 
     const value = {
         user,
-        loading,
-        error,
-        register,
-        login,
+        loading: isLoading,
         googleLogin,
-        logout,
-        forgotPassword,
-        resetPassword,
-        verifyEmail,
-        setError
+        register: registerMutation.mutateAsync,
+        login: loginMutation.mutateAsync,
+        logout: logoutMutation.mutateAsync,
+        forgotPassword: forgotPasswordMutation.mutateAsync,
+        resetPassword: resetPasswordMutation.mutateAsync,
+        verifyEmail: verifyEmailMutation.mutateAsync,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
+
+export default AuthProvider;
+
+
+
+
+

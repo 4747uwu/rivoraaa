@@ -13,6 +13,7 @@ import CreateProjectForm from './component/ProjectForm.jsx';
 import Projects from './component/Projects.jsx';
 import UpcomingTasks from './component/Tasks/UpcomingTasks.jsx';
 import CalendarWidget from "./component/CalenderWidget.jsx";
+import { useAuth } from "./context/authContext.jsx";
 
 const getThemeClasses = (darkMode) => ({
   background: darkMode ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' : 'bg-gradient-to-br from-gray-50 via-white to-gray-50',
@@ -25,13 +26,16 @@ const getThemeClasses = (darkMode) => ({
 });
 
 const Dashboard = () => {
-  const [user, setUser] = useState(null);
+  // const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const location = useLocation();
   const { projects, loading, error, fetchProjects } = useProjects();
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const { darkMode, toggleTheme } = useTheme();
   const themeClasses = getThemeClasses(darkMode);
+  const{user} = useAuth();
+  console.log(user);
+  
 
   // Navigation items
   const navItems = [
@@ -44,11 +48,11 @@ const Dashboard = () => {
     { icon: Settings, text: "Settings", path: "/settings" },
   ];
 
-  useEffect(() => {
-    API.get("/api/dashboard")
-      .then((res) => setUser(res.data))
-      .catch(() => setUser(null));
-  }, []);
+  // useEffect(() => {
+  //   API.get("/api/dashboard")
+  //     .then((res) => setUser(res.data))
+  //     .catch(() => setUser(null));
+  // }, []);
 
   useEffect(() => {
     fetchProjects();
@@ -144,7 +148,7 @@ const Dashboard = () => {
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-gray-300">
-                    {user.message?.split(",")[0]}
+                    {user.name}
                   </p>
                   <p className="text-sm text-purple-400">Online</p>
                 </div>

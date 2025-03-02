@@ -55,13 +55,13 @@ export const register = async (req, res) => {
         const normalizedEmail = email.toLowerCase();
         const existingUser = await User.findOne({email: normalizedEmail});
 
-        // if(existingUser){
-        //     return res.status(400).json({
-        //         message: existingUser.authType === 'google' ? 
-        //             "This email is registered with Google. Please login with Google." : 
-        //             "User already exists"
-        //     });
-        // }   
+        if(existingUser){
+            return res.status(400).json({
+                message: existingUser.authType === 'google' ? 
+                    "This email is registered with Google. Please login with Google." : 
+                    "User already exists"
+            });
+        }   
 
         const hashedPassword = await bcrypt.hash(password, 10);
         const emailVerificationToken = crypto.randomBytes(32).toString('hex');
@@ -316,10 +316,12 @@ export const resetPassword = async (req, res) => {
 
 export const forgotPassword = async (req, res) => {
     const { email } = req.body;
+    console.log('Forgot Password Request:', email);
 
     try {
         const normalizedEmail = email.toLowerCase();
         const user = await User.findOne({ email: normalizedEmail });
+        console.log('User found:', user);
 
         if (!user) {
             return res.status(404).json({ message: "User not found" });
@@ -349,6 +351,7 @@ export const forgotPassword = async (req, res) => {
 
 export const verifyEmail = async (req, res) => {
     const { token } = req.body;
+    console.log('Verify Email Request:', token);
 
     try {
         const user = await User.findOne({

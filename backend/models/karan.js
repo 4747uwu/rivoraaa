@@ -199,7 +199,7 @@
       transform-style: preserve-3d;
     }
 
-    /* Base card styles */
+    /* Base state */
     .level-card {
       background: #f8f5ff;
       border-radius: 1rem;
@@ -215,7 +215,7 @@
       filter: blur(0.5px);
     }
 
-    /* Modifier styles */
+    /* Modifier states */
     .level-card.prev {
       transform: scale(0.8) translateX(-50%);
       opacity: 0.7;
@@ -230,14 +230,14 @@
       filter: blur(0.5px);
     }
 
-    /* Active state styles placed last to ensure highest priority */
+    /* Active state moved to the bottom for highest priority */
     .level-card.active {
-      background: #f3e8ff;
-      transform: scale(1);
-      opacity: 1;
-      z-index: 2;
-      filter: blur(0);
-      box-shadow: 0 10px 30px rgba(107, 33, 168, 0.1);
+      background: #f3e8ff !important;
+      transform: scale(1) !important;
+      opacity: 1 !important;
+      z-index: 2 !important;
+      filter: blur(0) !important;
+      box-shadow: 0 10px 30px rgba(107,33,168,0.1) !important;
     }
 
     .level-card.locked {
@@ -457,7 +457,7 @@
 
                   <div class="actions">
                     <button class="btn btn-secondary">Learn More</button>
-                    <button class="btn btn-primary" :disabled="level.locked">
+                    <button class="btn btn-primary" :disabled="level.locked && currentLevel !== index">
                       {{ level.completed ? 'Start over' : 'Start Practice' }}
                     </button>
                   </div>
@@ -535,13 +535,16 @@
             this.currentLevel++
           }
         },
-        getCarouselStyle() {
-         const cardWidth = 340; // Width of card + margin
-          const offset = -this.currentLevel * cardWidth;
-          return {
-            transform: `translateX(calc(-50% + ${offset}px))`,
-          }
-        }
+       getCarouselStyle() {
+              const cardWidth = 340; // Width of card + margin
+              const totalCards = this.levels.length;
+              // Center offset moves the whole carousel so that card 0 is centered initially.
+              const centerOffset = ((totalCards - 1) * cardWidth) / 2;
+              const slideOffset = -this.currentLevel * cardWidth;
+              return {
+                transform: `translateX(calc(-50% + ${centerOffset + slideOffset}px))`
+              }
+            }
       }
     }).mount('#app')
   </script>

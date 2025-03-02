@@ -11,7 +11,7 @@ const CalendarWidget = ({ darkMode, glassCard, textClass, subTextClass }) => {
 
   const fetchCalendars = async () => {
     try {
-      const response = await fetch('http://localhost:4000/api/calendars', { credentials: 'include' });
+      const response = await fetch(`${backendUrl}/api/calendars`, { credentials: 'include' });
       const data = await response.json();
       if (data.success) {
         setCalendars(data.calendars);
@@ -30,7 +30,7 @@ const CalendarWidget = ({ darkMode, glassCard, textClass, subTextClass }) => {
     const timeMax = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).toISOString();
     try {
       const response = await fetch(
-        `http://localhost:4000/api/events?calendarId=${calendarId}&timeMin=${timeMin}&timeMax=${timeMax}`,
+        `${backendUrl}/api/events?calendarId=${calendarId}&timeMin=${timeMin}&timeMax=${timeMax}`,
         { credentials: 'include' }
       );
       const data = await response.json();

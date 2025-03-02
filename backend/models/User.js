@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema({
     }},
     profilePicture:{type:String, default:""},
     role:{type:String, enum:["admin","member","viewer"], default:"member"},
+    profession:{type:String, default:""},
     authProvider:{type:String, enum:["email","google"], default:"email"},
     googleId:{type:String, default:""},
     bio: { type: String, default: "" },
@@ -100,7 +101,7 @@ const userSchema = new mongoose.Schema({
     inviterId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // User who sent the invite
     status: { type: String, enum: ["pending", "accepted", "declined"], default: "pending" },
     projectId: { type: mongoose.Schema.Types.ObjectId, ref: "Project" }, // Project for which the invitation was sent
-    role: { type: String, enum: ["admin", "editor", "viewer"] }, // Role assigned in the project if accepted
+    role: { type: String, enum: ["admin","member", "editor", "viewer"] }, // Role assigned in the project if accepted
     sentAt: { type: Date, default: Date.now }, // When the invitation was sent
     respondedAt: { type: Date }, // When the invite was accepted/declined
     message: { type: String, default: "" }, // Custom message with the invite

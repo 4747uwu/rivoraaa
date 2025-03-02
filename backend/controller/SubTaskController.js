@@ -144,22 +144,84 @@ export const getSubtasks = async (req, res) => {
     }
 };
 
+// export const updateProgress = async (req, res) => {
+//     try {
+//         const { taskId } = req.params;
+//         const { progress } = req.body;
+
+//         const updatedTask = await Task.findByIdAndUpdate(
+//             taskId,
+//             { progress },
+//             { new: true }
+//         );
+
+//         if (!updatedTask) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: 'Task not found'
+//             });
+//         }
+
+//         if (req.body.status) {
+//             await updateProjectProgress(updatedTask.projectId);
+//         }
+//          if (progress !== undefined) {
+//             await updateProjectProgress(updatedTask.projectId);
+//         }
+
+//         res.status(200).json({
+//             success: true,
+//             data: updatedTask
+//         });
+
+//     } catch (error) {
+//         console.error('Update progress error:', error);
+//         res.status(500).json({
+//             success: false,
+//             message: 'Failed to update task progress',
+//             error: error.message
+//         });
+//     }
+// };
+
 export const updateProgress = async (req, res) => {
     try {
         const { taskId } = req.params;
         const { progress } = req.body;
 
+        // Validate input
+        if (progress === undefined || progress < 0 || progress > 100) {
+            return res.status(400).json({
+                success: false,
+                message: 'Valid progress value (0-100) is required'
+            });
+        }
+
+        // Find task and update progress
         const updatedTask = await Task.findByIdAndUpdate(
             taskId,
-            { progress },
+            { 
+                progress,
+                updatedAt: new Date() 
+            },
             { new: true }
-        );
+        ).populate('projectId'); // Make sure we get the project ID
 
         if (!updatedTask) {
             return res.status(404).json({
                 success: false,
                 message: 'Task not found'
             });
+        }
+
+        // Update project progress whenever task progress changes
+        if (updatedTask.projectId) {
+            await updateProjectProgress(updatedTask.projectId);
+            
+            // Log for debugging
+            console.log(`Updated progress for project ${updatedTask.projectId} after task ${taskId} progress changed to ${progress}%`);
+        } else {
+            console.warn(`Task ${taskId} has no associated project ID`);
         }
 
         res.status(200).json({
@@ -176,6 +238,7 @@ export const updateProgress = async (req, res) => {
         });
     }
 };
+
 
 export const updateSubtaskStatus = async (req, res) => {
     try {
@@ -214,6 +277,10 @@ export const updateSubtaskStatus = async (req, res) => {
             { new: true }
         );
 
+           if (updatedTask) {
+            await updateProjectProgress(updatedTask.projectId);
+        }
+
         res.status(200).json({
             success: true,
             data: subtask,
@@ -229,4 +296,53 @@ export const updateSubtaskStatus = async (req, res) => {
             error: error.message
         });
     }
+};
+
+// Add this helper function to TaskController.js
+const updateProjectProgress = async (projectId) => {
+  try {
+    console.log(`Updating progress for project: ${projectId}`);
+    
+    // Get all tasks for this project
+    const tasks = await Task.find({ projectId: projectId });
+    
+    if (!tasks || tasks.length === 0) {
+      console.log(`No tasks found for project ${projectId}`);
+      return;
+    }
+    
+    console.log(`Found ${tasks.length} tasks for project ${projectId}`);
+    
+    // Calculate progress based on individual task progress values
+    // This is more accurate than just counting completed tasks
+    let totalProgress = 0;
+    tasks.forEach(task => {
+      totalProgress += task.progress || 0;
+    });
+    
+    // Calculate average progress (0-100)
+    const progress = Math.round(totalProgress / tasks.length);
+    
+    console.log(`Calculated progress for project ${projectId}: ${progress}%`);
+    
+    // Update the project
+    const updatedProject = await Project.findByIdAndUpdate(
+      projectId,
+      { 
+        progress,
+        lastUpdated: Date.now() 
+      },
+      { new: true }
+    );
+    
+    if (!updatedProject) {
+      console.log(`Project ${projectId} not found`);
+    } else {
+      console.log(`Successfully updated project ${projectId} progress to ${progress}%`);
+    }
+    
+    return progress;
+  } catch (error) {
+    console.error('Error updating project progress:', error);
+  }
 };

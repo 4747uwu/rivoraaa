@@ -32,6 +32,9 @@ const taskSchema = new mongoose.Schema(
       workloadImpact: { type: String, default: "" },
     },
 
+    aiGenerated: { type: Boolean, default: false }, // Flag for AI-generated tasks
+
+
     // Task Dependencies & Structure
     dependencies: [{ type: mongoose.Schema.Types.ObjectId, ref: "Task" }],
     blockers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Task" }],

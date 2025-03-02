@@ -1,78 +1,100 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Plus, X, Check } from 'lucide-react';
 import API from '../../api/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 // Update the component props to include task and currentUser
 const SubTask = ({ taskId, onTaskUpdate, task, currentUser }) => {
-  const [subtasks, setSubtasks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newSubtask, setNewSubtask] = useState({ title: '', description: '' });
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    fetchSubtasks();
-  }, [taskId]);
-
-  const fetchSubtasks = async () => {
-    try {
-      setLoading(true);
+  // Fetch subtasks using React Query
+  const { 
+    data: subtasks = [], 
+    isLoading,
+    error 
+  } = useQuery({
+    queryKey: ['subtasks', taskId],
+    queryFn: async () => {
       const response = await API.get(`/api/task/${taskId}/subtasks`);
-      setSubtasks(response.data.data);
-    } catch (error) {
-      setError('Failed to fetch subtasks');
-      console.error('Error fetching subtasks:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      return response.data.data;
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
-  const handleAddSubtask = async (e) => {
-    e.preventDefault();
-    if (!newSubtask.title.trim()) return;
-
-    try {
+  // Add subtask mutation
+  const addSubtaskMutation = useMutation({
+    mutationFn: async (newSubtask) => {
       const response = await API.post(`/api/task/${taskId}/subtasks`, newSubtask);
-      setSubtasks([...subtasks, response.data.data]);
+      return response.data.data;
+    },
+    onSuccess: (newSubtaskData) => {
+      // Update cache
+      queryClient.setQueryData(['subtasks', taskId], (old = []) => [...old, newSubtaskData]);
+      // Reset form
       setNewSubtask({ title: '', description: '' });
       setShowAddForm(false);
-    } catch (error) {
-      setError('Failed to add subtask');
-      console.error('Error adding subtask:', error);
+    },
+    onError: (err) => {
+      console.error('Error adding subtask:', err);
     }
-  };
+  });
 
-  const handleRemoveSubtask = async (subtaskId) => {
-    try {
+  // Remove subtask mutation
+  const removeSubtaskMutation = useMutation({
+    mutationFn: async (subtaskId) => {
       await API.delete(`/api/subtasks/${subtaskId}`);
-      setSubtasks(subtasks.filter(st => st._id !== subtaskId));
-    } catch (error) {
-      setError('Failed to remove subtask');
-      console.error('Error removing subtask:', error);
+      return subtaskId;
+    },
+    onSuccess: (removedId) => {
+      // Update cache by filtering out the removed subtask
+      queryClient.setQueryData(['subtasks', taskId], (old = []) => 
+        old.filter(st => st._id !== removedId)
+      );
+    },
+    onError: (err) => {
+      console.error('Error removing subtask:', err);
     }
+  });
+
+  // Update subtask progress mutation
+  const updateProgressMutation = useMutation({
+    mutationFn: async ({ subtaskId, completed }) => {
+      const response = await API.patch(`/api/subtasks/${subtaskId}/status`, { completed });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      // Update the subtask in cache
+      queryClient.setQueryData(['subtasks', taskId], (oldSubtasks = []) =>
+        oldSubtasks.map(st => st._id === data.data._id ? data.data : st)
+      );
+      
+      // Update parent task progress if needed
+      if (data.task) {
+        onTaskUpdate(data.task);
+        // If you have task cache, update it here
+        queryClient.setQueryData(['tasks', data.task._id], data.task);
+      }
+    },
+    onError: (err) => {
+      console.error('Error updating progress:', err);
+    }
+  });
+
+  const handleAddSubtask = (e) => {
+    e.preventDefault();
+    if (!newSubtask.title.trim()) return;
+    addSubtaskMutation.mutate(newSubtask);
   };
 
-  const handleUpdateProgress = async (subtaskId, completed) => {
-    try {
-      const response = await API.patch(`/api/subtasks/${subtaskId}/status`, { completed });
-      
-      // Update local subtasks state
-      setSubtasks(prevSubtasks => 
-        prevSubtasks.map(st => 
-          st._id === subtaskId ? response.data.data : st
-        )
-      );
+  const handleRemoveSubtask = (subtaskId) => {
+    removeSubtaskMutation.mutate(subtaskId);
+  };
 
-      // Update parent task progress
-      if (response.data.task) {
-        onTaskUpdate(response.data.task);
-      }
-
-    } catch (error) {
-      setError('Failed to update progress');
-      console.error('Error updating progress:', error);
-    }
+  const handleUpdateProgress = (subtaskId, completed) => {
+    updateProgressMutation.mutate({ subtaskId, completed });
   };
 
   // Add function to check if user is assigned to task
@@ -95,10 +117,20 @@ const SubTask = ({ taskId, onTaskUpdate, task, currentUser }) => {
   const completedCount = subtasks.filter(st => st.status === 'completed').length;
   const progress = subtasks.length ? (completedCount / subtasks.length) * 100 : 0;
 
-  if (loading) {
+  // Show loading spinner during initial load
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-2">
         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  // Show error if there's a problem fetching subtasks
+  if (error) {
+    return (
+      <div className="text-red-500 text-sm p-2">
+        Failed to load subtasks: {error.message}
       </div>
     );
   }
@@ -195,15 +227,19 @@ const SubTask = ({ taskId, onTaskUpdate, task, currentUser }) => {
                       type="button"
                       onClick={() => setShowAddForm(false)}
                       className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                      disabled={addSubtaskMutation.isPending}
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg 
-                               hover:bg-blue-600 transition-colors"
+                      className={`px-4 py-2 bg-blue-500 text-white rounded-lg 
+                               hover:bg-blue-600 transition-colors ${
+                                 addSubtaskMutation.isPending ? 'opacity-70 cursor-not-allowed' : ''
+                               }`}
+                      disabled={addSubtaskMutation.isPending}
                     >
-                      Add Subtask
+                      {addSubtaskMutation.isPending ? 'Adding...' : 'Add Subtask'}
                     </button>
                   </div>
                 </form>
@@ -223,55 +259,65 @@ const SubTask = ({ taskId, onTaskUpdate, task, currentUser }) => {
 
             {/* Subtasks List - Update to show creator info */}
             <div className="max-h-[400px] overflow-y-auto">
-              {subtasks.map((subtask) => (
-                <div
-                  key={subtask._id}
-                  className="p-4 border-b last:border-b-0 hover:bg-gray-50 group"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => handleUpdateProgress(
-                            subtask._id, 
-                            subtask.status !== 'completed'
-                        )}
-                        className={`w-5 h-5 rounded border-2 flex items-center justify-center 
-                                  transition-colors ${
-                          subtask.status === 'completed'
-                            ? 'bg-blue-500 border-blue-500 text-white'
-                            : 'border-gray-300 hover:border-blue-500'
-                        }`}
-                      >
-                        {subtask.status === 'completed' && <Check size={14} />}
-                      </button>
-                      <div>
-                        <h4 className={`font-medium ${
-                            subtask.status === 'completed' 
-                                ? 'text-gray-400 line-through' 
-                                : 'text-gray-700'
-                        }`}>
-                          {subtask.title}
-                        </h4>
-                        {subtask.description && (
-                          <p className="text-sm text-gray-500 mt-1">
-                            {subtask.description}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    {/* Only show delete button if user is assigned */}
-                    {isUserAssigned() && (
-                      <button
-                        onClick={() => handleRemoveSubtask(subtask._id)}
-                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-50 
-                                 rounded-full text-red-500 transition-all"
-                      >
-                        <X size={16} />
-                      </button>
-                    )}
-                  </div>
+              {subtasks.length === 0 ? (
+                <div className="p-8 text-center text-gray-500">
+                  No subtasks yet. Add some to track progress!
                 </div>
-              ))}
+              ) : (
+                subtasks.map((subtask) => (
+                  <div
+                    key={subtask._id}
+                    className="p-4 border-b last:border-b-0 hover:bg-gray-50 group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => handleUpdateProgress(
+                              subtask._id, 
+                              subtask.status !== 'completed'
+                          )}
+                          disabled={updateProgressMutation.isPending}
+                          className={`w-5 h-5 rounded border-2 flex items-center justify-center 
+                                    transition-colors ${
+                            subtask.status === 'completed'
+                              ? 'bg-blue-500 border-blue-500 text-white'
+                              : 'border-gray-300 hover:border-blue-500'
+                          } ${updateProgressMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          {subtask.status === 'completed' && <Check size={14} />}
+                        </button>
+                        <div>
+                          <h4 className={`font-medium ${
+                              subtask.status === 'completed' 
+                                  ? 'text-gray-400 line-through' 
+                                  : 'text-gray-700'
+                          }`}>
+                            {subtask.title}
+                          </h4>
+                          {subtask.description && (
+                            <p className="text-sm text-gray-500 mt-1">
+                              {subtask.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      {/* Only show delete button if user is assigned */}
+                      {isUserAssigned() && (
+                        <button
+                          onClick={() => handleRemoveSubtask(subtask._id)}
+                          disabled={removeSubtaskMutation.isPending}
+                          className={`opacity-0 group-hover:opacity-100 p-1 hover:bg-red-50 
+                                   rounded-full text-red-500 transition-all ${
+                                   removeSubtaskMutation.isPending ? 'cursor-not-allowed opacity-50' : ''
+                                  }`}
+                        >
+                          <X size={16} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

@@ -33,7 +33,7 @@ const PasswordReset = () => {
                     setError('Passwords do not match');
                     return;
                 }
-                await resetPassword(resetToken, password);
+                await resetPassword({ token: resetToken, newPassword: password });
                 navigate('/login', { 
                     state: { message: 'Password has been reset successfully' }
                 });
