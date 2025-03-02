@@ -10,7 +10,7 @@ const router = express.Router();
 
 router.get("/google", googleAuth);
 router.get("/google/callback", googleAuthCallback);
-router.get('logout',logout);
+// router.get('logout',logout);
 
 //Calender endpoints
 
