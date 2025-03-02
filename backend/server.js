@@ -51,6 +51,16 @@ const server = createServer(app);
 //     });
 // });
 
+app.use(cors({
+    // origin: "http://localhost:5173",
+    origin: process.env.CLIENT_URL,
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
+  credentials: true
+}));
+
+
+
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
@@ -66,11 +76,6 @@ app.use(session({
 // redisClient.get('test').then(value => console.log('Test value:', value));
 
 
-app.use(cors({
-    // origin: "http://localhost:5173",
-    origin: process.env.CLIENT_URL,
-    credentials: true
-}));
 
 initializeSocket(server);
 
