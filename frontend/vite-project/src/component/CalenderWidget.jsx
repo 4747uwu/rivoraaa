@@ -8,6 +8,7 @@ const CalendarWidget = ({ darkMode, glassCard, textClass, subTextClass }) => {
   const [error, setError] = useState(null);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [hoveredDay, setHoveredDay] = useState(null);
+  const backendUrl = import.meta.env.VITE_API_URL;
 
   const fetchCalendars = async () => {
     try {
@@ -17,6 +18,7 @@ const CalendarWidget = ({ darkMode, glassCard, textClass, subTextClass }) => {
         setCalendars(data.calendars);
         return data.calendars[0]?.id; // Return primary calendar ID
       }
+      console.error('Raw Response:', data);
       throw new Error(data.message);
     } catch (err) {
       setError('Failed to fetch calendars');
@@ -143,7 +145,7 @@ const CalendarWidget = ({ darkMode, glassCard, textClass, subTextClass }) => {
                 {formatDay(day)}
               </div>
               {isHovered && hasEvent && (
-                <div className="absolute top-full left-0 z-10 w-48 bg-white dark:bg-gray-800 p-2 border border-gray-300 dark:border-gray-700 rounded shadow-md mt-1 text-xs text-gray-900 dark:text-gray-100">
+                <div className="absolute top-full -left-24 z-10 w-48 bg-white dark:bg-gray-800 p-2 border border-gray-300 dark:border-gray-700 rounded shadow-md mt-1 text-xs text-gray-900 dark:text-gray-100">
                   {eventsByDate[dateStr].map((event, idx) => (
                     <div key={idx} className="mb-1 last:mb-0">
                       <strong>{event.summary || 'Untitled Event'}</strong>

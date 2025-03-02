@@ -42,6 +42,18 @@ export const initializeSocket = (server) => {
             transportType: socket.conn.transport.name
         });
 
+        // Join project room on connection
+        if (socket.handshake.query.projectId) {
+            socket.join(socket.handshake.query.projectId);
+            console.log(`User joined project ${socket.handshake.query.projectId}`);
+        }
+        
+        // Then handle group join separately
+        socket.on("joinGroup", (groupId) => {
+            socket.join(groupId);
+            console.log(`User joined group ${groupId}`);
+        });
+
         socket.on("sendMessage", async (data) => {
             try {
                 const { projectId, groupId, content, type = 'text', metadata = {} } = data;
@@ -74,7 +86,7 @@ export const initializeSocket = (server) => {
                     .lean();
 
                 // Broadcast to all users in the project room
-                io.to(projectId).emit('receiveMessage', {
+                io.to(groupId).emit('receiveMessage', {
                     _id: populatedMessage._id,
                     content: populatedMessage.content,
                     sender: {
@@ -93,6 +105,14 @@ export const initializeSocket = (server) => {
                 console.error('Error saving message:', error);
                 socket.emit('error', 'Failed to save message');
             }
+        });
+
+        socket.on("typing", ({ groupId, userId, username }) => {
+            socket.to(groupId).emit("userTyping", { groupId, userId, username });
+        });
+
+        socket.on("stopTyping", ({ groupId, userId }) => {
+            socket.to(groupId).emit("userStoppedTyping", { groupId, userId });
         });
 
         socket.on("disconnect", () => {

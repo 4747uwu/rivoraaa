@@ -4,6 +4,7 @@ import { useAuth } from '../../context/authContext';
 import { useProjects } from '../../context/ProjectContext';
 import GroupCreationModal from './GroupCreation';
 import AddMembersModal from './AddMembersModal';
+// import TypingIndicator from "./TypingIndicator";
 import { 
   Users, 
   PlusCircle, 
@@ -28,6 +29,8 @@ const ChatComponent = () => {
   const messagesEndRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [typingUsers, setTypingUsers] = useState({});
+  const typingTimeoutRef = useRef({});
 
   const { user } = useAuth();
   const { selectedProject } = useProjects();
@@ -42,29 +45,49 @@ const ChatComponent = () => {
 
   // Socket initialization
   useEffect(() => {
-    if (!projectId || !selectedGroup) return;
+    if (!projectId) return;
 
+    // Create socket once per project, not per group
     const newSocket = io(import.meta.env.VITE_API_URL, {
       withCredentials: true,
       transports: ['polling', 'websocket'],
-      query: { 
-        projectId,
-        groupId: selectedGroup._id 
-      }
+      query: { projectId }
+    });
+
+    // Add debugging
+    newSocket.on('connect', () => {
+      console.log('Socket connected:', newSocket.id);
+    });
+
+    newSocket.on('connect_error', (err) => {
+      console.error('Socket connection error:', err);
     });
 
     setSocket(newSocket);
 
     return () => {
+      console.log('Disconnecting socket');
       if (newSocket) newSocket.disconnect();
     };
-  }, [projectId, selectedGroup]);
+  }, [projectId]); // Only depend on projectId, not selectedGroup
+
+  // Add separate effect to handle group changes
+  useEffect(() => {
+    if (!socket || !selectedGroup) return;
+    
+    // Leave previous room and join new one
+    console.log(`Joining group room: ${selectedGroup._id}`);
+    socket.emit('joinGroup', selectedGroup._id);
+    
+    // Don't need to return cleanup as the socket will handle it
+  }, [socket, selectedGroup?._id]);
 
   // Receive messages
   useEffect(() => {
     if (!socket) return;
 
     socket.on('receiveMessage', (message) => {
+      console.log('Received message:', message);
       setMessages(prev => {
         // Remove temporary message if it exists
         const filteredMessages = prev.filter(msg => 
@@ -75,10 +98,37 @@ const ChatComponent = () => {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     });
 
+    socket.on('error', (error) => {
+      console.error('Socket error:', error);
+    });
+
+    // Add these new event listeners
+    socket.on('userTyping', ({userId, groupId, username}) => {
+      if (groupId === selectedGroup?._id && userId !== currentUser) {
+        setTypingUsers(prev => ({
+          ...prev,
+          [userId]: { username, timestamp: Date.now() }
+        }));
+      }
+    });
+
+    socket.on('userStoppedTyping', ({userId, groupId}) => {
+      if (groupId === selectedGroup?._id) {
+        setTypingUsers(prev => {
+          const updated = {...prev};
+          delete updated[userId];
+          return updated;
+        });
+      }
+    });
+
     return () => {
       socket.off('receiveMessage');
+      socket.off('error');
+      socket.off('userTyping');
+      socket.off('userStoppedTyping');
     };
-  }, [socket]);
+  }, [socket, selectedGroup?._id, currentUser]);
 
   // Load groups
   useEffect(() => {
@@ -164,6 +214,34 @@ const ChatComponent = () => {
 
     socket.emit('sendMessage', messageData);
     setNewMessage('');
+  };
+
+  // Add this to handle typing status
+  const handleMessageChange = (e) => {
+    setNewMessage(e.target.value);
+    
+    // Only emit typing events if there's a selected group and socket
+    if (!socket || !selectedGroup) return;
+    
+    // Emit typing event
+    socket.emit('typing', {
+      groupId: selectedGroup._id,
+      userId: currentUser,
+      username: user.username || user.name
+    });
+    
+    // Clear existing timeout
+    if (typingTimeoutRef.current[currentUser]) {
+      clearTimeout(typingTimeoutRef.current[currentUser]);
+    }
+    
+    // Set timeout to stop typing indication
+    typingTimeoutRef.current[currentUser] = setTimeout(() => {
+      socket.emit('stopTyping', {
+        groupId: selectedGroup._id,
+        userId: currentUser
+      });
+    }, 2000); // Stop typing indication after 2 seconds of inactivity
   };
 
   // Create default group
@@ -560,6 +638,11 @@ const ChatComponent = () => {
             )}
           </div>
 
+          {/* Add this just before the message input area */}
+          <div className="px-6 py-1">
+            <TypingIndicator users={typingUsers} />
+          </div>
+
           {/* Message Input */}
           <div className="px-4 py-3 bg-white border-t border-gray-200">
             <form onSubmit={handleSendMessage} className="flex items-center gap-2">
@@ -567,7 +650,7 @@ const ChatComponent = () => {
                 <input
                   type="text"
                   value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
+                  onChange={handleMessageChange}
                   placeholder="Type your message..."
                   className="w-full px-4 py-3 pr-12 bg-gray-50 border border-gray-300 rounded-full 
                            focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
@@ -639,5 +722,30 @@ const ChatComponent = () => {
     </div>
   );
 };
-
+// Add this component at the bottom of your file
+const TypingIndicator = ({ users }) => {
+  if (Object.keys(users).length === 0) return null;
+  
+  // Get the usernames of people typing
+  const typingUsernames = Object.values(users).map(u => u.username);
+  
+  // Limit to showing max 2 users typing
+  const displayNames = typingUsernames.slice(0, 2);
+  const text = displayNames.length === 1 
+    ? `${displayNames[0]} is typing...` 
+    : displayNames.length === 2 
+      ? `${displayNames[0]} and ${displayNames[1]} are typing...` 
+      : `${displayNames[0]}, ${displayNames[1]} and ${typingUsernames.length - 2} others are typing...`;
+      
+  return (
+    <div className="flex items-center gap-2 text-sm text-gray-500 mt-1 ml-12">
+      <div className="flex space-x-1">
+        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0ms' }}></div>
+        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '150ms' }}></div>
+        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+      </div>
+      <span>{text}</span>
+    </div>
+  );
+};
 export default ChatComponent;
