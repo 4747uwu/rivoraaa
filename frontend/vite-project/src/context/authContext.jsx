@@ -36,21 +36,58 @@ export const AuthProvider = ({ children }) => {
 
 
     // Register mutation
+    // const registerMutation = useMutation({
+    //     mutationFn: async ({ username, name, email, password }) => {
+    //         const { data } = await axios.post('/api/auth/register', {
+    //             username,
+    //             name,
+    //             email,
+    //             password
+    //         });
+    //         return data;
+    //     },
+    //     onSuccess: (data) => {
+    //         localStorage.setItem('accessToken', data.accessToken);
+    //         queryClient.invalidateQueries(['authUser']);
+    //     }
+    // });
+
     const registerMutation = useMutation({
-        mutationFn: async ({ username, name, email, password }) => {
-            const { data } = await axios.post('/api/auth/register', {
-                username,
-                name,
-                email,
-                password
-            });
-            return data;
-        },
-        onSuccess: (data) => {
+    mutationFn: async (userData) => {
+        // Make sure we're sending all required fields
+        const { username, name, email, password } = userData;
+        
+        // Log what we're sending for debugging
+        console.log('Sending registration data to API:', { username, name, email });
+        
+        const response = await axios.post('/api/auth/register', {
+            username,
+            name,
+            email,
+            password
+        });
+        
+        return response.data;
+    },
+    onSuccess: (data) => {
+        // Check if we got an access token (immediate authentication)
+        if (data.accessToken) {
+            // User can login immediately
             localStorage.setItem('accessToken', data.accessToken);
             queryClient.invalidateQueries(['authUser']);
-        }
-    });
+            return true;
+        } 
+        
+        // Email verification flow - don't set token
+        // Just return success so the UI can show verification message
+        return true;
+    },
+    onError: (error) => {
+        console.error('Registration error:', error.response?.data || error);
+        throw error;
+    }
+});
+
 
     // Login mutation
     const loginMutation = useMutation({
@@ -93,41 +130,47 @@ export const AuthProvider = ({ children }) => {
 };
 
     // Logout mutation
-  const logoutMutation = useMutation({
-    mutationFn: async () => {
-        const userId = user?._id;
-        await axios.post('/api/auth/logout', { userId });
-        
-        // Clear all storage mechanisms
-        localStorage.clear(); // Clear localStorage
-        sessionStorage.clear(); // Clear sessionStorage
-        
-        // Clear cookies
-        document.cookie.split(";").forEach((cookie) => {
-            const eqPos = cookie.indexOf("=");
-            const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
-            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
-        });
-
-        // Remove axios default headers
-        delete axios.defaults.headers.common['Authorization'];
-    },
-    onSuccess: () => {
-        // Clear React Query cache
-        queryClient.clear();
-        queryClient.removeQueries(); // Remove all queries from cache
-        queryClient.invalidateQueries(); // Invalidate all queries
-        
-        // Force reload to clear any remaining state
-        window.location.href = '/login';
-    },
-    onError: (error) => {
-        console.error('Logout failed:', error);
-        // Still attempt to clear frontend state even if logout request fails
-        localStorage.clear();
-        sessionStorage.clear();
-        queryClient.clear();
+// Replace your current logout mutation with this more robust version
+const logoutMutation = useMutation({
+  mutationFn: async () => {
+    try {
+      await axios.post('/api/auth/logout');
+      return true;
+    } catch (error) {
+      console.error('Logout API call failed:', error);
+      // Continue with client-side logout even if API fails
+      return false;
     }
+  },
+  onSuccess: () => {
+    // Clear all client state BEFORE redirecting
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    // Aggressively clear cookies (may not affect HTTP-only cookies from server)
+    document.cookie.split(";").forEach((cookie) => {
+      const eqPos = cookie.indexOf("=");
+      const name = eqPos > -1 ? cookie.trim().substr(0, eqPos) : cookie.trim();
+      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
+    });
+    
+    // Remove auth headers
+    delete axios.defaults.headers.common['Authorization'];
+    
+    // Reset React Query completely
+    queryClient.clear();
+    queryClient.resetQueries(['authUser'], { exact: true });
+    
+    // Force hard reload instead of React Router navigation
+    window.location.replace('/');
+  },
+  onError: () => {
+    // Same cleanup even on error, force hard reload
+    localStorage.clear();
+    sessionStorage.clear();
+    queryClient.clear();
+    window.location.replace('/');
+  }
 });
 
     // Forgot password

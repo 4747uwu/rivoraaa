@@ -196,39 +196,48 @@ export const login = async (req, res) => {
 
 export const logout = async (req, res) => {
     try {
-        const { userId } = req.body;
-        await redisClient.del(`user:${userId}`);
-        // Clear all cookies
-        res.clearCookie('token', {
+        console.log('Logout Request:', req.body);
+        // Get user ID from token instead of requiring it in body
+        const userId = req.user?.userId || req.user?.id || req.body.userId;
+        
+        // Clear Redis cache if userId is available
+        if (userId) {
+            try {
+                await redisClient.del(`user:${userId}`);
+            } catch (redisError) {
+                console.error('Redis error during logout:', redisError);
+                // Continue with logout even if Redis fails
+            }
+        }
+        
+        // Clear ALL relevant cookies - note you're missing 'refreshToken'!
+        const cookiesToClear = ['token', 'refreshToken', 'connect.sid', '__refresh_yMT98QO8'];
+        
+        const cookieOptions = {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            sameSite: 'None',
             path: '/'
+        };
+        
+        cookiesToClear.forEach(cookieName => {
+            res.clearCookie(cookieName, cookieOptions);
         });
         
-        res.clearCookie('connect.sid', {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            path: '/'
-        });
-        
-        res.clearCookie('__refresh_yMT98QO8', {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            path: '/'
-        });
-
         // Destroy session if using sessions
         if (req.session) {
-            req.session.destroy();
+            req.session.destroy(err => {
+                if (err) console.error('Session destruction error:', err);
+            });
         }
 
-        res.status(200).json({ message: 'Logged out successfully' });
+        res.status(200).json({ 
+            success: true,
+            message: 'Logged out successfully' 
+        });
         
     } catch (error) {
-        console.error(error);
+        console.error('Logout error:', error);
         res.status(500).json({ message: "Something went wrong" });
     }
 };

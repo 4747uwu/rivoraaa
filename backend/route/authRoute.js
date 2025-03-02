@@ -104,9 +104,9 @@ const validationSchemas = {
 
 
 router.post("/register", 
-    authLimiters.register,
-    validationSchemas.register,
-    validateRequest,
+    // authLimiters.register,
+    // validationSchemas.register,
+    // validateRequest,
     register
 );
 
