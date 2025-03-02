@@ -22,7 +22,7 @@ const projectSchema = new mongoose.Schema(
 
     // Task & Workflow Management
     tasks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Task" }],
-    status: { type: String, enum: ["active", "completed", "archived"], default: "active" },
+    status: { type: String, enum: ["active", "completed",  'in_progress', "archived"], default: "active" },
     priority: { type: String, enum: ["low", "medium", "high"], default: "medium" },
     deadline: { type: Date, required: true },
     progress: { type: Number, min: 0, max: 100, default: 0 },

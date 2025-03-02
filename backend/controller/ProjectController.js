@@ -138,36 +138,88 @@ export const getProjectById = async (req, res) => {
 };
 
 
+// export const updateProject = async (req, res) => {
+//     try {
+//           const project = await Project.findById(req.params.id);
+//         if (!project) {
+//             return res.status(404).json({ success: false, message: 'Project not found' });
+//         }
+        
+//         if(project.owner.toString() !== req.user.id)
+//         {
+//             return res.status(401).json({ success: false, message: 'You are not authorized to update this project' });
+//         }
+
+//         const updatedProject = await Project.findByIdAndUpdate(req.params.id, req.body, {new: true, runValidators: true});
+
+//         try{
+//             await redisClient.del("projects"+ req.user.id);
+//         }catch (error) {
+//             console.log(`Redis Deleting Error: ${error.message}`);
+//         }
+
+//         res.json({ success: true, project: updatedProject });
+
+
+//     } catch (error) {
+//         console.log(`Error: ${error.message}`);
+        
+//     }
+
+// }
+
 export const updateProject = async (req, res) => {
     try {
-          const project = await Project.findById(req.params.id);
+        const project = await Project.findById(req.params.id);
         if (!project) {
             return res.status(404).json({ success: false, message: 'Project not found' });
         }
         
-        if(project.owner.toString() !== req.user.id)
-        {
+        if(project.owner.toString() !== req.user.id) {
             return res.status(401).json({ success: false, message: 'You are not authorized to update this project' });
         }
 
-        const updatedProject = await Project.findByIdAndUpdate(req.params.id, req.body, {new: true, runValidators: true});
+       
+        const updateData = { ...req.body };
+        
+        if (req.body.status === 'active') {
+            
+            updateData.currentStatus = project.currentStatus === 'available' ? 
+                'available' : 'in_progress';
+        } else if (req.body.status) {
+            
+            if (['completed', 'archived'].includes(req.body.status)) {
+                updateData.currentStatus = req.body.status;
+            }
+        }
+        
+        // // If client is trying to directly update currentStatus, respect that
+        // console.log('Update data before DB call:', updateData);
 
-        try{
-            await redisClient.del("projects"+ req.user.id);
-        }catch (error) {
+        const updatedProject = await Project.findByIdAndUpdate(
+            req.params.id, 
+            updateData, 
+            {new: true, runValidators: true}
+        );
+
+        // console.log('Updated project:', updatedProject);
+
+        try {
+            await redisClient.del("projects:" + req.user.id);
+        } catch (error) {
             console.log(`Redis Deleting Error: ${error.message}`);
         }
 
         res.json({ success: true, project: updatedProject });
-
-
     } catch (error) {
-        console.log(`Error: ${error.message}`);
-        
+        console.log(`Error: ${error.message}`, error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to update project',
+            error: error.message
+        });
     }
-
 }
-
 //delete project
 
 export const deleteProject = async (req, res) => {

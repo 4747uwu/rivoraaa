@@ -15,7 +15,7 @@ import subTaskRoute from  "./route/subTaskRoute.js";
 import aiRoute from './route/aiRoute.js';
 import chatRoute from './route/messageRoute.js'
 import group from './route/group.js'
-
+import profileUpdate from './route/profileUpdate.js'
 
 import { initializeSocket } from "./config/socketConfig.js";
 import http from "http";
@@ -96,6 +96,7 @@ app.use('/api', subTaskRoute)
 app.use('/api/ai', aiRoute)
 app.use('/api/chat', chatRoute)
 app.use('/api', group)
+app.use('/api/user', profileUpdate)
 
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
