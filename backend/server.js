@@ -75,9 +75,8 @@ app.use(cors({
 initializeSocket(server);
 
 app.get("/", (req, res) => { 
-  res.send("API is running....");
+  res.send("Hello World!"); 
 });
-
 
 app.use(cookieParser());
 app.use("/api/auth",googleroute);
