@@ -53,7 +53,7 @@ const server = createServer(app);
 
 app.use(cors({
     // origin: "http://localhost:5173",
-    origin: process.env.CLIENT_URL,
+    origin: process.env.CLIENT_URL || "https://aether-mind-frontend.vercel.app",
     credentials: true,
      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Cookie"]
