@@ -8,7 +8,6 @@ const CalendarWidget = ({ darkMode, glassCard, textClass, subTextClass }) => {
   const [error, setError] = useState(null);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [hoveredDay, setHoveredDay] = useState(null);
-  const backendUrl = import.meta.env.VITE_API_URL;
 
   const backendUrl = import.meta.env.VITE_API_URL;
 
