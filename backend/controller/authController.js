@@ -270,9 +270,9 @@ export const getUser = async (req, res) => {
             password: undefined
         };
         try {
-            await redisClient.set(
+             await redisClient.set(
                 `user:${userId}`, 
-                JSON.stringify(userToSend), 
+                JSON.stringify(userToSend),  // 🚨 Error here!
                 { EX: CACHE_EXPIRY }
             );
             console.log('User cached successfully');
@@ -359,7 +359,7 @@ export const forgotPassword = async (req, res) => {
 };
 
 export const verifyEmail = async (req, res) => {
-    const { token } = req.body;
+    const token = req.query.token || req.body.token;
     console.log('Verify Email Request:', token);
 
     try {
@@ -384,7 +384,11 @@ export const verifyEmail = async (req, res) => {
         };
         await redisClient.set(`user:${user._id}`, JSON.stringify(userToCache), {EX: CACHE_EXPIRY});
 
-        res.status(200).json({ message: "Email verified successfully" });
+       res.status(200).json({ 
+            success: true,
+            message: "Email verified successfully" 
+        });
+        
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Something went wrong" });
