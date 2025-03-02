@@ -55,8 +55,9 @@ app.use(cors({
     // origin: "http://localhost:5173",
     origin: process.env.CLIENT_URL,
     credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
-  credentials: true
+     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"]
+  
 }));
 
 
