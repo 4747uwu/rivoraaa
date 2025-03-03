@@ -242,6 +242,7 @@ export const updateProgress = async (req, res) => {
 
 export const updateSubtaskStatus = async (req, res) => {
     try {
+        // console.log('Update subtask status:', req.body);
         const { subtaskId } = req.params;
         const { completed } = req.body;
 
