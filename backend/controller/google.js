@@ -62,6 +62,115 @@ export const googleAuth = (req, res) => {
   res.redirect(redirectUrl);
 };
 
+// export const googleAuthCallback = async (req, res) => {
+//     const { code } = req.query;
+
+//     if (!code) {
+//         return res.status(400).json({ success: false, message: "No code provided" });
+//     }
+
+//     try {
+//         const { tokens } = await client.getToken(code);
+        
+//         // Verify token and get user info
+//         const ticket = await client.verifyIdToken({
+//             idToken: tokens.id_token,
+//             audience: process.env.GOOGLE_CLIENT_ID,
+//         });
+        
+//         const payload = ticket.getPayload();
+//         let user = await User.findOne({ googleId: payload.sub });
+
+//         // Initialize Google Calendar service
+//         const calendarService = new GoogleCalendarService(tokens);
+        
+//         // Fetch user's calendars
+//         const calendars = await calendarService.listCalendars();
+//         const primaryCalendar = calendars.find(cal => cal.primary);
+
+//         // Calculate token expiry properly
+//         let tokenExpiry = null;
+//         if (tokens.expiry_date) {
+//             tokenExpiry = new Date(tokens.expiry_date);
+//         } else if (tokens.expires_in) {
+//             tokenExpiry = new Date(Date.now() + tokens.expires_in * 1000);
+//         }
+
+//         // Verify tokenExpiry is valid before using it
+//         if (!(tokenExpiry instanceof Date && !isNaN(tokenExpiry))) {
+//             console.warn('Invalid token expiry, setting default expiry');
+//             tokenExpiry = new Date(Date.now() + 3600 * 1000); // 1 hour default
+//         }
+
+//         const updateData = {
+//             authProvider: "google",
+//             isVerified: true,
+//             googleAccessToken: tokens.access_token,
+//             googleRefreshToken: tokens.refresh_token,
+//             googleTokenExpiry: tokenExpiry,
+//             'preferences.calendarSettings': {
+//                 enabled: true,
+//                 syncEnabled: true,
+//                 primaryCalendarId: primaryCalendar?.id || 'primary',
+//                 defaultReminders: primaryCalendar?.defaultReminders || [],
+//                 workingHours: {
+//                     start: "09:00",
+//                     end: "17:00",
+//                     workDays: [1, 2, 3, 4, 5]
+//                 }
+//             }
+//         };
+
+//         if (user) {
+//             // Update existing user
+//             await User.findByIdAndUpdate(user._id, {
+//                 $set: updateData,
+//                 $setOnInsert: {
+//                     username: payload.email.split("@")[0],
+//                     name: payload.name,
+//                     email: payload.email,
+//                     profilePicture: payload.picture || ""
+//                 }
+//             }, { new: true, upsert: true });
+//         } else {
+//             // Create new user
+//             user = await User.create({
+//                 ...updateData,
+//                 googleId: payload.sub,
+//                 username: payload.email.split("@")[0],
+//                 name: payload.name,
+//                 email: payload.email,
+//                 profilePicture: payload.picture || ""
+//             });
+//         }
+
+//         // Generate JWT token
+//         const jwtToken = jwt.sign(
+//             { id: user._id, name: user.name, email: user.email },
+//             process.env.JWT_SECRET,
+//             { expiresIn: "7d" }
+//         );
+
+//         // Set cookie and redirect
+//         res.cookie("token", jwtToken, {
+//             httpOnly: true,
+//             secure: process.env.NODE_ENV === "production",
+//             sameSite: "None",
+//             maxAge: 7 * 24 * 60 * 60 * 1000,
+//         });
+
+//         res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
+
+//     } catch (error) {
+//         console.error('Google OAuth Error:', error);
+//         return res.status(400).json({
+//             success: false,
+//             message: "Authentication failed",
+//             error: error.response?.data?.error_description || error.message
+//         });
+//     }
+// };
+
 export const googleAuthCallback = async (req, res) => {
     const { code } = req.query;
 
@@ -79,7 +188,14 @@ export const googleAuthCallback = async (req, res) => {
         });
         
         const payload = ticket.getPayload();
+        
+        // First try to find user by googleId, then by email as fallback
         let user = await User.findOne({ googleId: payload.sub });
+        
+        // If user not found by googleId, try finding by email
+        if (!user) {
+            user = await User.findOne({ email: payload.email });
+        }
 
         // Initialize Google Calendar service
         const calendarService = new GoogleCalendarService(tokens);
@@ -104,6 +220,7 @@ export const googleAuthCallback = async (req, res) => {
 
         const updateData = {
             authProvider: "google",
+            googleId: payload.sub, // Make sure googleId is set when updating by email
             isVerified: true,
             googleAccessToken: tokens.access_token,
             googleRefreshToken: tokens.refresh_token,
@@ -123,7 +240,7 @@ export const googleAuthCallback = async (req, res) => {
 
         if (user) {
             // Update existing user
-            await User.findByIdAndUpdate(user._id, {
+            user = await User.findByIdAndUpdate(user._id, {
                 $set: updateData,
                 $setOnInsert: {
                     username: payload.email.split("@")[0],
@@ -131,7 +248,7 @@ export const googleAuthCallback = async (req, res) => {
                     email: payload.email,
                     profilePicture: payload.picture || ""
                 }
-            }, { new: true, upsert: true });
+            }, { new: true });
         } else {
             // Create new user
             user = await User.create({
@@ -163,6 +280,12 @@ export const googleAuthCallback = async (req, res) => {
 
     } catch (error) {
         console.error('Google OAuth Error:', error);
+        
+        // Redirect to frontend with error
+        if (process.env.FRONTEND_URL) {
+            return res.redirect(`${process.env.FRONTEND_URL}/auth/error?message=${encodeURIComponent("Authentication failed. Please try again.")}`);
+        }
+        
         return res.status(400).json({
             success: false,
             message: "Authentication failed",
@@ -170,8 +293,6 @@ export const googleAuthCallback = async (req, res) => {
         });
     }
 };
-
-
 
 export const logout = (req, res) => {
   res.clearCookie("token");
