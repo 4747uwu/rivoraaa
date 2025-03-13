@@ -22,19 +22,11 @@ import TeamManagerPage from "./Pages/TeamManagerPage";
 import Invitations from "./Pages/Invitations";
 import Loginpage from "./Services/Loginpage";
 
-// const queryClient = new QueryClient({
-//   defaultOptions: {
-//     queries: {
-//       staleTime: 1000 * 60 * 5, // 5 minutes
-//       refetchOnWindowFocus: false,
-//     },
-//   },
-// });
+
 
 
 function App() {
   return (
-    // <QueryClientProvider client={queryClient}>
     <AuthProvider>
 
     <Router>
@@ -63,13 +55,11 @@ function App() {
                     <Route path="/profile" element={<Profile />} />
                     <Route path="/calender" element={<CalendarManagement />} />
                     {/* <Route path="/project/:projectId" element={<ProjectDashboard />} /> */}
-                    {/* <Route path="/project/:projectId" element={<ProjectDashboard />} /> */}
                     <Route path="/team" element={<Invitations />} />
                     <Route path="/linkups" element={<LinkUps/>} />
                     <Route path="/profile/:userId" element={<UserProfilePage />} />
                     <Route path="/teamBuilder" element={<TeamManagerPage />} />
                     <Route path="/teams/:teamId" element={<TeamPage />} />
-                     {/* <Route path="/grid" element={<ProjectGrid/>} /> */}
 
                 <Route path="*" element={<Navigate to="/" replace />} />
                 </Route>
@@ -84,7 +74,6 @@ function App() {
     </Router>
     </AuthProvider>
 
-    // </QueryClientProvider>
   );
 }
 
