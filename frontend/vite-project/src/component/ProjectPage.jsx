@@ -14,6 +14,7 @@ import { useAuth } from '../context/authContext';
 import GenerateAITasks from './Tasks/aiGenerate';
 // import AIInsightsCard from './Tasks/aiAnalysis';
 import ProjectInsightCard from './Tasks/aiAnalysis';
+import TeamDeploymentModal from './Team/FastDeploy';
 
 // Helper function
 const userHasPermission = (user, project, requiredRole = 'member') => {
@@ -167,6 +168,8 @@ const ProjectDashboard = () => {
   const [showAllMembers, setShowAllMembers] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const {user} = useAuth();
+  const [teamDeployModalOpen, setTeamDeployModalOpen] = useState(false);
+
   
   useEffect(() => {
     if(user) setCurrentUser(user);
@@ -434,6 +437,17 @@ const ProjectDashboard = () => {
 
               {/* Invite Button */}
               {userHasPermission(currentUser, project, 'admin') && (
+                <>
+                <button
+                  onClick={() => setTeamDeployModalOpen(true)}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg 
+                            hover:bg-indigo-700 transition-colors flex items-center gap-2
+                            shadow-sm mr-2"
+                >
+                  <Users size={16} />
+                  <span className="font-medium">Deploy Team</span>
+                </button>
+
                 <button
                   onClick={() => setShowInviteModal(true)}
                   className="px-4 py-2 bg-black text-white rounded-lg 
@@ -443,7 +457,9 @@ const ProjectDashboard = () => {
                   <UserPlus size={16} />
                   <span className="font-medium">Invite</span>
                 </button>
+                </>
               )}
+                
             </div>
           </div>
           
@@ -563,6 +579,8 @@ const ProjectDashboard = () => {
             currentUser={currentUser}
           />
 
+      
+
 
 
           </div>
@@ -583,6 +601,8 @@ const ProjectDashboard = () => {
         projectMembers={project.members}
       />
 
+      
+
       {showInviteModal && userHasPermission(currentUser, project, 'admin') && (
         <InviteModal
           isOpen={showInviteModal}
@@ -601,6 +621,16 @@ const ProjectDashboard = () => {
           onAssign={handleAssignTaskToMember}
         />
       )}
+
+      <TeamDeploymentModal
+        isOpen={teamDeployModalOpen}
+        onClose={() => setTeamDeployModalOpen(false)}
+        projectId={projectId}
+        user={currentUser}
+      />
+
+      
+    
     </div>
   );
 };

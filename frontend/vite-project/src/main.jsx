@@ -7,6 +7,8 @@ import { AuthProvider } from './context/authContext.jsx'
 import { ProjectProvider } from './context/ProjectContext.jsx'
 import { ThemeProvider } from './context/themeContext.jsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ConnectionProvider } from './context/connectionContext.jsx'
+import { TeamProvider } from './context/teamContext.jsx'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -25,7 +27,11 @@ createRoot(document.getElementById('root')).render(
 
     <AuthProvider>
       <ProjectProvider>
+        <ConnectionProvider>
+          <TeamProvider>
           <App />
+          </TeamProvider>
+        </ConnectionProvider>
       </ProjectProvider>
     </AuthProvider>
     </ThemeProvider> 

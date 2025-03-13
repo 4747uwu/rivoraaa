@@ -16,7 +16,12 @@ import aiRoute from './route/aiRoute.js';
 import chatRoute from './route/messageRoute.js'
 import group from './route/group.js'
 import profileUpdate from './route/profileUpdate.js'
-
+import teamTaskCalendarRoute from './route/teamTaskCalendarRoute.js'
+import connectionRoute from './route/connectionRoute.js'
+import teamRoutes from './route/teamRoute.js'
+import errorHandler from "./middleware/errorHandler.js";
+import userPerformance from './route/userPerformance.js'
+import StorageRoute from './route/StorageRoute.js'
 import { initializeSocket } from "./config/socketConfig.js";
 import http from "http";
 import { createServer } from "http";
@@ -85,6 +90,7 @@ app.get("/", (req, res) => {
 });
 
 app.use(cookieParser());
+
 app.use("/api/auth",googleroute);
 app.use('/api', dashboard)
 app.use('/api/auth', authRoute)
@@ -97,6 +103,13 @@ app.use('/api/ai', aiRoute)
 app.use('/api/chat', chatRoute)
 app.use('/api', group)
 app.use('/api/user', profileUpdate)
+app.use('/api/connections', connectionRoute)
+app.use('/api/teams', teamRoutes)
+app.use('/api/analytics', userPerformance)
+app.use('/api', StorageRoute)
+app.use('/api', teamTaskCalendarRoute)
+
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {

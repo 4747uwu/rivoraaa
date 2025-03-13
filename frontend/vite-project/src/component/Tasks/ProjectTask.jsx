@@ -1,12 +1,16 @@
-import React, { useState, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import API from '../../api/api';
+import API from '../../api/api.js';
 import { useProjects } from '../../context/ProjectContext';
 import SubTask from '../Tasks/subtask';
 import GenerateAITasks from './aiGenerate';
-import { SearchIcon, MoreHorizontal, Plus, AlertCircle, SortAsc, SortDesc } from 'lucide-react';
+import { SearchIcon, MoreHorizontal, Plus, AlertCircle, SortAsc, SortDesc, Paperclip, Image, FileText } from 'lucide-react';
 import TaskDetailsModal from './TaskDetailsModel';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import UserPerformanceReport from '../Report/userPerformanceReport';
+import FileList from '../FileUpload/FileList';
+import FileUploaderModal from '../FileUpload/FileUploaderModal';
+import FileListModal from '../FileUpload/FileList.jsx';
 
 // Define TaskCard as a memoized component
 const TaskCard = React.memo(({ 
@@ -23,16 +27,30 @@ const TaskCard = React.memo(({
   handleTaskUpdate
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
+
   const [showAssignMenu, setShowAssignMenu] = useState(false);
   const assignMenuRef = useRef(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [files, setFiles] = useState([]);
+  const [isFileUploaderOpen, setIsFileUploaderOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showFileListModal, setShowFileListModal] = useState(false);
+  const [isFileListOpen, setIsFileListOpen] = useState(false);
 
+  // console.log('currentUser' , currentUser.role);
   // Use useCallback for event handlers
+  // console.log(projectMembers) 
   const handleClickOutside = useCallback((event) => {
     if (assignMenuRef.current && !assignMenuRef.current.contains(event.target)) {
       setShowAssignMenu(false);
     }
   }, [assignMenuRef]);
+  // This is your existing isAdmin helper function
+  const isAdmin = (currentUser, selectedProject) => {
+    if (!currentUser || !selectedProject) return false;
+    const member = selectedProject.members.find(m => m.userId?._id === currentUser._id);
+    return member?.role === 'admin';
+  };
 
   React.useEffect(() => {
     document.addEventListener('mousedown', handleClickOutside);
@@ -144,84 +162,156 @@ const TaskCard = React.memo(({
   const showActionMenu = useMemo(() => isAdmin(currentUser, selectedProject), 
     [currentUser, selectedProject]);
 
+  // Fetch task files on component mount
+  useEffect(() => {
+    if (task?._id) {
+      fetchFiles();
+    }
+  }, [task?._id]);
+  
+  const fetchFiles = async () => {
+    if (!task?._id) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await API.get(`/api/tasks/${task._id}/files`);
+      setFiles(response.data.files || []);
+    } catch (error) {
+      console.error('Failed to fetch files:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleUploadComplete = (file) => {
+    setFiles(prev => [...prev, file]);
+  };
+  
+  const handleDeleteFile = (fileId) => {
+    setFiles(prev => prev.filter(file => file._id !== fileId));
+  };
+
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      draggable
-      onDragStart={(e) => handleDragStart(e, task._id)}
-      className="group relative bg-gray-50 rounded-lg p-4 border-[0.05rem] border-gray-200 
+    <div className="relative group">
+      {/* Draggable Task Card Section */}
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        draggable
+        onDragStart={(e) => handleDragStart(e, task._id)}
+        className="group relative bg-gray-50 rounded-lg p-4 border-[0.05rem] border-gray-200 
                  hover:border-blue-200 hover:shadow-lg transition-all duration-200 
                  cursor-move hover:scale-[1.02] overflow-hidden"
-    >
-      {/* Main Task Content - Clickable for Task Details */}
-      <div 
-        onClick={() => setShowDetailsModal(true)}
-        className="cursor-pointer"
       >
-        {/* Priority Badge */}
-        <div className="absolute -top-2 -right-[0.75] z-10">
-          <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full 
-                         text-xs font-medium shadow-md border 
-                         ${getPriorityColor(task.priority)}`}>
-            {task.priority}
-          </span>
-        </div>
-
-        {/* Task Content */}
-        <div className="">
-          <h3 className="flex items-center gap-2">
-            <span className="font-semibold text-black text-base group-hover:text-blue-600 
-                         transition-colors line-clamp-2 flex-1">
-              {task.title} 
-              <span className="text-s font-medium px-2 py-0.5 text-gray-600 rounded-full 
-                           inline-flex items-center">
-                {task.progress || 0}%
-              </span>
+        {/* Main Task Content - Clickable for Task Details */}
+        <div 
+          onClick={() => setShowDetailsModal(true)}
+          className="cursor-pointer"
+        >
+          {/* Priority Badge */}
+          <div className="absolute -top-2 -right-[0.75] z-10">
+            <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full 
+                           text-xs font-medium shadow-md border 
+                           ${getPriorityColor(task.priority)}`}>
+              {task.priority}
             </span>
-          </h3>
-          <p className="text-sm text-gray-600 mt-1 line-clamp-2 pb-2 border-b border-gray-50">
-            {task.description}
-          </p>
-        </div>
-
-        {/* Task Metadata */}
-        <div className="flex items-center justify-between pt-2">
-          <div className="flex -space-x-2">
-            {renderAssignedMembers}
-            {task.assignedTo?.length > 3 && (
-              <div className="w-6 h-6 rounded-full bg-gray-100 border-2 border-white 
-                           flex items-center justify-center text-xs font-medium 
-                           text-gray-600 shadow-sm">
-                +{task.assignedTo.length - 3}
-              </div>
-            )}
           </div>
 
-          {task.dueDate && (
-            <span className="text-xs font-medium px-2.5 py-1 rounded-full 
-                         bg-gray-50 text-gray-600 border border-gray-200">
-              {new Date(task.dueDate).toLocaleDateString()}
-            </span>
-          )}
+          {/* Task Content */}
+          <div className="">
+            <h3 className="flex items-center gap-2">
+              <span className="font-semibold text-black text-base group-hover:text-blue-600 
+                           transition-colors line-clamp-2 flex-1">
+                {task.title} 
+                <span className="text-s font-medium px-2 py-0.5 text-gray-600 rounded-full 
+                             inline-flex items-center">
+                  {task.progress || 0}%
+                </span>
+              </span>
+            </h3>
+            <p className="text-sm text-gray-600 mt-1 line-clamp-2 pb-2 border-b border-gray-50">
+              {task.description}
+            </p>
+          </div>
+
+          {/* Task Metadata */}
+          <div className="flex items-center justify-between pt-2">
+            <div className="flex -space-x-2">
+              {renderAssignedMembers}
+              {task.assignedTo?.length > 3 && (
+                <div className="w-6 h-6 rounded-full bg-gray-100 border-2 border-white 
+                             flex items-center justify-center text-xs font-medium 
+                             text-gray-600 shadow-sm">
+                  +{task.assignedTo.length - 3}
+                </div>
+              )}
+            </div>
+
+            {task.dueDate && (
+              <span className="text-xs font-medium px-2.5 py-1 rounded-full 
+                           bg-gray-50 text-gray-600 border border-gray-200">
+                {new Date(task.dueDate).toLocaleDateString()}
+              </span>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Subtasks Section - Separate Click Area */}
+        {/* Subtasks Section - Separate Click Area */}
+        <div 
+          onClick={(e) => e.stopPropagation()}
+          className="mt-4 border-t pt-4"
+        >
+          <SubTask 
+            taskId={task._id} 
+            onTaskUpdate={handleTaskUpdate}
+            task={task}
+            currentUser={currentUser}
+          />
+        </div>
+      </motion.div>
+      
+      {/* NON-DRAGGABLE SECTION - File Attachment UI */}
+      {/* This section is completely outside the draggable div */}
       <div 
-        onClick={(e) => e.stopPropagation()}
-        className="mt-4 border-t pt-4"
+        className="mt-2 py-2 px-3 bg-white rounded-lg border border-gray-200 flex items-center justify-between"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (files.length > 0) {
+            setShowFileListModal(true);
+          } else if (task.assignedTo?.some(id => 
+            id === currentUser._id || id._id === currentUser._id
+          ) || isAdmin(currentUser, selectedProject)) {
+            setIsFileUploaderOpen(true);
+          }
+        }}
       >
-        <SubTask 
-          taskId={task._id} 
-          onTaskUpdate={handleTaskUpdate}
-          task={task}
-          currentUser={currentUser}
-        />
+        <div className="flex items-center cursor-pointer">
+          <Paperclip size={16} className={`mr-2 ${files.length > 0 ? 'text-blue-500' : 'text-gray-400'}`} />
+          <span className="text-sm">
+            {files.length > 0 
+              ? `${files.length} attachment${files.length > 1 ? 's' : ''}` 
+              : 'Add attachment'}
+          </span>
+        </div>
+        
+        {(task.assignedTo?.some(id => 
+          id === currentUser?._id || id?._id === currentUser?._id
+        ) || isAdmin(currentUser, selectedProject)) && (
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsFileUploaderOpen(true);
+            }}
+            className="py-1 px-2 text-xs text-blue-600 hover:bg-blue-50 
+                      rounded-md border border-blue-200 transition-colors"
+          >
+            <Plus size={14} />
+          </button>
+        )}
       </div>
-
+      
       {/* Actions Menu */}
       {showActionMenu && (
         <div 
@@ -307,21 +397,51 @@ const TaskCard = React.memo(({
         </div>
       )}
 
-      {/* Task Details Modal */}
-      {showDetailsModal && (
-        <TaskDetailsModal
-          task={task}
-          onClose={() => setShowDetailsModal(false)}
-          projectMembers={projectMembers}
-          onSubtaskToggle={handleSubtaskToggle}
-        />
-      )}
-    </motion.div>
+      {/* Modals */}
+      <AnimatePresence>
+        {showDetailsModal && (
+          <TaskDetailsModal
+            task={task}
+            onClose={() => setShowDetailsModal(false)}
+            projectMembers={projectMembers}
+            onSubtaskToggle={handleSubtaskToggle}
+          />
+        )}
+        
+        {showFileListModal && (
+  <FileListModal
+    isOpen={showFileListModal} // Use showFileListModal instead of isFileListOpen
+    onClose={() => setShowFileListModal(false)} // Match the state variable name
+    files={files}
+    taskId={task._id}
+    projectId={task.projectId}
+    onDelete={handleDeleteFile}
+    currentUser={currentUser}
+    isOwner={task?.createdBy === currentUser?._id}
+    onUploadComplete={handleUploadComplete}
+    onFilesUpdate={(updatedFiles) => {
+      console.log('Files updated from FileListModal:', updatedFiles);
+      setFiles(updatedFiles);
+    }}
+  />
+        )}
+        
+        {isFileUploaderOpen && (
+          <FileUploaderModal
+            isOpen={isFileUploaderOpen}
+            onClose={() => setIsFileUploaderOpen(false)}
+            taskId={task._id}
+            projectId={selectedProject._id}
+            onUploadComplete={handleUploadComplete}
+          />
+        )}
+      </AnimatePresence>
+    </div>
   );
 });
 
 // Memoize the TaskControls component
-const TaskControls = React.memo(({ sortBy, setSortBy, sortOrder, setSortOrder, filterPriority, setFilterPriority }) => (
+const TaskControls = React.memo(({ sortBy, setSortBy, sortOrder, setSortOrder, filterPriority, setFilterPriority,filterUser, setFilterUser, projectMembers }) => (
   <div className="flex items-center gap-4 pb-0">
     <div className="flex items-center gap-2">
       <span className="text-sm font-medium text-gray-700">Sort by:</span>
@@ -354,6 +474,26 @@ const TaskControls = React.memo(({ sortBy, setSortBy, sortOrder, setSortOrder, f
         <option value="high">High</option>
         <option value="medium">Medium</option>
         <option value="low">Low</option>
+      </select>
+    </div>
+
+    <div className="flex items-center gap-2">
+      <span className="text-sm font-medium text-gray-700">Assigned to:</span>
+      <select
+        value={filterUser}
+        onChange={(e) => setFilterUser(e.target.value)}
+        className="px-3 py-1 border border-gray-200 rounded-lg text-sm"
+        style={{ minWidth: "120px" }}
+      >
+        <option value="all">All Users</option>
+        {projectMembers?.map(member => (
+          <option 
+            key={member.userId?._id || member._id} 
+            value={member.userId?._id || member._id}
+          >
+            {member.userId?.username || member?.username || "Unknown User"}
+          </option>
+        ))}
       </select>
     </div>
   </div>
@@ -513,6 +653,9 @@ const ProjectTasks = ({
   const [sortOrder, setSortOrder] = useState('desc');
   const [filterPriority, setFilterPriority] = useState('all');
   const [error, setError] = useState(null);
+  const [filterUser, setFilterUser] = useState('all');
+  const [viewMode, setViewMode] = useState('board'); // 'board' or 'performance'
+  
 
   // Column configuration
   const columns = useMemo(() => [
@@ -761,9 +904,15 @@ const ProjectTasks = ({
     if (filterPriority !== 'all') {
       filtered = filtered.filter(task => task.priority === filterPriority);
     }
+
+    if (filterUser !== 'all') {
+      filtered = filtered.filter(task => task.assignedTo?.some(userId => 
+        userId === filterUser || userId._id === filterUser
+      ))
+    }
     
     return sortTasks(filtered);
-  }, [filteredTasks, filterPriority, sortTasks]);
+  }, [filteredTasks, filterPriority, filterUser, sortTasks]);
 
   return (
     <div className="space-y-4">
@@ -779,10 +928,32 @@ const ProjectTasks = ({
 
       {/* Header Controls */}
       <div className="flex flex-col gap-2 bg-white rounded-lg p-0 border border-gray-200">
-       
+        {/* Tab Navigation */}
+        <div className="flex border-b border-gray-200">
+          <button
+            onClick={() => setViewMode('board')}
+            className={`px-4 py-3 font-medium text-sm ${
+              viewMode === 'board'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Task Board
+          </button>
+          <button
+            onClick={() => setViewMode('performance')}
+            className={`px-4 py-3 font-medium text-sm ${
+              viewMode === 'performance'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Performance Analytics
+          </button>
+        </div>
 
-        {/* Search and View Toggle */}
-        <div className="flex justify-between items-center py-0">
+        {/* Existing search and filters */}
+        <div className="flex justify-between items-center py-0 px-4">
           <div className="relative w-[49%] border px-2 border-gray-100 rounded-lg">
             <input
               type="text"
@@ -800,6 +971,9 @@ const ProjectTasks = ({
             setSortOrder={setSortOrder}
             filterPriority={filterPriority}
             setFilterPriority={setFilterPriority}
+            filterUser={filterUser}
+            setFilterUser={setFilterUser}
+            projectMembers={projectMembers}
           />
           <GenerateAITasks 
             projectId={projectId}
@@ -815,77 +989,84 @@ const ProjectTasks = ({
         </div>
       </div>
 
-      {/* Task Board View */}
-      <div className="grid grid-cols-4 gap-4">
-        {columns.map((column) => (
-          <div
-            key={column.id}
-            onDragOver={handleDragOver}
-            onDrop={(e) => handleDrop(e, column.id)}
-            className="bg-white rounded-xl p-4 min-h-[calc(80vh-80px)] flex flex-col 
-                       border border-gray-200 shadow-sm"
-          >
-            {/* Column Header with Task Count and Add Button */}
-            <div className="flex justify-between items-center mb-4 sticky top-0 bg-white z-10 pb-2 
-                              border-b-2 border-gray-100">
-                <div className="flex items-center">
-                  <h2 className="font-semibold text-gray-900">{column.label}</h2>
-                  <span className="ml-2 px-2.5 py-0.5 bg-gray-200 rounded-full text-xs font-medium 
-                                 text-black border border-gray-200">
-                    {filteredTasks.filter(task => task.status === column.id).length}
-                  </span>
+      {/* Conditionally render task board or performance report */}
+      {viewMode === 'performance' ? (
+        <UserPerformanceReport 
+          userId={filterUser}
+          projectId={projectId}
+        />
+      ) : (
+        <div className="grid grid-cols-4 gap-4">
+          {columns.map((column) => (
+            <div
+              key={column.id}
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, column.id)}
+              className="bg-white rounded-xl p-4 min-h-[calc(80vh-80px)] flex flex-col 
+                        border border-gray-200 shadow-sm"
+            >
+              {/* Column Header with Task Count and Add Button */}
+              <div className="flex justify-between items-center mb-4 sticky top-0 bg-white z-10 pb-2 
+                                border-b-2 border-gray-100">
+                  <div className="flex items-center">
+                    <h2 className="font-semibold text-gray-900">{column.label}</h2>
+                    <span className="ml-2 px-2.5 py-0.5 bg-gray-200 rounded-full text-xs font-medium 
+                                  text-black border border-gray-200">
+                      {filteredTasks.filter(task => task.status === column.id).length}
+                    </span>
+                  </div>
+                  
+                  {/* Add Task Button - Moved to header */}
+                  {isAdmin(currentUser, selectedProject) ? (
+                    <button
+                      onClick={() => {
+                        setSelectedTask(null); // Set to null for new task
+                        setShowTaskForm(true);
+                        setFormData({ 
+                          title: '',
+                          description: '',
+                          dueDate: '',
+                          priority: 'medium',
+                          status: column.id,
+                          assignedTo: []
+                        });
+                      }}
+                      className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-blue-600 
+                                transition-all duration-200 flex items-center justify-center group"
+                      title="Add task"
+                    >
+                      <Plus size={18} className="group-hover:scale-110 transition-transform" />
+                    </button>
+                  ) : null}
                 </div>
-                
-                {/* Add Task Button - Moved to header */}
-                {isAdmin(currentUser, selectedProject) ? (
-                  <button
-                    onClick={() => {
-                      setSelectedTask(null); // Set to null for new task
-                      setShowTaskForm(true);
-                      setFormData({ // Set initial status only
-                        title: '',
-                        description: '',
-                        dueDate: '',
-                        priority: 'medium',
-                        status: column.id,
-                        assignedTo: []
-                      });
-                    }}
-                    className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-blue-600 
-                               transition-all duration-200 flex items-center justify-center group"
-                    title="Add task"
-                  >
-                    <Plus size={18} className="group-hover:scale-110 transition-transform" />
-                  </button>
-                ) : null}
+        
+                {/* Tasks Container */}
+                <div className="space-y-4 flex-1 overflow-y-auto">
+                  <AnimatePresence>
+                    {getFilteredAndSortedTasks()
+                      .filter(task => task.status === column.id)
+                      .map(task => (
+                        <TaskCard 
+                          key={task._id} 
+                          task={task} 
+                          onEdit={handleEditTask} 
+                          onDelete={handleDeleteTask}
+                          projectMembers={projectMembers}  // Add this prop
+                          canAssignTasks={canAssignTasks}  // Add this prop
+                          handleAssignUsers={handleAssignUsers}  // Add this prop
+                          handleUnassignUser={handleUnassignUser}  // Add this prop
+                          handleDragStart={handleDragStart}  // Add this prop
+                          currentUser={currentUser}  // Add this prop
+                          selectedProject={selectedProject}  // Add this prop
+                          handleTaskUpdate={handleTaskUpdate}  // Add this prop
+                        />
+                      ))}
+                  </AnimatePresence>
+                </div>
               </div>
-      
-              {/* Tasks Container */}
-              <div className="space-y-4 flex-1 overflow-y-auto">
-                <AnimatePresence>
-                  {getFilteredAndSortedTasks()
-                    .filter(task => task.status === column.id)
-                    .map(task => (
-                      <TaskCard 
-                        key={task._id} 
-                        task={task} 
-                        onEdit={handleEditTask} 
-                        onDelete={handleDeleteTask}
-                        projectMembers={projectMembers}  // Add this prop
-                        canAssignTasks={canAssignTasks}  // Add this prop
-                        handleAssignUsers={handleAssignUsers}  // Add this prop
-                        handleUnassignUser={handleUnassignUser}  // Add this prop
-                        handleDragStart={handleDragStart}  // Add this prop
-                        currentUser={currentUser}  // Add this prop
-                        selectedProject={selectedProject}  // Add this prop
-                        handleTaskUpdate={handleTaskUpdate}  // Add this prop
-                      />
-                    ))}
-                </AnimatePresence>
-              </div>
-            </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Task Form Modal */}
       {showTaskForm && (

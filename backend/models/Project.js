@@ -14,11 +14,12 @@ const projectSchema = new mongoose.Schema(
     members: [
       {
         userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-        role: { type: String, enum: ["admin", "editor", "viewer"], default: "viewer" },
+        role: { type: String, enum: ["admin", "editor", "viewer", "member"], default: "viewer" },
         joinedAt: { type: Date, default: Date.now },
         permissions: { type: [String], default: [] }, // Custom permissions
       },
     ],
+    image: { type: String, default: "" }, // Project image URL
 
     // Task & Workflow Management
     tasks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Task" }],

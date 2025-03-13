@@ -2,6 +2,9 @@ import express from 'express';
 import Project from '../models/Project.js';
 import redisClient from '../config/redis.js';
 import User from '../models/User.js';
+import { Task } from '../models/TaskModel.js';
+import Group from '../models/Group.js';
+import mongoose from 'mongoose';  // Add this import for transactions
 
 export const createProject = async (req, res) => {
     try {
@@ -288,4 +291,298 @@ export const deleteProject = async (req, res) => {
             error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
+};
+
+
+// Update project member role
+export const updateMemberRole = async (req, res) => {
+    console.log('Update member role request:', req.body);
+  try {
+    const { projectId, userId } = req.params;
+    const { role } = req.body;
+    
+    // Validate role
+    const validRoles = ['admin', 'member', 'viewer'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ message: 'Invalid role. Must be admin, member, or viewer.' });
+    }
+    
+    // Check if project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+    
+    // Check if current user is admin in this project
+    const currentUserMember = project.members.find(
+      m => m.userId.toString() === req.user.id || m._id.toString() === req.user.id
+    );
+    
+    if (!currentUserMember || currentUserMember.role !== 'admin') {
+      return res.status(403).json({ message: 'Only project admins can update member roles' });
+    }
+    
+    // Find the member and update role
+    const memberIndex = project.members.findIndex(
+      m => m.userId.toString() === userId || m._id.toString() === userId
+    );
+    
+    if (memberIndex === -1) {
+      return res.status(404).json({ message: 'Member not found in this project' });
+    }
+    
+    // Update the role
+    project.members[memberIndex].role = role;
+    await project.save();
+    
+    return res.status(200).json({
+      message: 'Member role updated successfully',
+      member: project.members[memberIndex]
+    });
+  } catch (error) {
+    console.error('Error updating member role:', error);
+    return res.status(500).json({ message: 'Failed to update member role', error: error.message });
+  }
+};
+
+// Add these controller methods to your existing ProjectController.js
+
+// Remove a member from the project
+export const removeMember = async (req, res) => {
+  try {
+    const { projectId, userId } = req.params;
+    
+    // Check if project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+    
+    // Check if current user is admin in this project
+    const currentUserMember = project.members.find(
+      m => (m.userId && m.userId.toString() === req.user.id) || 
+           (m._id && m._id.toString() === req.user.id)
+    );
+    
+    if (!currentUserMember || currentUserMember.role !== 'admin') {
+      return res.status(403).json({ message: 'Only project admins can remove members' });
+    }
+    
+    // Find the member to remove
+    const memberIndex = project.members.findIndex(
+      m => (m.userId && m.userId.toString() === userId) || 
+           (m._id && m._id.toString() === userId)
+    );
+    
+    if (memberIndex === -1) {
+      return res.status(404).json({ message: 'Member not found in this project' });
+    }
+
+    // Start a session for transaction
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
+    try {
+      // Store the member information before removal
+      const memberToRemove = project.members[memberIndex];
+      // Get the actual user ID (could be either userId or _id)
+      const actualUserId = memberToRemove.userId || memberToRemove._id;
+      
+      console.log(`Removing member with ID: ${actualUserId}`);
+      
+      // 1. Remove the member from the project
+      project.members.splice(memberIndex, 1);
+      await project.save({ session });
+      
+      // 2. Unassign all tasks assigned to this user in this project
+      // Since assignedTo is an array, we use $pull to remove the user from it
+      const updatedTasks = await Task.updateMany(
+        { 
+          projectId: projectId,  // No need to convert as mongoose will handle this
+          assignedTo: { $in: [actualUserId] }  // Find tasks where this user is in the assignedTo array
+        },
+        { 
+          $pull: { assignedTo: actualUserId },  // Remove this user from the assignedTo array
+          $push: { 
+            history: {
+              action: 'unassigned',
+              by: req.user.id,
+              timestamp: new Date(),
+              details: 'Member removed from project'
+            }
+          }
+        },
+        { session }
+      );
+      
+      console.log(`Updated ${updatedTasks.modifiedCount} tasks for removed user`);
+      
+      // 3. Remove the member from all group chats in this project
+      const updatedGroups = await Group.updateMany(
+        { 
+          projectId: projectId,  // No need to convert as mongoose will handle this
+          members: { $in: [actualUserId] }  // Find groups where this user is in the members array
+        },
+        { 
+          $pull: { members: actualUserId }  // Remove this user from the members array
+        },
+        { session }
+      );
+      
+      console.log(`Updated ${updatedGroups.modifiedCount} group chats for removed user`);
+      
+      // 4. Clear relevant Redis cache
+      try {
+        await redisClient.del(`projects:${req.user.id}`);
+        await redisClient.del(`project:${projectId}`);
+        await redisClient.del(`tasks:project:${projectId}`);
+        await redisClient.del(`groups:project:${projectId}`);
+      } catch (redisError) {
+        console.log(`Redis Error: ${redisError.message}`);
+        // Continue with the operation even if Redis fails
+      }
+      
+      // Commit the transaction
+      await session.commitTransaction();
+      session.endSession();
+      
+      return res.status(200).json({
+        message: 'Member removed successfully from project, tasks, and groups',
+        projectId: project._id,
+        tasksUpdated: updatedTasks.modifiedCount,
+        groupsUpdated: updatedGroups.modifiedCount
+      });
+    } catch (error) {
+      // If an error occurred, abort the transaction
+      await session.abortTransaction();
+      session.endSession();
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error removing member:', error);
+    return res.status(500).json({ message: 'Failed to remove member', error: error.message });
+  }
+};
+
+// Leave a project (remove yourself)
+export const leaveProject = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const userId = req.user.id;
+    
+    // Check if project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+    
+    // Find the current user in the project members
+    const memberIndex = project.members.findIndex(
+      m => (m.userId && m.userId.toString() === userId) || 
+           (m._id && m._id.toString() === userId)
+    );
+    
+    if (memberIndex === -1) {
+      return res.status(404).json({ message: 'You are not a member of this project' });
+    }
+    
+    // Check if user is leaving as the last admin
+    if (project.members[memberIndex].role === 'admin') {
+      const adminCount = project.members.filter(m => 
+        m.role === 'admin' && 
+        ((m.userId && m.userId.toString() !== userId) || 
+         (m._id && m._id.toString() !== userId))
+      ).length;
+      
+      if (adminCount === 0) {
+        return res.status(400).json({ 
+          message: 'You are the only admin of this project. Promote another member to admin before leaving.'
+        });
+      }
+    }
+    
+    // Start a session for transaction
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
+    try {
+      // Store the member information before removal
+      const memberToRemove = project.members[memberIndex];
+      // Get the actual user ID (could be either userId or _id)
+      const actualUserId = memberToRemove.userId || memberToRemove._id;
+      
+      console.log(`User ${userId} leaving project, identified as ${actualUserId}`);
+      
+      // 1. Remove the member from the project
+      project.members.splice(memberIndex, 1);
+      await project.save({ session });
+      
+      // 2. Unassign all tasks assigned to this user in this project
+      // Since assignedTo is an array, we use $pull to remove the user from it
+      const updatedTasks = await Task.updateMany(
+        { 
+          projectId: projectId,  // No need to convert as mongoose will handle this
+          assignedTo: { $in: [actualUserId] }  // Find tasks where this user is in the assignedTo array
+        },
+        { 
+          $pull: { assignedTo: actualUserId },  // Remove this user from the assignedTo array
+          $push: { 
+            history: {
+              action: 'unassigned',
+              by: userId,
+              timestamp: new Date(),
+              details: 'User left project'
+            }
+          }
+        },
+        { session }
+      );
+      
+      console.log(`Updated ${updatedTasks.modifiedCount} tasks for user leaving project`);
+      
+      // 3. Remove the member from all group chats in this project
+      const updatedGroups = await Group.updateMany(
+        { 
+          projectId: projectId,  // No need to convert as mongoose will handle this
+          members: { $in: [actualUserId] }  // Find groups where this user is in the members array
+        },
+        { 
+          $pull: { members: actualUserId }  // Remove this user from the members array
+        },
+        { session }
+      );
+      
+      console.log(`Updated ${updatedGroups.modifiedCount} group chats for user leaving project`);
+      
+      // 4. Clear relevant Redis cache
+      try {
+        await redisClient.del(`projects:${userId}`);
+        await redisClient.del(`project:${projectId}`);
+        await redisClient.del(`tasks:project:${projectId}`);
+        await redisClient.del(`groups:project:${projectId}`);
+      } catch (redisError) {
+        console.log(`Redis Error: ${redisError.message}`);
+        // Continue with the operation even if Redis fails
+      }
+      
+      // Commit the transaction
+      await session.commitTransaction();
+      session.endSession();
+      
+      return res.status(200).json({
+        message: 'You have left the project successfully',
+        projectId: project._id,
+        tasksUpdated: updatedTasks.modifiedCount,
+        groupsUpdated: updatedGroups.modifiedCount
+      });
+    } catch (error) {
+      // If an error occurred, abort the transaction
+      await session.abortTransaction();
+      session.endSession();
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error leaving project:', error);
+    return res.status(500).json({ message: 'Failed to leave project', error: error.message });
+  }
 };

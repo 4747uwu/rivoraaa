@@ -63,15 +63,10 @@ const taskSchema = new mongoose.Schema(
     ],
 
     // Attachments & Documentation
-    attachments: [
-      {
-        name: String,
-        url: String,
-        uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-        uploadedAt: { type: Date, default: Date.now },
-        aiSummary: { type: String, default: "" },
-      },
-    ],
+  attachments: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'File'
+  }],
 
     // Task Collaboration
     comments: [

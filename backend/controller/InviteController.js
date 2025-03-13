@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 import { Invitation } from "../models/Invitation.js";
 import Project from "../models/Project.js";
 import User from "../models/User.js";
@@ -31,7 +32,7 @@ export const searchUser = async (req, res) => {
 
 export const inviteUser = async (req, res) => {
     try {
-        const { projectId, userId, role } = req.body;
+        const { projectId, userId, role, message } = req.body;
         if (!projectId || !userId || !role) {
             return res.status(400).json({
                 success: false,
@@ -48,7 +49,7 @@ export const inviteUser = async (req, res) => {
             });
         }
 
-        // Then check ownership
+        // Check ownership
         if (project.owner.toString() !== req.user._id.toString()) {
             return res.status(401).json({
                 success: false,
@@ -56,7 +57,7 @@ export const inviteUser = async (req, res) => {
             });
         }
 
-        // Rest of your existing code...
+        // Check if user exists
         const existingUser = await User.findById(userId);
         if (!existingUser) {
             return res.status(404).json({
@@ -65,37 +66,38 @@ export const inviteUser = async (req, res) => {
             });
         }
 
-        const existingInvitation = await Invitation.findOne({ projectId, userId });
+        // Check if there's already a pending invitation
+        const existingInvitation = await Invitation.findOne({ 
+            projectId, 
+            inviteeEmail: existingUser.email,
+            status: 'pending'
+        });
+        
         if (existingInvitation) {
             return res.status(400).json({
                 success: false,
-                message: 'User already invited to this project'
+                message: 'User already has a pending invitation to this project'
             });
         }
 
+        // Create new standalone invitation
         const invitation = await Invitation.create({
             projectId,
             userId,
             inviterId: req.user._id,
             inviteeEmail: existingUser.email,
             role,
-            status: 'pending'
+            status: 'pending',
+            message: message || ''
         });
 
-        await User.findByIdAndUpdate(userId, {
-            $push: {
-                invitations: {
-                    invitationId: invitation._id,
-                    inviterId: req.user._id,
-                    projectId,
-                    role,
-                    status: 'pending',
-                    sentAt: new Date()
-                }
-            }
-        });
+        // We no longer need to update the User model with embedded invitations
 
-        res.status(201).json({ success: true, invitation });
+        res.status(201).json({ 
+            success: true, 
+            message: 'Invitation sent successfully',
+            invitation 
+        });
 
     } catch (error) {
         console.error('Invite user error:', error);
@@ -108,11 +110,13 @@ export const inviteUser = async (req, res) => {
 };
 
 export const respondToInvitation = async (req, res) => {
+    console.log('Respond to invitation:', req.body);
     try {
         const { invitationId, action } = req.body;
+        const userId = req.user._id;
 
         // Validate required fields
-        if (!invitationId || !action) {
+        if (!invitationId) {
             return res.status(400).json({
                 success: false,
                 message: 'Invitation ID and action are required'
@@ -127,15 +131,37 @@ export const respondToInvitation = async (req, res) => {
             });
         }
 
-        // Find and populate the invitation
-        const invitation = await Invitation.findById(invitationId)
+        // Ensure we have a valid ObjectId
+        let objectId;
+        try {
+            objectId = new mongoose.Types.ObjectId(invitationId);
+        } catch (err) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid invitation ID format'
+            });
+        }
+
+        // Find the standalone invitation
+        const invitation = await Invitation.findById(objectId)
             .populate('projectId', 'name description owner')
             .populate('inviterId', 'username email profilePicture');
+
+        console.log('Found invitation:', invitation ? 'yes' : 'no');
 
         if (!invitation) {
             return res.status(404).json({
                 success: false,
                 message: 'Invitation not found'
+            });
+        }
+
+        // Ensure this user is the intended recipient
+        if (invitation.inviteeEmail !== req.user.email && 
+            invitation.userId.toString() !== userId.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: 'You do not have permission to respond to this invitation'
             });
         }
 
@@ -149,13 +175,23 @@ export const respondToInvitation = async (req, res) => {
 
         // Update invitation status
         invitation.status = action === 'accept' ? 'accepted' : 'rejected';
+        invitation.respondedAt = new Date();
+        invitation.respondedBy = userId;
         
+        // If accepting, add user to project
         if (action === 'accept') {
             // Check if user is already a member
-            const isAlreadyMember = await Project.findOne({
-                _id: invitation.projectId._id,
-                'members.userId': req.user._id
-            });
+            const project = await Project.findById(invitation.projectId._id);
+            if (!project) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Project not found'
+                });
+            }
+
+            const isAlreadyMember = project.members.some(
+                member => member.userId.toString() === userId.toString()
+            );
 
             if (!isAlreadyMember) {
                 await Project.findByIdAndUpdate(
@@ -163,8 +199,9 @@ export const respondToInvitation = async (req, res) => {
                     {
                         $push: {
                             members: {
-                                userId: req.user._id,
-                                role: invitation.role
+                                userId,
+                                role: invitation.role,
+                                joinedAt: new Date()
                             }
                         }
                     }
@@ -172,22 +209,24 @@ export const respondToInvitation = async (req, res) => {
             }
         }
 
+        // Save the updated invitation
         await invitation.save();
-
-        // Update user's invitations array
-        await User.updateOne(
-            { 
-                _id: req.user._id,
-                'invitations.invitationId': invitationId 
-            },
-            { 
-                $set: { 
-                    'invitations.$.status': invitation.status,
-                    'invitations.$.respondedAt': new Date()
-                } 
+        
+        // Update the user's respondedInvitations list to track their responses
+        await User.findByIdAndUpdate(
+            userId,
+            {
+                $push: {
+                    respondedInvitations: {
+                        invitationId: invitation._id,
+                        status: invitation.status,
+                        respondedAt: invitation.respondedAt
+                    }
+                }
             }
         );
 
+        // Return success response
         res.json({
             success: true,
             message: `Invitation ${action}ed successfully`,
@@ -199,38 +238,45 @@ export const respondToInvitation = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Failed to respond to invitation',
-            // error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            error: error.message
         });
     }
 };
 
 export const getMyInvitations = async (req, res) => {
     try {
-        const user = await User.findById(req.user._id)
-            .populate({
-                path: 'invitations.inviterId',
-                select: 'username email profilePicture'
-            })
-            .populate({
-                path: 'invitations.projectId',
-                select: 'name description'
-            });
-
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
-
-        // Sort invitations by date, newest first
-        const sortedInvitations = user.invitations.sort((a, b) =>
-            b.sentAt - a.sentAt
-        );
+        const userId = req.user._id;
+        const userEmail = req.user.email;
+        
+        // Get all invitations for this user's email or userId
+        const invitations = await Invitation.find({
+            $or: [
+                { inviteeEmail: userEmail },
+                { userId: userId }
+            ]
+        })
+        .populate('projectId', 'name description')
+        .populate('inviterId', 'username email profilePicture')
+        .sort({ createdAt: -1 });
+        
+        console.log(`Found ${invitations.length} invitations for user ${userId}`);
+        
+        // Format invitations for frontend consistency
+        const formattedInvitations = invitations.map(inv => ({
+            invitationId: inv._id,
+            inviterId: inv.inviterId,
+            projectId: inv.projectId,
+            role: inv.role,
+            status: inv.status,
+            message: inv.message || '',
+            sentAt: inv.createdAt,
+            respondedAt: inv.respondedAt,
+            teamDeployment: inv.teamDeployment || false
+        }));
 
         res.json({
             success: true,
-            invitations: sortedInvitations
+            invitations: formattedInvitations
         });
 
     } catch (error) {
@@ -242,4 +288,3 @@ export const getMyInvitations = async (req, res) => {
         });
     }
 };
-

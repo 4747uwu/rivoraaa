@@ -75,6 +75,146 @@ const userSchema = new mongoose.Schema({
         }
     },
 
+//     connections: {
+//       followers: [{ 
+//         type: mongoose.Schema.Types.ObjectId, 
+//         ref: 'User' 
+//       }],
+//       following: [{ 
+//         type: mongoose.Schema.Types.ObjectId, 
+//         ref: 'User' 
+//       }],
+//       blocked: [{ 
+//         type: mongoose.Schema.Types.ObjectId, 
+//         ref: 'User' 
+//       }],
+//       pending: {
+//         sent: [{ 
+//           type: mongoose.Schema.Types.ObjectId, 
+//           ref: 'User' 
+//         }],
+//         received: [{ 
+//           type: mongoose.Schema.Types.ObjectId, 
+//           ref: 'User' 
+//         }]
+//       }
+// },
+//   connectionSettings: {
+//       whoCanFollow: { 
+//         type: String, 
+//         enum: ['everyone', 'connections', 'nobody'], 
+//         default: 'everyone' 
+//       },
+//       followApproval: { 
+//         type: Boolean, 
+//         default: false // If true, follows require approval
+//       },
+//       activityVisibility: { 
+//         type: String, 
+//         enum: ['public', 'linkUps', 'nobody'], 
+//         default: 'connections' 
+//       },
+//       showFollowersCount: { 
+//         type: Boolean, 
+//         default: true 
+//       },
+//       showFollowingCount: { 
+//         type: Boolean, 
+//         default: true 
+//       },
+//   },
+
+// Replace the existing connections section with this:
+connections: {
+  // Direct references to Connection model
+  linkUps: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Connection'
+  }],
+  followers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Connection'
+  }],
+  following: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Connection'
+  }],
+  blocked: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Connection'
+  }],
+  // Keep track of pending requests
+  pending: {
+    sent: [{
+      connection: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Connection'
+      },
+      requestedAt: { type: Date, default: Date.now }
+    }],
+    received: [{
+      connection: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Connection'
+      },
+      requestedAt: { type: Date, default: Date.now }
+    }]
+  }
+},
+
+team: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'Team'
+},
+
+Skills: [{ type: String }],
+interests: [{ type: String }],
+
+
+connectionSettings: {
+  whoCanConnect: {
+    type: String,
+    enum: ['everyone', 'followers', 'nobody'],
+    default: 'everyone'
+  },
+  connectionApproval: {
+    type: Boolean,
+    default: true // LinkUps always require approval
+  },
+  whoCanFollow: {
+    type: String,
+    enum: ['everyone', 'linkUps', 'nobody'],
+    default: 'everyone'
+  },
+  followApproval: {
+    type: Boolean,
+    default: false // Follows don't require approval by default
+  },
+  visibility: {
+    profile: {
+      type: String,
+      enum: ['public', 'linkUps-only', 'private'],
+      default: 'public'
+    },
+    activity: {
+      type: String,
+      enum: ['public', 'linkUps-only', 'private'],
+      default: 'linkUps-only'
+    }
+  },
+  showStats: {
+    followers: { type: Boolean, default: true },
+    following: { type: Boolean, default: true },
+    linkUps: { type: Boolean, default: true }
+  },
+  notifications: {
+    newFollower: { type: Boolean, default: true },
+    linkUpRequest: { type: Boolean, default: true },
+    acceptedLinkUp: { type: Boolean, default: true }
+  }
+},
+
+
   
 
 
@@ -95,18 +235,34 @@ const userSchema = new mongoose.Schema({
     }],
 
 
-  invitations: [
-  {
-    invitationId: { type: mongoose.Schema.Types.ObjectId, ref: "Invitation" }, 
-    inviterId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // User who sent the invite
-    status: { type: String, enum: ["pending", "accepted", "declined"], default: "pending" },
-    projectId: { type: mongoose.Schema.Types.ObjectId, ref: "Project" }, // Project for which the invitation was sent
-    role: { type: String, enum: ["admin","member", "editor", "viewer"] }, // Role assigned in the project if accepted
-    sentAt: { type: Date, default: Date.now }, // When the invitation was sent
-    respondedAt: { type: Date }, // When the invite was accepted/declined
-    message: { type: String, default: "" }, // Custom message with the invite
-  },
-],
+//   invitations: [
+//   {
+//     invitationId: { type: mongoose.Schema.Types.ObjectId, ref: "Invitation" }, 
+//     inviterId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // User who sent the invite
+//     status: { type: String, enum: ["pending", "accepted", "declined"], default: "pending" },
+//     projectId: { type: mongoose.Schema.Types.ObjectId, ref: "Project" }, // Project for which the invitation was sent
+//     role: { type: String, enum: ["admin","member", "editor", "viewer"] }, // Role assigned in the project if accepted
+//     sentAt: { type: Date, default: Date.now }, // When the invitation was sent
+//     respondedAt: { type: Date }, // When the invite was accepted/declined
+//     message: { type: String, default: "" }, // Custom message with the invite
+//   },
+// ],
+
+  respondedInvitations: [{
+    invitationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Invitation'
+    },
+    status: {
+      type: String,
+      enum: ['accepted', 'rejected'],
+      required: true
+    },
+    respondedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
 
     notifications: [
   {

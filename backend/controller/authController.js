@@ -37,11 +37,6 @@ const generateTokens = (userId) => {
 };
 
 
-
-
-
-
-
 // Modified register function to include authType
 export const register = async (req, res) => {
     console.log("Request Body:", req.body);

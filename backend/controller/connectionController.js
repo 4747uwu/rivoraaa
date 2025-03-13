@@ -1,0 +1,621 @@
+import Connection from '../models/Connections.js';
+import User from '../models/User.js';
+import mongoose from 'mongoose';
+
+/**
+ * Send a LinkUp request to another user
+ * @route POST /api/connections/linkup
+ */
+export const sendLinkUpRequest = async (req, res) => {
+  try {
+    const { userId, message } = req.body;
+    const currentUserId = req.user._id;
+    
+    // Don't allow linking up with yourself
+    if (currentUserId.toString() === userId) {
+      return res.status(400).json({ message: "You cannot link up with yourself" });
+    }
+    
+    // Check if user exists
+    const targetUser = await User.findById(userId);
+    if (!targetUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    // Check if connection already exists
+    const existingConnection = await Connection.findOne({
+      $or: [
+        { followers: currentUserId, following: userId },
+        { followers: userId, following: currentUserId }
+      ],
+      // Only check pending and accepted connections
+      status: { $in: ['pending', 'accepted'] }
+    });
+    
+    if (existingConnection) {
+      if (existingConnection.status === 'pending') {
+        return res.status(400).json({ message: "A pending LinkUp request already exists" });
+      } else {
+        return res.status(400).json({ message: "You are already linked up with this user" });
+      }
+    }
+    
+    // Create new connection (always pending for LinkUps)
+    const connection = new Connection({
+      followers: currentUserId,
+      following: userId,
+      connectionType: 'linkUps',
+      status: 'pending',
+      requestedAt: new Date(),
+      message: message || ''
+    });
+    
+    await connection.save();
+    
+    // Update users' pending lists
+    await User.findByIdAndUpdate(currentUserId, {
+      $push: { 
+        'connections.pending.sent': {
+          connection: connection._id,
+          requestedAt: new Date()
+        }
+      }
+    });
+    
+    await User.findByIdAndUpdate(userId, {
+      $push: { 
+        'connections.pending.received': {
+          connection: connection._id,
+          requestedAt: new Date()
+        }
+      }
+    });
+    
+    // Create notification for target user
+    const currentUser = await User.findById(currentUserId);
+    await User.findByIdAndUpdate(userId, {
+      $push: {
+        notifications: {
+          message: `${currentUser.name} wants to LinkUp with you`,
+          type: 'invitation',
+          createdAt: new Date(),
+          triggeredBy: currentUserId,
+          actionUrl: `/profile/${currentUserId}`,
+          priority: 'medium'
+        }
+      }
+    });
+    
+    return res.status(200).json({ 
+      message: "LinkUp request sent",
+      connection
+    });
+  } catch (error) {
+    console.error("Error sending LinkUp request:", error);
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+/**
+ * Accept a LinkUp request
+ * @route PUT /api/connections/linkup/accept/:connectionId
+ */
+export const acceptLinkUpRequest = async (req, res) => {
+  try {
+    const { connectionId } = req.params;
+    const currentUserId = req.user._id;
+    
+    const connection = await Connection.findById(connectionId);
+    if (!connection) {
+      return res.status(404).json({ message: "LinkUp request not found" });
+    }
+    
+    // Ensure this request is meant for the current user
+    if (connection.following.toString() !== currentUserId.toString()) {
+      return res.status(403).json({ message: "You are not authorized to accept this request" });
+    }
+    
+    if (connection.status !== 'pending') {
+      return res.status(400).json({ message: `This request is already ${connection.status}` });
+    }
+    
+    // Update connection status
+    connection.status = 'accepted';
+    connection.acceptedAt = new Date();
+    await connection.save();
+    
+    // Remove from pending lists
+    await User.findByIdAndUpdate(connection.followers, {
+      $pull: { 'connections.pending.sent': { connection: connectionId } }
+    });
+    
+    await User.findByIdAndUpdate(currentUserId, {
+      $pull: { 'connections.pending.received': { connection: connectionId } }
+    });
+    
+    // Add to LinkUp lists for both users
+    await User.findByIdAndUpdate(currentUserId, {
+      $push: { 'connections.linkUps': connection._id }
+    });
+    
+    await User.findByIdAndUpdate(connection.followers, {
+      $push: { 'connections.linkUps': connection._id }
+    });
+    
+    // Create notification for the requester
+    const currentUser = await User.findById(currentUserId);
+    await User.findByIdAndUpdate(connection.followers, {
+      $push: {
+        notifications: {
+          message: `${currentUser.name} accepted your LinkUp request`,
+          type: 'general',
+          createdAt: new Date(),
+          triggeredBy: currentUserId,
+          actionUrl: `/profile/${currentUserId}`,
+          priority: 'low'
+        }
+      }
+    });
+    
+    return res.status(200).json({ 
+      message: "LinkUp request accepted",
+      connection 
+    });
+  } catch (error) {
+    console.error("Error accepting LinkUp request:", error);
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+/**
+ * Reject a LinkUp request
+ * @route PUT /api/connections/linkup/reject/:connectionId
+ */
+export const rejectLinkUpRequest = async (req, res) => {
+  try {
+    const { connectionId } = req.params;
+    const currentUserId = req.user._id;
+    
+    const connection = await Connection.findById(connectionId);
+    if (!connection) {
+      return res.status(404).json({ message: "LinkUp request not found" });
+    }
+    
+    // Ensure this request is meant for the current user
+    if (connection.following.toString() !== currentUserId.toString()) {
+      return res.status(403).json({ message: "You are not authorized to reject this request" });
+    }
+    
+    if (connection.status !== 'pending') {
+      return res.status(400).json({ message: `This request is already ${connection.status}` });
+    }
+    
+    // Update connection status
+    connection.status = 'declined';
+    await connection.save();
+    
+    // Remove from pending lists
+    await User.findByIdAndUpdate(connection.followers, {
+      $pull: { 'connections.pending.sent': { connection: connectionId } }
+    });
+    
+    await User.findByIdAndUpdate(currentUserId, {
+      $pull: { 'connections.pending.received': { connection: connectionId } }
+    });
+    
+    return res.status(200).json({ 
+      message: "LinkUp request rejected",
+      connection 
+    });
+  } catch (error) {
+    console.error("Error rejecting LinkUp request:", error);
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+/**
+ * Remove a LinkUp connection
+ * @route DELETE /api/connections/linkup/:userId
+ */
+export const removeLinkUp = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const currentUserId = req.user._id;
+    
+    // Find the connection
+    const connection = await Connection.findOne({
+      $or: [
+        { followers: currentUserId, following: userId },
+        { followers: userId, following: currentUserId }
+      ],
+      connectionType: 'linkUps',
+      status: 'accepted'
+    });
+    
+    if (!connection) {
+      return res.status(404).json({ message: "LinkUp connection not found" });
+    }
+    
+    // Delete the connection
+    await Connection.findByIdAndDelete(connection._id);
+    
+    // Remove from linkUps lists for both users
+    await User.findByIdAndUpdate(connection.followers, {
+      $pull: { 'connections.linkUps': connection._id }
+    });
+    
+    await User.findByIdAndUpdate(connection.following, {
+      $pull: { 'connections.linkUps': connection._id }
+    });
+    
+    return res.status(200).json({ 
+      message: "LinkUp removed successfully"
+    });
+  } catch (error) {
+    console.error("Error removing LinkUp:", error);
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+/**
+ * Get all LinkUps for the current user
+ * @route GET /api/connections/linkups
+ */
+export const getLinkUps = async (req, res) => {
+  try {
+    const currentUserId = req.user._id;
+    console.log("1. Getting LinkUps for user:", currentUserId);
+    
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    
+    console.log("2. Pagination params:", { page, limit, skip });
+    
+    // First get the user document
+    const user = await User.findById(currentUserId);
+    console.log("3. User's linkUp IDs:", user.connections.linkUps);
+    
+    // Find all connections where user is either follower or following
+    const connections = await Connection.find({
+      _id: { $in: user.connections.linkUps },
+      status: 'accepted',
+      connectionType: 'linkUps'
+    })
+    .populate('followers', 'name username profilePicture bio profession')
+    .populate('following', 'name username profilePicture bio profession')
+    .skip(skip)
+    .limit(limit)
+    .sort({ acceptedAt: -1 });
+    
+    console.log("4. Found connections:", connections.length);
+    
+    // Format the linkUps data
+    const linkUps = connections.map(connection => {
+      const otherUser = connection.followers._id.toString() === currentUserId.toString()
+        ? connection.following 
+        : connection.followers;
+        
+      return {
+        connectionId: connection._id,
+        user: {
+          _id: otherUser._id,
+          name: otherUser.name,
+          username: otherUser.username,
+          profilePicture: otherUser.profilePicture,
+          bio: otherUser.bio,
+          profession: otherUser.profession
+        },
+        since: connection.acceptedAt
+      };
+    });
+    
+    console.log("5. Formatted linkUps:", linkUps.length);
+    
+    // Get total count
+    const totalCount = await Connection.countDocuments({
+      _id: { $in: user.connections.linkUps },
+      status: 'accepted',
+      connectionType: 'linkUps'
+    });
+    
+    console.log("6. Total count:", totalCount);
+    
+    return res.status(200).json({
+      linkUps,
+      count: totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit)
+    });
+  } catch (error) {
+    console.error("Error getting LinkUps:", error);
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+/**
+ * Get pending LinkUp requests (both sent and received)
+ * @route GET /api/connections/linkup/pending
+ */
+export const getPendingLinkUps = async (req, res) => {
+  try {
+    const currentUserId = req.user._id;
+    console.log("Current User ID:", currentUserId);
+    
+    // Get user with pending connections
+    const user = await User.findById(currentUserId);
+    
+    // Get received requests
+    const receivedRequests = await Promise.all(
+      user.connections.pending.received.map(async (item) => {
+        const connection = await Connection.findById(item.connection)
+          .populate('followers', 'name username profilePicture bio profession');
+          
+        return connection ? {
+          connectionId: connection._id,
+          user: connection.followers,
+          message: connection.message,
+          requestedAt: connection.requestedAt
+        } : null;
+      })
+    );
+    
+    // Get sent requests
+    const sentRequests = await Promise.all(
+      user.connections.pending.sent.map(async (item) => {
+        const connection = await Connection.findById(item.connection)
+          .populate('following', 'name username profilePicture bio profession');
+          
+        return connection ? {
+          connectionId: connection._id,
+          user: connection.following,
+          message: connection.message,
+          requestedAt: connection.requestedAt
+        } : null;
+      })
+    );
+    
+    return res.status(200).json({
+      received: receivedRequests.filter(Boolean),
+      sent: sentRequests.filter(Boolean)
+    });
+  } catch (error) {
+    console.error("Error getting pending LinkUps:", error);
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+/**
+ * Get the LinkUp count for a user
+ * @route GET /api/connections/linkup/count/:userId?
+ */
+export const getLinkUpCount = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const targetUserId = userId || req.user._id;
+    
+    const user = await User.findById(targetUserId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    return res.status(200).json({
+      count: user.connections.linkUps.length
+    });
+  } catch (error) {
+    console.error("Error getting LinkUp count:", error);
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+/**
+ * Check LinkUp status with another user
+ * @route GET /api/connections/linkup/status/:userId
+ */
+export const checkLinkUpStatus = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const currentUserId = req.user._id;
+    
+    // Validate user ID
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+    
+    // Ensure valid user
+    const targetUser = await User.findById(userId);
+    if (!targetUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    // Check for any connection between the users
+    const connection = await Connection.findOne({
+      $or: [
+        { followers: currentUserId, following: userId },
+        { followers: userId, following: currentUserId }
+      ],
+      connectionType: 'linkUps'
+    });
+    
+    if (!connection) {
+      return res.status(200).json({ status: 'none' });
+    }
+    
+    let status;
+    if (connection.status === 'pending') {
+      // Check if current user is the requester or recipient
+      if (connection.followers.toString() === currentUserId.toString()) {
+        status = 'request_sent';
+      } else {
+        status = 'request_received';
+      }
+    } else {
+      status = connection.status; // 'accepted' or 'declined'
+    }
+    
+    return res.status(200).json({
+      status,
+      connectionId: connection._id,
+      requestedAt: connection.requestedAt,
+      acceptedAt: connection.acceptedAt,
+      message: connection.message
+    });
+  } catch (error) {
+    console.error("Error checking LinkUp status:", error);
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+/**
+ * Get a user's profile with appropriate privacy controls
+ * @route GET /api/users/profile/:userId
+ */
+export const getUserProfile = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const currentUserId = req.user._id;
+    
+    // Validate the user ID
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+    
+    // Find the user but exclude sensitive information
+    const user = await User.findById(userId)
+      .select('-password -refreshToken -__v')
+      .populate({
+        path: 'connections.linkUps',
+        select: '_id followers following',
+        options: { limit: 5 }
+      });
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Check connection status between users
+    const connection = await Connection.findOne({
+      $or: [
+        { followers: currentUserId, following: userId },
+        { followers: userId, following: currentUserId }
+      ],
+      connectionType: 'linkUps'
+    });
+    
+    // Determine connection status
+    let connectionStatus = 'none';
+    let connectionId = null;
+    
+    if (connection) {
+      connectionId = connection._id;
+      
+      if (connection.status === 'pending') {
+        // Check if current user is the requester or recipient
+        connectionStatus = connection.followers.toString() === currentUserId.toString() 
+          ? 'request_sent' 
+          : 'request_received';
+      } else {
+        connectionStatus = connection.status; // 'accepted' or 'declined'
+      }
+    }
+    
+    // Check visibility settings to determine what to expose
+    const isOwner = currentUserId.toString() === userId;
+    const isConnected = connectionStatus === 'accepted';
+    const isBlocked = user.connections.blocked.some(id => 
+      id.toString() === currentUserId.toString()
+    );
+    
+    // If blocked, return minimal info
+    if (isBlocked && !isOwner) {
+      return res.status(403).json({
+        message: 'You cannot view this profile',
+        restricted: true
+      });
+    }
+    
+    // Apply privacy filters based on settings
+    let profileData = {
+      _id: user._id,
+      name: user.name,
+      username: user.username,
+      email: user.email,
+      profilePicture: user.profilePicture,
+      createdAt: user.createdAt,
+      online: user.online,
+      lastActive: user.lastActive
+    };
+    
+    // Handle visibility settings for detailed profile data
+    if (isOwner || isConnected || user.connectionSettings.visibility.profile === 'public') {
+      // Full profile access
+      profileData = {
+        ...profileData,
+        bio: user.bio,
+        profession: user.profession,
+        location: user.location,
+        website: user.website,
+        coverImage: user.coverImage,
+        connectionStats: {
+          linkUpsCount: user.connections.linkUps.length,
+          followersCount: user.connections.followers.length,
+          followingCount: user.connections.following.length
+        }
+      };
+      
+      // Only add activity data if appropriate visibility
+      if (isOwner || 
+         (isConnected && user.connectionSettings.visibility.activity !== 'private') || 
+         user.connectionSettings.visibility.activity === 'public') {
+        
+        // Get recent activities (projects, posts, etc.)
+        // This would be specific to your application's activity model
+        // Example: const recentActivity = await Activity.find({user: userId}).limit(5);
+        
+        profileData.recentActivity = []; // Populate with actual activity data
+      }
+    } else {
+      // Limited profile for non-connections when profile is not public
+      profileData = {
+        _id: user._id,
+        name: user.name,
+        username: user.username,
+        profilePicture: user.profilePicture,
+        restricted: true
+      };
+    }
+    
+    // Add connection information
+    const connectionInfo = {
+      status: connectionStatus,
+      connectionId: connectionId,
+      canConnect: isOwner ? false : true  // Default to true
+    };
+    
+    // Check connection settings
+    if (!isOwner && connectionStatus === 'none') {
+      // Apply connection restrictions based on settings
+      if (user.connectionSettings.whoCanConnect === 'nobody') {
+        connectionInfo.canConnect = false;
+      } else if (user.connectionSettings.whoCanConnect === 'followers') {
+        // Check if current user is a follower
+        const isFollower = await Connection.exists({
+          followers: currentUserId,
+          following: userId,
+          connectionType: 'followers',
+          status: 'accepted'
+        });
+        
+        connectionInfo.canConnect = isFollower ? true : false;
+      }
+    }
+    
+    return res.status(200).json({
+      profile: profileData,
+      connection: connectionInfo
+    });
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};

@@ -8,24 +8,25 @@ import {
   ArrowLeft,
   ChevronRight
 } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import ProjectDashboard from '../component/ProjectPage';
 import ChatComponent from '../component/Chat/chat';
 import { useProjects } from '../context/ProjectContext';
-// import ProjectDocuments from '../component/ProjectDocuments';
-// import ProjectDiscussion from '../component/ProjectDiscussion';
-// import ProjectTeam from '../component/ProjectTeam';
-// import { useAuth } from '../context/authContext';
-// import { useProjects } from '../context/ProjectContext';
-
-// const {user} = useAuth();
-// console.log(user);
+import TeamManagement from '../component/Team/TeamMembers';
+import { useAuth } from '../context/authContext';
+import API from '../api/api';
 
 const WorkSpace = () => {
   const { projectId } = useParams();
   const [activeTab, setActiveTab] = useState('Dashboard');
   const navigate = useNavigate();
-  const { selectedProject } = useProjects();
+  const { selectedProject, fetchProjectById } = useProjects();
+  const { user: currentUser } = useAuth();
+  const queryClient = useQueryClient();
   
+  // Add state to track when we need to refresh project data
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
   // Set the document title based on the project name
   useEffect(() => {
     if (selectedProject?.name) {
@@ -36,6 +37,41 @@ const WorkSpace = () => {
     };
   }, [selectedProject]);
 
+  // This effect will run when the refresh trigger changes
+  useEffect(() => {
+    if (projectId) {
+      // Fetch fresh project data
+      fetchProjectById(projectId)
+        .catch(err => console.error("Error refreshing project data:", err));
+    }
+  }, [projectId, refreshTrigger, fetchProjectById]);
+
+  // Use the direct project query to get real-time data
+  const { data: currentProject } = useQuery({
+    queryKey: ['project', projectId],
+    queryFn: async () => {
+      if (!projectId) return null;
+      const response = await API.get(`/api/projects/${projectId}`);
+      return response.data.project;
+    },
+    enabled: !!projectId
+  });
+  
+  // Use the most up-to-date project data
+  const projectData = currentProject || selectedProject;
+
+  // Fetch project tasks for the team management component
+  const { data: tasks = [], refetch: refetchTasks } = useQuery({
+    queryKey: ['projectTasks', projectId],
+    queryFn: async () => {
+      if (!projectId) return [];
+      const response = await API.get(`/api/tasks?projectId=${projectId}`);
+      return response.data;
+    },
+    enabled: !!projectId && activeTab === 'Team'
+  });
+
+  // Define navigation with the new Team tab
   const navigation = [
     {
       name: 'Dashboard',
@@ -52,11 +88,40 @@ const WorkSpace = () => {
       icon: MessageSquare,
       component: <ChatComponent />
     },
-    // {
-    //   name: 'Team',
-    //   icon: Users,
-    //   component: <ProjectTeam projectId={projectId} />,
-    // },
+    {
+      name: 'Team',
+      icon: Users,
+      component: (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <TeamManagement 
+            key={`team-${refreshTrigger}`} // Add key to force re-render when data changes
+            projectMembers={projectData?.members || []}
+            tasks={tasks}
+            currentUser={currentUser}
+            projectId={projectId}
+            onUpdateSuccess={async () => {
+              // Invalidate queries first
+              queryClient.invalidateQueries(['project', projectId]);
+              queryClient.invalidateQueries(['projects']);
+              queryClient.invalidateQueries(['projectTasks', projectId]);
+              
+              // Immediately fetch fresh data
+              try {
+                await Promise.all([
+                  fetchProjectById(projectId),
+                  refetchTasks()
+                ]);
+                
+                // Force a re-render of the component by updating the trigger
+                setRefreshTrigger(prev => prev + 1);
+              } catch (error) {
+                console.error("Error refreshing data after role update:", error);
+              }
+            }}
+          />
+        </div>
+      ),
+    },
   ];
 
   const activeComponent = navigation.find(item => item.name === activeTab)?.component;
@@ -79,11 +144,11 @@ const WorkSpace = () => {
               
               <div className="flex items-center">
                 <h1 className="text-xl font-semibold text-gray-900">
-                  {selectedProject?.name || 'Project Workspace'}
+                  {projectData?.name || 'Project Workspace'}
                 </h1>
-                {selectedProject?.deadline && (
+                {projectData?.deadline && (
                   <span className="ml-2 px-2.5 py-0.5 bg-blue-50 text-blue-700 text-xs font-medium rounded-full border border-blue-100">
-                    Due {new Date(selectedProject.deadline).toLocaleDateString()}
+                    Due {new Date(projectData.deadline).toLocaleDateString()}
                   </span>
                 )}
               </div>
@@ -141,9 +206,6 @@ const WorkSpace = () => {
           </div>
         </div>
       </div>
-      
-      {/* Project Info Bar */}
-      
       
       {/* Main Content Area */}
       <div className="flex-1">

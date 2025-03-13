@@ -35,6 +35,7 @@ export const createTask = async (req, res) => {
 // Get all tasks
 export const getTasks = async (req, res) => {
     try {
+        console.log('Fetching tasks:', req.query);
         const { projectId } = req.query;
 
         // If projectId is provided, filter tasks by project
@@ -50,6 +51,8 @@ export const getTasks = async (req, res) => {
                 select: 'username email profilePicture'
             })
             .sort({ createdAt: -1 }); // Sort by newest first
+
+        console.log(`Found ${tasks.length} tasks`);
 
         res.status(200).json(tasks);
     } catch (error) {
