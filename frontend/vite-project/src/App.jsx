@@ -21,7 +21,6 @@ import TeamPage from "./component/Team/TeamPage";
 import TeamManagerPage from "./Pages/TeamManagerPage";
 import Invitations from "./Pages/Invitations";
 import Loginpage from "./Services/Loginpage";
-import ProjectGrid from "./component/ProjectGrid";
 
 // const queryClient = new QueryClient({
 //   defaultOptions: {
@@ -70,7 +69,7 @@ function App() {
                     <Route path="/profile/:userId" element={<UserProfilePage />} />
                     <Route path="/teamBuilder" element={<TeamManagerPage />} />
                     <Route path="/teams/:teamId" element={<TeamPage />} />
-                     <Route path="/grid" element={<ProjectGrid/>} />
+                     {/* <Route path="/grid" element={<ProjectGrid/>} /> */}
 
                 <Route path="*" element={<Navigate to="/" replace />} />
                 </Route>
