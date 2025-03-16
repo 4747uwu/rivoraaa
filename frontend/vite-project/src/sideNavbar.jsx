@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Home, Calendar, User, Settings, BarChart2, 
-  Files, Users, X, ChevronRight, LogOut, Zap, Cable, Loader 
+  Files, Users, X, ChevronRight, LogOut, Zap, Cable, Loader, Bell 
 } from 'lucide-react';
 
 import { useTheme } from './context/themeContext';
@@ -43,10 +43,10 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     { icon: Home, text: "Dashboard", path: "/dashboard", section: 'main' },
     { icon: Calendar, text: "Calendar", path: "/calender", section: 'main' },
     { icon: Files, text: "Projects", path: "/projects", section: 'main' },
-    { icon: Users, text: "Team", path: "/team", section: 'main' },
+    { icon: Users, text: "Invitation", path: "/team", section: 'main' },
     { icon: BarChart2, text: "TeamBuilder", path: "/teamBuilder", section: 'main' },
     { icon: User, text: "Profile", path: "/profile", section: 'main' },
-    { icon: Settings, text: "Settings", path: "/settings", section: 'main' },
+    { icon: Bell, text: "Notification", path: "/notification", section: 'main' },
     { icon: Cable, text: "LinkUps", path: "/linkups", section: 'main' },
   ];
 

@@ -46,6 +46,7 @@
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.1.5",
     "redis": "^4.7.0",
+    "socket-io": "^1.0.0",
     "socket.io": "^4.8.1",
     "textract": "^2.5.0",
     "uuid": "^11.1.0",

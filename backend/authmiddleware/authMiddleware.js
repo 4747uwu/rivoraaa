@@ -37,7 +37,6 @@ const authMiddlewareHybrid = async (req, res, next) => {
         const verified = jwt.verify(token, secret);
         // console.log("Token verified:", verified);
 
-        // Important change: Find and attach the complete user object
         const user = await User.findById(verified.id || verified.userId);
         if (!user) {
             return res.status(401).json({

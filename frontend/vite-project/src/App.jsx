@@ -21,6 +21,7 @@ import TeamPage from "./component/Team/TeamPage";
 import TeamManagerPage from "./Pages/TeamManagerPage";
 import Invitations from "./Pages/Invitations";
 import Loginpage from "./Services/Loginpage";
+import NotificationsPage from "./component/Notification/notificationCenter";
 
 
 
@@ -56,6 +57,7 @@ function App() {
                     <Route path="/calender" element={<CalendarManagement />} />
                     {/* <Route path="/project/:projectId" element={<ProjectDashboard />} /> */}
                     <Route path="/team" element={<Invitations />} />
+                    <Route path="/notification" element={<NotificationsPage />} />
                     <Route path="/linkups" element={<LinkUps/>} />
                     <Route path="/profile/:userId" element={<UserProfilePage />} />
                     <Route path="/teamBuilder" element={<TeamManagerPage />} />

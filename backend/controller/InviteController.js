@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { Invitation } from "../models/Invitation.js";
 import Project from "../models/Project.js";
 import User from "../models/User.js";
+import notificationService from "../Service/notificationService.js"; // Import notification service
 
 export const searchUser = async (req, res) => {
     try {
@@ -25,10 +26,14 @@ export const searchUser = async (req, res) => {
         res.json({ success: true, users });
 
     } catch (error) {
-
+        console.error('Search user error:', error);
+        res.status(500).json({
+            success: false, 
+            message: 'Failed to search users',
+            error: error.message
+        });
     }
-
-}
+};
 
 export const inviteUser = async (req, res) => {
     try {
@@ -91,7 +96,25 @@ export const inviteUser = async (req, res) => {
             message: message || ''
         });
 
-        // We no longer need to update the User model with embedded invitations
+        // Create notification for the invited user
+        const inviter = await User.findById(req.user._id).select('name username');
+        
+        await notificationService.createNotification({
+            recipientId: userId,
+            type: 'project_invite',
+            title: 'New Project Invitation',
+            content: `${inviter.name} has invited you to join project "${project.name}" as ${role}`,
+            senderId: req.user._id,
+            entityType: 'project',
+            entityId: projectId,
+            actionUrl: `/projects/invites`,
+            metaData: {
+                invitationId: invitation._id,
+                role: role,
+                message: message || '',
+                projectName: project.name
+            }
+        });
 
         res.status(201).json({ 
             success: true, 
@@ -207,6 +230,73 @@ export const respondToInvitation = async (req, res) => {
                     }
                 );
             }
+            
+            // Create notification for project owner that invitation was accepted
+            const currentUser = await User.findById(userId).select('name username');
+            
+            await notificationService.createNotification({
+                recipientId: invitation.projectId.owner,
+                type: 'project_update',
+                title: 'Project Invitation Accepted',
+                content: `${currentUser.name} has accepted your invitation to join "${invitation.projectId.name}" as ${invitation.role}`,
+                senderId: userId,
+                entityType: 'project',
+                entityId: invitation.projectId._id,
+                actionUrl: `/projects/${invitation.projectId._id}/members`,
+                metaData: {
+                    invitationId: invitation._id,
+                    role: invitation.role,
+                    projectName: invitation.projectId.name
+                }
+            });
+            
+            // If this was a team deployment invitation, also notify team owner
+            if (invitation.teamDeployment && invitation.teamId) {
+                try {
+                    const team = await mongoose.model('Team').findById(invitation.teamId).select('name owner');
+                    
+                    if (team && team.owner.toString() !== invitation.projectId.owner.toString()) {
+                        await notificationService.createNotification({
+                            recipientId: team.owner,
+                            type: 'team_update',
+                            title: 'Team Member Joined Project',
+                            content: `${currentUser.name} has joined project "${invitation.projectId.name}" from your team "${team.name}"`,
+                            senderId: userId,
+                            entityType: 'team',
+                            entityId: invitation.teamId,
+                            actionUrl: `/teams/${invitation.teamId}/members`,
+                            metaData: {
+                                projectId: invitation.projectId._id,
+                                projectName: invitation.projectId.name,
+                                role: invitation.role
+                            }
+                        });
+                    }
+                } catch (teamError) {
+                    console.error('Error notifying team owner:', teamError);
+                    // Continue execution even if team notification fails
+                }
+            }
+            
+        } else {
+            // Rejected invitation - notify the project owner
+            const currentUser = await User.findById(userId).select('name username');
+            
+            await notificationService.createNotification({
+                recipientId: invitation.projectId.owner,
+                type: 'project_update',
+                title: 'Project Invitation Declined',
+                content: `${currentUser.name} has declined your invitation to join "${invitation.projectId.name}"`,
+                senderId: userId,
+                entityType: 'project',
+                entityId: invitation.projectId._id,
+                actionUrl: `/projects/${invitation.projectId._id}/members`,
+                priority: 'low',
+                metaData: {
+                    invitationId: invitation._id,
+                    projectName: invitation.projectId.name
+                }
+            });
         }
 
         // Save the updated invitation
@@ -256,7 +346,7 @@ export const getMyInvitations = async (req, res) => {
             ]
         })
         .populate('projectId', 'name description')
-        .populate('inviterId', 'username email profilePicture')
+        .populate('inviterId', 'username email profilePicture name')
         .sort({ createdAt: -1 });
         
         console.log(`Found ${invitations.length} invitations for user ${userId}`);
@@ -284,6 +374,151 @@ export const getMyInvitations = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Failed to fetch invitations',
+            error: error.message
+        });
+    }
+};
+
+export const resendInvitation = async (req, res) => {
+    try {
+        const { invitationId } = req.params;
+        
+        // Find the invitation
+        const invitation = await Invitation.findById(invitationId)
+            .populate('projectId', 'name description owner')
+            .populate('userId', 'name email');
+            
+        if (!invitation) {
+            return res.status(404).json({
+                success: false,
+                message: 'Invitation not found'
+            });
+        }
+        
+        // Check if user is authorized to resend
+        if (invitation.projectId.owner.toString() !== req.user._id.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: 'You are not authorized to resend this invitation'
+            });
+        }
+        
+        // Check if invitation is already accepted
+        if (invitation.status === 'accepted') {
+            return res.status(400).json({
+                success: false,
+                message: 'This invitation has already been accepted'
+            });
+        }
+        
+        // Reset invitation status if it was rejected
+        if (invitation.status === 'rejected') {
+            invitation.status = 'pending';
+            invitation.respondedAt = null;
+            await invitation.save();
+        }
+        
+        // Create a new notification
+        const inviter = await User.findById(req.user._id).select('name username');
+        
+        await notificationService.createNotification({
+            recipientId: invitation.userId._id,
+            type: 'project_invite',
+            title: 'Project Invitation Reminder',
+            content: `${inviter.name} has sent you a reminder to join project "${invitation.projectId.name}" as ${invitation.role}`,
+            senderId: req.user._id,
+            entityType: 'project',
+            entityId: invitation.projectId._id,
+            actionUrl: `/projects/invites`,
+            priority: 'high', // Higher priority for reminders
+            metaData: {
+                invitationId: invitation._id,
+                role: invitation.role,
+                message: invitation.message || '',
+                projectName: invitation.projectId.name,
+                isReminder: true
+            }
+        });
+        
+        // Return success response
+        res.json({
+            success: true,
+            message: 'Invitation resent successfully',
+            invitation
+        });
+        
+    } catch (error) {
+        console.error('Resend invitation error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to resend invitation',
+            error: error.message
+        });
+    }
+};
+
+export const cancelInvitation = async (req, res) => {
+    try {
+        const { invitationId } = req.params;
+        
+        // Find the invitation
+        const invitation = await Invitation.findById(invitationId)
+            .populate('projectId', 'name description owner')
+            .populate('userId', 'name email');
+            
+        if (!invitation) {
+            return res.status(404).json({
+                success: false,
+                message: 'Invitation not found'
+            });
+        }
+        
+        // Check if user is authorized to cancel
+        if (invitation.projectId.owner.toString() !== req.user._id.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: 'You are not authorized to cancel this invitation'
+            });
+        }
+        
+        // Check if invitation is already accepted
+        if (invitation.status === 'accepted') {
+            return res.status(400).json({
+                success: false,
+                message: 'This invitation has already been accepted and cannot be cancelled'
+            });
+        }
+        
+        // Delete the invitation
+        await Invitation.findByIdAndDelete(invitationId);
+        
+        // Create a notification about the cancellation
+        await notificationService.createNotification({
+            recipientId: invitation.userId._id,
+            type: 'project_update',
+            title: 'Project Invitation Cancelled',
+            content: `Your invitation to join project "${invitation.projectId.name}" has been cancelled`,
+            senderId: req.user._id,
+            entityType: 'project',
+            entityId: invitation.projectId._id,
+            priority: 'low',
+            metaData: {
+                projectName: invitation.projectId.name,
+                wasCancelled: true
+            }
+        });
+        
+        // Return success response
+        res.json({
+            success: true,
+            message: 'Invitation cancelled successfully'
+        });
+        
+    } catch (error) {
+        console.error('Cancel invitation error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to cancel invitation',
             error: error.message
         });
     }

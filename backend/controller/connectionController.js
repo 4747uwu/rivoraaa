@@ -72,19 +72,25 @@ export const sendLinkUpRequest = async (req, res) => {
     });
     
     // Create notification for target user
-    const currentUser = await User.findById(currentUserId);
-    await User.findByIdAndUpdate(userId, {
-      $push: {
-        notifications: {
-          message: `${currentUser.name} wants to LinkUp with you`,
-          type: 'invitation',
-          createdAt: new Date(),
-          triggeredBy: currentUserId,
-          actionUrl: `/profile/${currentUserId}`,
-          priority: 'medium'
-        }
-      }
-    });
+    // const currentUser = await User.findById(currentUserId);
+    // await User.findByIdAndUpdate(userId, {
+    //   $push: {
+    //     notifications: {
+    //       message: `${currentUser.name} wants to LinkUp with you`,
+    //       type: 'invitation',
+    //       createdAt: new Date(),
+    //       triggeredBy: currentUserId,
+    //       actionUrl: `/profile/${currentUserId}`,
+    //       priority: 'medium'
+    //     }
+    //   }
+    // });
+
+      await notificationService.sendConnectionRequest(
+      currentUserId,   // requesterId
+      userId,          // recipientId
+      message || ''    // optional message
+    );
     
     return res.status(200).json({ 
       message: "LinkUp request sent",
@@ -143,19 +149,20 @@ export const acceptLinkUpRequest = async (req, res) => {
     });
     
     // Create notification for the requester
-    const currentUser = await User.findById(currentUserId);
-    await User.findByIdAndUpdate(connection.followers, {
-      $push: {
-        notifications: {
-          message: `${currentUser.name} accepted your LinkUp request`,
-          type: 'general',
-          createdAt: new Date(),
-          triggeredBy: currentUserId,
-          actionUrl: `/profile/${currentUserId}`,
-          priority: 'low'
-        }
-      }
+    const currentUser = await User.findById(currentUserId).select('name username profilePicture');
+
+      await notificationService.createNotification({
+      recipientId: connection.followers,
+      type: 'connection_accepted',
+      title: 'Connection Request Accepted',
+      content: `${currentUser.name} accepted your connection request`,
+      senderId: currentUserId,
+      entityType: 'user',
+      entityId: currentUserId,
+      actionUrl: `/profile/${currentUserId}`,
+      metaData: { connectionId: connection._id }
     });
+    
     
     return res.status(200).json({ 
       message: "LinkUp request accepted",
@@ -550,17 +557,19 @@ export const getUserProfile = async (req, res) => {
     if (isOwner || isConnected || user.connectionSettings.visibility.profile === 'public') {
       // Full profile access
       profileData = {
-        ...profileData,
-        bio: user.bio,
-        profession: user.profession,
-        location: user.location,
-        website: user.website,
-        coverImage: user.coverImage,
-        connectionStats: {
-          linkUpsCount: user.connections.linkUps.length,
-          followersCount: user.connections.followers.length,
-          followingCount: user.connections.following.length
-        }
+    ...profileData,
+    bio: user.bio,
+    profession: user.profession,
+    skills: user.skills || [],          // Include skills array
+    interests: user.interests || [],    // Include interests array
+    location: user.location,
+    website: user.website,
+    coverImage: user.coverImage,
+    connectionStats: {
+      linkUpsCount: user.connections.linkUps.length,
+      followersCount: user.connections.followers.length,
+      followingCount: user.connections.following.length
+    }
       };
       
       // Only add activity data if appropriate visibility

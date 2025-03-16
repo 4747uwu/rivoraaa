@@ -181,6 +181,7 @@ router.post('/teams/:teamId/calendar', authMiddlewareHybrid, createTeamEvent);
 
 // Get a specific calendar event
 router.get('/calendar/:eventId', authMiddlewareHybrid, async (req, res) => {
+   console.log("hello")
   try {
     const { eventId } = req.params;
     

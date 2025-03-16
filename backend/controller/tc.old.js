@@ -3,7 +3,7 @@ import User from '../models/User.js';
 import Connection from '../models/Connections.js'; // Adjust based on your actual model name
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import ErrorResponse from '../utils/errorResponse.js';
-import notificationService from '../Service/notificationService.js'; // Import notification service
+
 
 export const createTeam = asyncHandler(async (req, res, next) => {
   const { name, description, category, members = [], isPrivate = false, avatar } = req.body;
@@ -80,59 +80,15 @@ export const createTeam = asyncHandler(async (req, res, next) => {
 
   await User.findByIdAndUpdate(userId, {
     $push: { team: team._id}
-  });
+  })
 
-  // Get the owner's info for notifications
-  const teamOwner = await User.findById(userId).select('name');
-
-  if (processedMembers.length > 0) {
-    // Process team member updates and send notifications
-    const memberUpdatePromises = processedMembers.map(async member => {
-      // Add team to user's teams list
-      await User.findByIdAndUpdate(member.user, {
+   if (processedMembers.length > 0) {
+    await Promise.all(processedMembers.map(member =>
+      User.findByIdAndUpdate(member.user, {
         $push: { team: team._id }
-      });
-      
-      // Send notification to the team member
-      await notificationService.createNotification({
-        recipientId: member.user,
-        type: 'team_invite',
-        title: 'Added to New Team',
-        content: `${teamOwner.name} has added you to their team "${team.name}" as ${member.role}`,
-        senderId: userId,
-        entityType: 'team',
-        entityId: team._id,
-        actionUrl: `/teams/${team._id}`,
-        priority: 'medium',
-        metaData: {
-          teamName: team.name,
-          teamCategory: team.category,
-          role: member.role,
-          isPrivate: team.isPrivate
-        }
-      });
-    });
-    
-    await Promise.all(memberUpdatePromises);
+      })
+    ));
   }
-
-  // Create a welcome notification for the team owner
-  await notificationService.createNotification({
-    recipientId: userId,
-    type: 'system',
-    title: 'Team Created Successfully',
-    content: `Your new team "${team.name}" has been created with ${processedMembers.length} members`,
-    entityType: 'team',
-    entityId: team._id,
-    actionUrl: `/teams/${team._id}`,
-    priority: 'medium',
-    metaData: {
-      teamName: team.name,
-      memberCount: processedMembers.length,
-      teamCategory: team.category,
-      createdAt: team.createdAt
-    }
-  });
 
   res.status(201).json({
     success: true,
@@ -236,39 +192,12 @@ export const updateTeam = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('Only the team owner can update team details', 403));
   }
 
-  // Store original values for change detection
-  const originalName = team.name;
-  const originalPrivacy = team.isPrivate;
-  const originalCategory = team.category;
-  
-  // Track what fields changed
-  const changedFields = [];
-  
   // Update the team
-  if (name && name.trim() !== team.name) {
-    team.name = name.trim();
-    changedFields.push('name');
-  }
-  
-  if (description !== undefined && description?.trim() !== team.description) {
-    team.description = description?.trim();
-    changedFields.push('description');
-  }
-  
-  if (category && category.trim() !== team.category) {
-    team.category = category.trim();
-    changedFields.push('category');
-  }
-  
-  if (isPrivate !== undefined && isPrivate !== team.isPrivate) {
-    team.isPrivate = isPrivate;
-    changedFields.push('privacy');
-  }
-  
-  if (avatar && avatar !== team.avatar) {
-    team.avatar = avatar;
-    changedFields.push('avatar');
-  }
+  if (name) team.name = name.trim();
+  if (description !== undefined) team.description = description?.trim();
+  if (category) team.category = category.trim();
+  if (isPrivate !== undefined) team.isPrivate = isPrivate;
+  if (avatar) team.avatar = avatar;
   
   team.updatedAt = Date.now();
   
@@ -278,49 +207,6 @@ export const updateTeam = asyncHandler(async (req, res, next) => {
   const updatedTeam = await Team.findById(teamId)
     .populate('owner', 'name email username profilePicture')
     .populate('members.user', 'name email username profilePicture');
-
-  // If significant changes were made, notify team members
-  if (changedFields.length > 0) {
-    // Get team owner info
-    const owner = await User.findById(userId).select('name');
-    
-    // Generate notification message based on changes
-    let notificationTitle = 'Team Updated';
-    let notificationContent = `${owner.name} has updated team "${originalName}"`;
-    
-    if (changedFields.length === 1) {
-      if (changedFields[0] === 'name') {
-        notificationTitle = 'Team Name Changed';
-        notificationContent = `${owner.name} has renamed team "${originalName}" to "${team.name}"`;
-      } else if (changedFields[0] === 'privacy') {
-        notificationTitle = 'Team Privacy Changed';
-        notificationContent = `${owner.name} has changed team "${team.name}" to ${team.isPrivate ? 'private' : 'public'}`;
-      }
-    }
-    
-    // Send notifications to all team members
-    const notificationPromises = team.members.map(member => 
-      notificationService.createNotification({
-        recipientId: member.user._id,
-        type: 'team_update',
-        title: notificationTitle,
-        content: notificationContent,
-        senderId: userId,
-        entityType: 'team',
-        entityId: team._id,
-        actionUrl: `/teams/${team._id}`,
-        priority: 'low',
-        metaData: {
-          teamName: team.name,
-          originalName: originalName,
-          changedFields: changedFields,
-          updatedAt: new Date()
-        }
-      })
-    );
-    
-    await Promise.all(notificationPromises);
-  }
 
   res.status(200).json({
     success: true,
@@ -335,8 +221,7 @@ export const deleteTeam = asyncHandler(async (req, res, next) => {
   const userId = req.user.id;
 
   // Find the team
-  const team = await Team.findById(teamId)
-    .populate('members.user', 'name');
+  const team = await Team.findById(teamId);
 
   // Check if team exists
   if (!team) {
@@ -348,49 +233,20 @@ export const deleteTeam = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('Only the team owner can delete this team', 403));
   }
 
-  // Get team owner info
-  const owner = await User.findById(userId).select('name');
-  
-  // Notify all team members about the deletion
-  const memberIds = team.members.map(member => member.user._id);
-  const teamName = team.name;
-  
-  const notificationPromises = memberIds.map(memberId => 
-    notificationService.createNotification({
-      recipientId: memberId,
-      type: 'team_update',
-      title: 'Team Disbanded',
-      content: `${owner.name} has disbanded the team "${teamName}"`,
-      senderId: userId,
-      entityType: 'user',
-      entityId: userId,
-      priority: 'high',
-      metaData: {
-        teamName: teamName,
-        teamCategory: team.category,
-        disbandedAt: new Date()
-      }
-    })
-  );
-  
-  // Remove team from all users' team list
   await User.updateMany(
     {
-      $or: [
-        { _id: team.owner },
-        { _id: { $in: team.members.map(member => member.user) } }
-      ]
+        $or: [
+            { _id: team.owner },
+            { _id: {$in: team.members.map(member => member.user)}}
+        ]
     },
     {
-      $pull: { team: team._id }
+        $pull: { team: team._id }
     }   
-  );
+  )
 
-  // Delete the team
-  await Team.findByIdAndDelete(teamId);
-  
-  // Send notifications after team is deleted
-  await Promise.all(notificationPromises);
+ 
+    await Team.findByIdAndDelete(teamId);
 
   res.status(200).json({
     success: true,
@@ -464,60 +320,9 @@ export const addTeamMember = asyncHandler(async (req, res, next) => {
   team.updatedAt = Date.now();
   await team.save();
 
-  // Add team to user's teams
   await User.findByIdAndUpdate(memberId, {
     $push: { team: team._id }
   });
-
-  // Get information for notification
-  const teamOwner = await User.findById(userId).select('name');
-  const newMember = await User.findById(memberId).select('name');
-
-  // Send notification to the new member
-  await notificationService.createNotification({
-    recipientId: memberId,
-    type: 'team_invite',
-    title: 'Added to Team',
-    content: `${teamOwner.name} has added you to team "${team.name}" as ${role}`,
-    senderId: userId,
-    entityType: 'team',
-    entityId: teamId,
-    actionUrl: `/teams/${teamId}`,
-    priority: 'medium',
-    metaData: {
-      teamName: team.name,
-      teamCategory: team.category,
-      role: role,
-      permissions: permissions
-    }
-  });
-  
-  // Notify existing team members about the new addition
-  if (team.members.length > 1) {
-    const existingMemberPromises = team.members
-      .filter(member => member.user.toString() !== memberId) // Exclude the new member
-      .map(member => 
-        notificationService.createNotification({
-          recipientId: member.user,
-          type: 'team_update',
-          title: 'New Team Member',
-          content: `${teamOwner.name} has added ${newMember.name} to team "${team.name}"`,
-          senderId: userId,
-          entityType: 'team',
-          entityId: teamId,
-          actionUrl: `/teams/${teamId}/members`,
-          priority: 'low',
-          metaData: {
-            teamName: team.name,
-            newMemberId: memberId,
-            newMemberRole: role,
-            addedAt: new Date()
-          }
-        })
-      );
-    
-    await Promise.all(existingMemberPromises);
-  }
 
   // Return updated team with populated fields
   const updatedTeam = await Team.findById(teamId)
@@ -577,58 +382,17 @@ export const updateTeamMember = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('Cannot update role - user is no longer in your LinkUps', 400));
   }
 
-  // Track what's changing for notification
-  const changedFields = [];
-  const previousRole = team.members[memberIndex].role;
-  const previousPermissions = [...team.members[memberIndex].permissions];
-  
   // Update member role and/or permissions
-  if (role && role !== previousRole) {
+  if (role) {
     team.members[memberIndex].role = role;
-    changedFields.push('role');
   }
   
-  if (permissions && JSON.stringify(permissions) !== JSON.stringify(previousPermissions)) {
+  if (permissions) {
     team.members[memberIndex].permissions = permissions;
-    changedFields.push('permissions');
   }
 
   team.updatedAt = Date.now();
   await team.save();
-
-  // If role or permissions changed, notify the member
-  if (changedFields.length > 0) {
-    // Get team owner info
-    const owner = await User.findById(userId).select('name');
-    
-    // Generate notification message based on what changed
-    let notificationTitle = 'Team Role Updated';
-    let notificationContent = `${owner.name} updated your role in team "${team.name}"`;
-    
-    if (changedFields.includes('role') && !changedFields.includes('permissions')) {
-      notificationContent = `${owner.name} changed your role in team "${team.name}" from ${previousRole} to ${role}`;
-    }
-    
-    // Send notification to the updated member
-    await notificationService.createNotification({
-      recipientId: memberId,
-      type: 'team_role_change',
-      title: notificationTitle,
-      content: notificationContent,
-      senderId: userId,
-      entityType: 'team',
-      entityId: teamId,
-      actionUrl: `/teams/${teamId}`,
-      priority: role === 'admin' ? 'high' : 'medium',
-      metaData: {
-        teamName: team.name,
-        previousRole: previousRole,
-        newRole: role || previousRole,
-        changedFields: changedFields,
-        updatedAt: new Date()
-      }
-    });
-  }
 
   // Return updated team with populated fields
   const updatedTeam = await Team.findById(teamId)
@@ -668,64 +432,14 @@ export const removeTeamMember = asyncHandler(async (req, res, next) => {
   if (memberIndex === -1) {
     return next(new ErrorResponse('Member not found in this team', 404));
   }
-
-  // Get member info before removal for notification
-  const removedMemberRole = team.members[memberIndex].role;
-  
-  // Get user objects for notifications
-  const teamOwner = await User.findById(userId).select('name');
-  const removedMember = await User.findById(memberId).select('name');
-  
-  // Remove team from user's team list
   await User.findByIdAndUpdate(memberId, {
     $pull: { team: team._id }
   });
-  
   // Remove member
   team.members.splice(memberIndex, 1);
   
   team.updatedAt = Date.now();
   await team.save();
-
-  // Notify the removed member
-  await notificationService.createNotification({
-    recipientId: memberId,
-    type: 'team_update',
-    title: 'Removed from Team',
-    content: `${teamOwner.name} has removed you from team "${team.name}"`,
-    senderId: userId,
-    entityType: 'team',
-    entityId: teamId,
-    priority: 'high',
-    metaData: {
-      teamName: team.name,
-      previousRole: removedMemberRole,
-      removedAt: new Date()
-    }
-  });
-  
-  // Notify other team members about the removal
-  const notificationPromises = team.members.map(member => 
-    notificationService.createNotification({
-      recipientId: member.user,
-      type: 'team_update',
-      title: 'Team Member Removed',
-      content: `${teamOwner.name} has removed ${removedMember.name} from team "${team.name}"`,
-      senderId: userId,
-      entityType: 'team',
-      entityId: teamId,
-      actionUrl: `/teams/${teamId}/members`,
-      priority: 'low',
-      metaData: {
-        teamName: team.name,
-        removedMemberId: memberId,
-        removedMemberName: removedMember.name,
-        removedAt: new Date()
-      }
-    })
-  );
-  
-  await Promise.all(notificationPromises);
 
   // Return updated team with populated fields
   const updatedTeam = await Team.findById(teamId)
@@ -740,21 +454,21 @@ export const removeTeamMember = asyncHandler(async (req, res, next) => {
 });
 
 
+
 export const leaveTeam = asyncHandler(async (req, res, next) => {
   const { teamId } = req.params;
   const userId = req.user.id;
 
   // Find the team
-  const team = await Team.findById(teamId)
-    .populate('owner', 'name');
-    
+  const team = await Team.findById(teamId);
+
   // Check if team exists
   if (!team) {
     return next(new ErrorResponse('Team not found', 404));
   }
 
   // Check if user is the owner
-  if (team.owner._id.toString() === userId.toString()) {
+  if (team.owner.toString() === userId.toString()) {
     return next(new ErrorResponse('Team owner cannot leave their own team. Transfer ownership or delete the team instead.', 400));
   }
 
@@ -767,11 +481,6 @@ export const leaveTeam = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('You are not a member of this team', 404));
   }
 
-  // Get member info before leaving
-  const memberRole = team.members[memberIndex].role;
-  const member = await User.findById(userId).select('name');
-  
-  // Remove team from user's team list
   await User.findByIdAndUpdate(userId, {
     $pull: { team: team._id }
   });
@@ -781,49 +490,6 @@ export const leaveTeam = asyncHandler(async (req, res, next) => {
   
   team.updatedAt = Date.now();
   await team.save();
-
-  // Notify the team owner that a member has left
-  await notificationService.createNotification({
-    recipientId: team.owner._id,
-    type: 'team_update',
-    title: 'Team Member Left',
-    content: `${member.name} has left your team "${team.name}"`,
-    senderId: userId,
-    entityType: 'team',
-    entityId: teamId,
-    actionUrl: `/teams/${teamId}/members`,
-    priority: memberRole === 'admin' ? 'high' : 'medium',
-    metaData: {
-      teamName: team.name,
-      memberRole: memberRole,
-      leftAt: new Date()
-    }
-  });
-  
-  // Notify other team members about someone leaving
-  if (team.members.length > 0) {
-    const notificationPromises = team.members.map(m => 
-      notificationService.createNotification({
-        recipientId: m.user,
-        type: 'team_update',
-        title: 'Team Member Left',
-        content: `${member.name} has left team "${team.name}"`,
-        senderId: userId,
-        entityType: 'team',
-        entityId: teamId,
-        actionUrl: `/teams/${teamId}/members`,
-        priority: 'low',
-        metaData: {
-          teamName: team.name,
-          memberId: userId,
-          memberName: member.name,
-          leftAt: new Date()
-        }
-      })
-    );
-    
-    await Promise.all(notificationPromises);
-  }
 
   res.status(200).json({
     success: true,

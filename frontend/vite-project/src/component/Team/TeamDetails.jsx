@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
   ArrowLeft, Edit, Trash2, X, User,
   UserPlus, Users, Clock, Check, Shield,
   MessageSquare, Mail, MoreHorizontal, Activity,
-  Loader // Add this
+  Loader, Layout, Calendar, Settings
 } from 'lucide-react';
+import TeamCalendarAndTasks from './teamFeatures/TeamCalendarAndTask';
 
 const TeamDetails = ({
   currentTeam,
@@ -40,8 +41,9 @@ const TeamDetails = ({
   buttonDanger,
   containerVariants,
   itemVariants,
-  loading // Add this prop
+  loading
 }) => {
+  const [activeTab, setActiveTab] = useState('overview');
 
   // Loading screen component
   if (loading) {
@@ -91,6 +93,18 @@ const TeamDetails = ({
       </div>
     );
   };
+
+  // Define tabs
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: <Layout size={16} /> },
+    { id: 'members', label: 'Members', icon: <Users size={16} /> },
+    { id: 'calendar', label: 'Calendar & Tasks', icon: <Calendar size={16} /> }
+  ];
+
+  // If user is owner, add settings tab
+  if (isOwner) {
+    tabs.push({ id: 'settings', label: 'Settings', icon: <Settings size={16} /> });
+  }
 
   const MemberCard = ({ member }) => {
     const isCurrentUser = member.user._id === user._id;
@@ -333,104 +347,215 @@ const TeamDetails = ({
             </div>
           </motion.div>
 
-          {/* Meet the Team Section */}
-          <motion.div variants={itemVariants}>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className={`text-2xl ${headingClass}`}>Meet the Team</h2>
-              {isOwner && (
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setShowMemberForm(true)}
-                  className={buttonPrimary}
+          {/* Tabs Navigation */}
+          <motion.div variants={itemVariants} className="border-b border-gray-700 mb-6">
+            <div className="flex flex-wrap -mb-px">
+              {tabs.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`inline-flex items-center py-3 px-4 text-sm font-medium text-center border-b-2 ${
+                    activeTab === tab.id
+                      ? 'border-indigo-500 text-indigo-300'
+                      : 'border-transparent text-gray-400 hover:text-gray-300'
+                  }`}
                 >
-                  <div className="flex items-center">
-                    <UserPlus size={16} className="mr-2" />
-                    Add Member
-                  </div>
-                </motion.button>
-              )}
+                  <span className="mr-2">{tab.icon}</span>
+                  {tab.label}
+                </button>
+              ))}
             </div>
+          </motion.div>
 
-            {/* Owner Card - Special Styling */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-              <motion.div 
-                variants={itemVariants}
-                className={`${glassCard} w-auto rounded-lg p-4 border-l-4 border-indigo-500 flex items-start space-x-4 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-900/20`}
-              >
-                <div className="w-16 h-16 rounded-full flex-shrink-0 bg-gradient-to-br from-gray-800 to-gray-700 overflow-hidden flex items-center justify-center border-2 border-indigo-500/20">
-                  {currentTeam?.owner.profilePicture ? (
-                    <img 
-                      src={currentTeam?.owner.profilePicture} 
-                      alt={currentTeam?.owner.name}
-                      className="w-full h-full object-cover scale-150"
-                    />
-                  ) : (
-                    <User size={20} className="text-gray-400" />
-                  )}
+          {/* Tab Content */}
+          {activeTab === 'overview' && (
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="space-y-6"
+            >
+              {/* Stats/Activity Section */}
+              <motion.div variants={itemVariants}>
+                <div className="flex items-center mb-4">
+                  <Activity size={18} className="text-indigo-400 mr-2" />
+                  <h3 className={`text-xl ${headingClass}`}>Team Activity</h3>
                 </div>
                 
-                <div className="flex-grow">
-                  <div className="flex justify-between">
-                    <div>
-                      <h3 className={textClass}>
-                        {currentTeam?.owner.name}
-                        {currentTeam?.owner._id === user._id && 
-                          <span className="ml-2 text-xs bg-indigo-800/50 text-indigo-200 px-2 py-0.5 rounded">You</span>
-                        }
-                      </h3>
-                      <p className="text-sm text-gray-400">@{currentTeam?.owner.username}</p>
-                    </div>
+                <div className={`${glassCard} rounded-lg p-6 text-center`}>
+                  <p className={subTextClass}>Team activity tracking coming soon</p>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+
+          {/* Members Tab */}
+          {activeTab === 'members' && (
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="space-y-6"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h2 className={`text-2xl ${headingClass}`}>Meet the Team</h2>
+                {isOwner && (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShowMemberForm(true)}
+                    className={buttonPrimary}
+                  >
                     <div className="flex items-center">
-                      <Shield size={16} className="text-indigo-400 mr-1.5" />
-                      <span className="text-indigo-300">Team Owner</span>
+                      <UserPlus size={16} className="mr-2" />
+                      Add Member
                     </div>
+                  </motion.button>
+                )}
+              </div>
+
+              {/* Owner Card - Special Styling */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                <motion.div 
+                  variants={itemVariants}
+                  className={`${glassCard} w-auto rounded-lg p-4 border-l-4 border-indigo-500 flex items-start space-x-4 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-900/20`}
+                >
+                  <div className="w-16 h-16 rounded-full flex-shrink-0 bg-gradient-to-br from-gray-800 to-gray-700 overflow-hidden flex items-center justify-center border-2 border-indigo-500/20">
+                    {currentTeam?.owner.profilePicture ? (
+                      <img 
+                        src={currentTeam?.owner.profilePicture} 
+                        alt={currentTeam?.owner.name}
+                        className="w-full h-full object-cover scale-150"
+                      />
+                    ) : (
+                      <User size={20} className="text-gray-400" />
+                    )}
                   </div>
                   
-                  <div className="mt-3 flex space-x-2">
-                    {currentTeam?.owner._id !== user?._id && (
+                  <div className="flex-grow">
+                    <div className="flex justify-between">
+                      <div>
+                        <h3 className={textClass}>
+                          {currentTeam?.owner.name}
+                          {currentTeam?.owner._id === user._id && 
+                            <span className="ml-2 text-xs bg-indigo-800/50 text-indigo-200 px-2 py-0.5 rounded">You</span>
+                          }
+                        </h3>
+                        <p className="text-sm text-gray-400">@{currentTeam?.owner.username}</p>
+                      </div>
+                      <div className="flex items-center">
+                        <Shield size={16} className="text-indigo-400 mr-1.5" />
+                        <span className="text-indigo-300">Team Owner</span>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-3 flex space-x-2">
+                      {currentTeam?.owner._id !== user?._id && (
+                        <button className="p-1.5 rounded-full bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white transition-colors">
+                          <MessageSquare size={14} />
+                        </button>
+                      )}
                       <button className="p-1.5 rounded-full bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white transition-colors">
-                        <MessageSquare size={14} />
+                        <Mail size={14} />
                       </button>
-                    )}
-                    <button className="p-1.5 rounded-full bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white transition-colors">
-                      <Mail size={14} />
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+
+              {/* Team Members */}
+              {currentTeam?.members.length === 0 ? (
+                <div className={`${glassCard} rounded-lg p-10 text-center`}>
+                  <Users className="w-12 h-12 mx-auto text-gray-600 mb-2" />
+                  <h4 className={textClass}>No other members yet</h4>
+                  <p className={subTextClass}>Add members to start collaborating</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {currentTeam?.members.map((member) => (
+                    <MemberCard key={member._id} member={member} />
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* Calendar & Tasks Tab */}
+          {activeTab === 'calendar' && (
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className={`${glassCard} rounded-lg overflow-hidden`}
+            >
+              <TeamCalendarAndTasks 
+                teamId={currentTeam?._id}
+                team={currentTeam}
+                isTeamAdmin={isOwner || userRole === 'admin'}
+              />
+            </motion.div>
+          )}
+
+          {/* Settings Tab */}
+          {activeTab === 'settings' && isOwner && (
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className={`${glassCard} rounded-lg p-6`}
+            >
+              <h2 className={`text-xl ${headingClass} mb-6`}>Team Settings</h2>
+              
+              <div className="space-y-6">
+                <div>
+                  <h3 className={`${textClass} font-medium mb-3`}>Team Management</h3>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className={buttonPrimary}
+                    >
+                      Edit Team
+                    </button>
+                    <button
+                      onClick={handleDeleteTeam}
+                      disabled={isLoadingDeleteTeam}
+                      className={buttonDanger}
+                    >
+                      {isLoadingDeleteTeam ? (
+                        <div className="flex items-center">
+                          <Clock size={16} className="animate-spin mr-2" />
+                          Deleting...
+                        </div>
+                      ) : (
+                        <div className="flex items-center">
+                          <Trash2 size={16} className="mr-2" />
+                          Delete Team
+                        </div>
+                      )}
                     </button>
                   </div>
-                  
                 </div>
                 
-              </motion.div>
-              
-            </div>
-
-            {/* Team Members */}
-            {currentTeam?.members.length === 0 ? (
-              <div className={`${glassCard} rounded-lg p-10 text-center`}>
-                <Users className="w-12 h-12 mx-auto text-gray-600 mb-2" />
-                <h4 className={textClass}>No other members yet</h4>
-                <p className={subTextClass}>Add members to start collaborating</p>
+                {/* More settings can be added here */}
+                <div>
+                  <h3 className={`${textClass} font-medium mb-3`}>Team Privacy</h3>
+                  <div className="flex items-center space-x-2">
+                    <div className={`${currentTeam?.isPrivate ? 'bg-indigo-500' : 'bg-gray-600'} w-11 h-6 rounded-full relative transition-all duration-300`}>
+                      <div className={`absolute top-1 ${currentTeam?.isPrivate ? 'right-1' : 'left-1'} w-4 h-4 bg-white rounded-full transition-all duration-300`}></div>
+                    </div>
+                    <span className={textClass}>
+                      {currentTeam?.isPrivate ? 'Private Team' : 'Public Team'}
+                    </span>
+                  </div>
+                  <p className={`${subTextClass} mt-2 text-sm`}>
+                    {currentTeam?.isPrivate 
+                      ? 'Only invited members can join this team.' 
+                      : 'Anyone with the link can request to join this team.'}
+                  </p>
+                </div>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {currentTeam?.members.map((member) => (
-                  <MemberCard key={member._id} member={member} />
-                ))}
-              </div>
-            )}
-          </motion.div>
-
-          {/* Stats/Activity Section (Optional) */}
-          <motion.div variants={itemVariants} className="mt-8">
-            <div className="flex items-center mb-4">
-              <Activity size={18} className="text-indigo-400 mr-2" />
-              <h3 className={`text-xl ${headingClass}`}>Team Activity</h3>
-            </div>
-            
-            <div className={`${glassCard} rounded-lg p-6 text-center`}>
-              <p className={subTextClass}>Team activity tracking coming soon</p>
-            </div>
-          </motion.div>
+            </motion.div>
+          )}
         </motion.div>
       )}
     </>

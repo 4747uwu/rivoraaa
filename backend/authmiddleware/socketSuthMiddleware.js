@@ -12,6 +12,7 @@ export const socketAuthMiddleware = async (socket, next) => {
     const token = cookies.token || 
                  socket.handshake.auth.token || 
                  socket.handshake.headers.authorization?.split(' ')[1];
+                 console.log('Token:', token);
     
     if (!token) {
       return next(new Error('Authentication error: No token provided'));

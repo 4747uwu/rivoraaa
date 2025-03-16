@@ -151,9 +151,9 @@ const QuotesWidget = () => {
               stiffness: 300, 
               damping: 30
             }}
-            className="flex flex-col justify-center h-full"
+            className="flex flex-col pl-5 justify-center h-full"
           >
-            <blockquote className="text-sm font-medium items-center  leading-tight text-gray-100 italic line-clamp-2">
+            <blockquote className="text-sm font-medium items-center flex justify-center leading-tight text-gray-100 italic line-clamp-2">
               "{currentQuote.text}"
             </blockquote>
             

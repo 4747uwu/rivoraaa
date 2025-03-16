@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Mail, Edit2, Loader, CheckCircle, Clock, PlusCircle, Bell, Moon, Sun, LogOut, Camera, X, Save, Briefcase, Trash2, MessageCircle } from 'lucide-react';
+import { Mail, Edit2, Loader, CheckCircle, Clock, PlusCircle, Bell, Moon, Sun, LogOut, Camera, X, Save, Briefcase, Trash2, MessageCircle, ArrowLeft } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/authContext';
 import { motion } from 'framer-motion';
@@ -62,7 +62,9 @@ const Profile = () => {
         bio: '',
         status: 'online',
         profession: '',
-        profilePicture: ''
+        profilePicture: '',
+        skills: [],
+        interests: []
     });
 
     // Initialize form data when user data is available
@@ -74,7 +76,9 @@ const Profile = () => {
                 bio: user.bio || '',
                 status: user.status || 'online',
                 profession: user.profession || '',
-                profilePicture: user.profilePicture || ''
+                profilePicture: user.profilePicture || '',
+                skills: user.skills || [],
+                interests: user.interests || []
             });
         }
     }, [user]);
@@ -109,7 +113,9 @@ const Profile = () => {
                 bio: user.bio || '',
                 status: user.status || 'online',
                 profession: user.profession || '',
-                profilePicture: user.profilePicture || ''
+                profilePicture: user.profilePicture || '',
+                skills: user.skills || [],
+                interests: user.interests || []
             });
         }
         setIsEditing(!isEditing);
@@ -156,13 +162,9 @@ const Profile = () => {
                 toast.success("Profile updated successfully!");
                 
                 // Refresh user data in auth context
-                if (typeof refreshUser === 'function') {
-                    await refreshUser();
-                }
+                await refreshUser();
                 
                 setIsEditing(false);
-            } else {
-                toast.error(result.data.message || "Failed to update profile");
             }
         } catch (error) {
             console.error("Profile update error:", error);
@@ -188,6 +190,38 @@ const Profile = () => {
             opacity: 1,
             transition: { type: "spring", stiffness: 100 }
         }
+    };
+
+    const handleSkillChange = (index, value) => {
+        const newSkills = [...profileData.skills];
+        newSkills[index] = value;
+        setProfileData(prev => ({ ...prev, skills: newSkills }));
+    };
+
+    const handleInterestChange = (index, value) => {
+        const newInterests = [...profileData.interests];
+        newInterests[index] = value;
+        setProfileData(prev => ({ ...prev, interests: newInterests }));
+    };
+
+    const addSkill = () => {
+        setProfileData(prev => ({ ...prev, skills: [...prev.skills, ''] }));
+    };
+
+    const removeSkill = (index) => {
+        const newSkills = [...profileData.skills];
+        newSkills.splice(index, 1);
+        setProfileData(prev => ({ ...prev, skills: newSkills }));
+    };
+
+    const addInterest = () => {
+        setProfileData(prev => ({ ...prev, interests: [...prev.interests, ''] }));
+    };
+
+    const removeInterest = (index) => {
+        const newInterests = [...profileData.interests];
+        newInterests.splice(index, 1);
+        setProfileData(prev => ({ ...prev, interests: newInterests }));
     };
 
     if (loading) {
@@ -232,10 +266,20 @@ const Profile = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => logout()}
-                className="fixed top-4 right-4 p-2.5 md:p-3 rounded-xl bg-red-950/30 backdrop-blur-lg border border-red-500/20 z-50 flex items-center gap-2 text-red-400 hover:text-red-300 hover:bg-red-950/40 transition-all duration-300 shadow-lg"
+                className="fixed top-2 right-4 p-1 md:p-3 rounded-xl bg-red-950/30 backdrop-blur-lg border border-red-500/20 z-50 flex items-center gap-2 text-red-400 hover:text-red-300 hover:bg-red-950/40 transition-all duration-300 shadow-lg"
             >
                 <LogOut className="w-5 h-5" />
                 <span className="hidden md:inline text-sm font-medium">Logout</span>
+            </motion.button>
+
+            <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/dashboard')}
+                className="fixed top-2 left-4 p-1 md:p-3 rounded-xl bg-indigo-900/30 backdrop-blur-lg border border-indigo-500/20 z-50 flex items-center gap-2 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-900/40 transition-all duration-300 shadow-lg"
+            >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="hidden md:inline text-sm font-medium">Dashboard</span>
             </motion.button>
 
             {/* Enhanced background animations */}
@@ -399,79 +443,172 @@ const Profile = () => {
                             </div>
 
                             {/* User Details with improved spacing and icons */}
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-3 p-1 rounded-lg bg-indigo-500/5">
-                                    <div className="p-2 rounded-full bg-indigo-500/10">
-                                        <Mail className="w-4 h-4 text-indigo-400" />
-                                    </div>
-                                    <span className={`${textClass} text-sm break-all`}>{user.email}</span>
-                                </div>
-                                
-                                <div className="flex items-center gap-3">
-                                    <div className={`${subTextClass} min-w-[80px]`}>Username:</div>
-                                    {isEditing ? (
-                                        <input
-                                            type="text"
-                                            name="username"
-                                            value={profileData.username}
-                                            onChange={handleChange}
-                                            placeholder="Username"
-                                            className={`${formInputClass} flex-1`}
-                                        />
-                                    ) : (
-                                        <span className={`${textClass} px-3 py-1 rounded-lg bg-indigo-500/5`}>@{user.username}</span>
-                                    )}
-                                </div>
-                                
-                                <div className="flex items-center gap-3">
-                                    <div className={`${subTextClass} min-w-[80px]`}>Role:</div>
-                                    <span className={`capitalize ${textClass} px-3 py-1 rounded-lg bg-indigo-500/5`}>{user.role}</span>
-                                </div>
-                                
-                                <div className="flex items-center gap-3">
-                                    <div className={`${subTextClass} min-w-[80px]`}>Status:</div>
-                                    {isEditing ? (
-                                        <select
-                                            name="status"
-                                            value={profileData.status}
-                                            onChange={handleChange}
-                                            className={`${formInputClass}`}
-                                        >
-                                            <option value="online">Online</option>
-                                            <option value="away">Away</option>
-                                            <option value="busy">Busy</option>
-                                            <option value="offline">Offline</option>
-                                        </select>
-                                    ) : (
-                                        <span className={`capitalize ${textClass} px-3 py-1 rounded-lg bg-indigo-500/5`}>{user.status}</span>
-                                    )}
-                                </div>
-                                
-                                {/* Enhanced Bio section */}
-                                <motion.div
-                                    whileHover={{ y: -5 }}
-                                    className="p-4 rounded-xl bg-[#1E293B]/70 backdrop-blur-sm 
-                                               border border-indigo-500/20 hover:border-indigo-500/40 
-                                               transition-all duration-300 shadow-lg"
-                                >
-                                    <h3 className={`font-semibold mb-3 ${headingClass}`}>Bio</h3>
-                                    {isEditing ? (
-                                        <textarea
-                                            name="bio"
-                                            value={profileData.bio || ''}
-                                            onChange={handleChange}
-                                            placeholder="Write something about yourself..."
-                                            className={`${formInputClass} h-24 resize-none`}
-                                        ></textarea>
-                                    ) : (
-                                        <div className="bg-[#0F172A]/50 rounded-lg p-3 border border-indigo-500/10">
-                                            <p className={`text-sm leading-relaxed ${user.bio ? textClass : 'text-gray-500 italic'}`}>
-                                                {user.bio || "No bio available"}
-                                            </p>
-                                        </div>
-                                    )}
-                                </motion.div>
-                            </div>
+                            <div className="space-y-5">
+    <div className="flex items-center gap-3 p-1 rounded-lg bg-indigo-500/5">
+        <div className="p-2 rounded-full bg-indigo-500/10">
+            <Mail className="w-4 h-4 text-indigo-400" />
+        </div>
+        <span className={`${textClass} text-sm break-all`}>{user.email}</span>
+    </div>
+    
+    <div className="flex items-center gap-3">
+        <div className={`${subTextClass} min-w-[80px]`}>Username:</div>
+        {isEditing ? (
+            <input
+                type="text"
+                name="username"
+                value={profileData.username}
+                onChange={handleChange}
+                placeholder="Username"
+                className={`${formInputClass} flex-1`}
+            />
+        ) : (
+            <span className={`${textClass} px-3 py-1 rounded-lg bg-indigo-500/5`}>@{user.username}</span>
+        )}
+    </div>
+    
+    {/* Skills Section */}
+    <div className="flex flex-col gap-3">
+        <div className={`${subTextClass} min-w-[80px] font-medium`}>Skills:</div>
+        
+        {isEditing ? (
+            <div className="space-y-2">
+                {profileData.skills.map((skill, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                        <input
+                            type="text"
+                            value={skill}
+                            onChange={(e) => handleSkillChange(index, e.target.value)}
+                            placeholder="Add skill"
+                            className={`${formInputClass} flex-1`}
+                        />
+                        <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => removeSkill(index)}
+                            className="p-2 rounded-lg bg-red-900/30 hover:bg-red-900/50 border border-red-500/30"
+                        >
+                            <Trash2 className="w-4 h-4 text-red-400" />
+                        </motion.button>
+                    </div>
+                ))}
+                
+                <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={addSkill}
+                    className="w-full py-2 mt-1 flex items-center justify-center gap-1 rounded-lg 
+                              border border-indigo-500/30 bg-indigo-600/10 hover:bg-indigo-600/20 
+                              text-indigo-400 text-sm transition-all duration-200"
+                >
+                    <PlusCircle className="w-4 h-4" />
+                    Add Skill
+                </motion.button>
+            </div>
+        ) : (
+            <div className="flex flex-wrap gap-2">
+                {user.skills && user.skills.length > 0 ? (
+                    user.skills.map((skill, index) => (
+                        <span 
+                            key={index}
+                            className="px-3 py-1.5 rounded-lg bg-indigo-900/40 border border-indigo-500/30 
+                                     text-indigo-300 text-sm font-medium hover:bg-indigo-900/60 
+                                     transition-colors duration-200 cursor-default"
+                        >
+                            {skill}
+                        </span>
+                    ))
+                ) : (
+                    <p className="text-gray-500 text-sm italic">No skills added</p>
+                )}
+            </div>
+        )}
+    </div>
+    
+    {/* Interests Section */}
+    <div className="flex flex-col gap-3">
+        <div className={`${subTextClass} min-w-[80px] font-medium`}>Interests:</div>
+        
+        {isEditing ? (
+            <div className="space-y-2">
+                {profileData.interests.map((interest, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                        <input
+                            type="text"
+                            value={interest}
+                            onChange={(e) => handleInterestChange(index, e.target.value)}
+                            placeholder="Add interest"
+                            className={`${formInputClass} flex-1`}
+                        />
+                        <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => removeInterest(index)}
+                            className="p-2 rounded-lg bg-red-900/30 hover:bg-red-900/50 border border-red-500/30"
+                        >
+                            <Trash2 className="w-4 h-4 text-red-400" />
+                        </motion.button>
+                    </div>
+                ))}
+                
+                <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={addInterest}
+                    className="w-full py-2 mt-1 flex items-center justify-center gap-1 rounded-lg 
+                              border border-indigo-500/30 bg-indigo-600/10 hover:bg-indigo-600/20 
+                              text-indigo-400 text-sm transition-all duration-200"
+                >
+                    <PlusCircle className="w-4 h-4" />
+                    Add Interest
+                </motion.button>
+            </div>
+        ) : (
+            <div className="flex flex-wrap gap-2">
+                {user.interests && user.interests.length > 0 ? (
+                    user.interests.map((interest, index) => (
+                        <span 
+                            key={index}
+                            className="px-3 py-1.5 rounded-lg bg-purple-900/30 border border-purple-500/30 
+                                     text-purple-300 text-sm font-medium hover:bg-purple-900/50 
+                                     transition-colors duration-200 cursor-default"
+                        >
+                            {interest}
+                        </span>
+                    ))
+                ) : (
+                    <p className="text-gray-500 text-sm italic">No interests added</p>
+                )}
+            </div>
+        )}
+    </div>
+    
+    {/* Enhanced Bio section */}
+    <motion.div
+        whileHover={{ y: -5 }}
+        className="p-4 rounded-xl bg-[#1E293B]/70 backdrop-blur-sm 
+                   border border-indigo-500/20 hover:border-indigo-500/40 
+                   transition-all duration-300 shadow-lg"
+    >
+        <h3 className={`font-semibold mb-3 ${headingClass}`}>Bio</h3>
+        {isEditing ? (
+            <textarea
+                name="bio"
+                value={profileData.bio || ''}
+                onChange={handleChange}
+                placeholder="Write something about yourself..."
+                className={`${formInputClass} h-24 resize-none`}
+            ></textarea>
+        ) : (
+            <div className="bg-[#0F172A]/50 rounded-lg p-3 border border-indigo-500/10">
+                <p className={`text-sm leading-relaxed ${user.bio ? textClass : 'text-gray-500 italic'}`}>
+                    {user.bio || "No bio available"}
+                </p>
+            </div>
+        )}
+    </motion.div>
+</div>
+
                         </div>
                     </div>
 

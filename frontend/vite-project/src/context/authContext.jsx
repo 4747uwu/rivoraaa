@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
     axios.defaults.headers.common['Content-Type'] = 'application/json';
 
     // Check if user is authenticated
-    const { data: user, isLoading } = useQuery({
+    const { data: user, isLoading, refetch } = useQuery({
         queryKey: ['authUser'], // Fixed: queryKey instead of querykey
         queryFn: async () => {
             const { data } = await axios.get('/api/auth/user');
@@ -27,6 +27,9 @@ export const AuthProvider = ({ children }) => {
         },
         retry: false,
         staleTime: 1000 * 60 * 5,
+        cacheTime: 1000 * 60 * 10, // 10 minutes
+        refetchOnWindowFocus: false,
+        refetchOnMount: true,
         onError: (error) => {
             console.error('Auth check error:', error);
             // Handle authentication errors gracefully
@@ -173,6 +176,21 @@ const logoutMutation = useMutation({
   }
 });
 
+    const refreshUser = async () => {
+    try {
+        // Invalidate and refetch the user data
+        await queryClient.invalidateQueries(['authUser']);
+        // Force a refetch in case invalidation doesn't trigger it
+        const { data } = await axios.get('/api/auth/user');
+        return data.user;
+    } catch (error) {
+        console.error('Error refreshing user data:', error);
+        throw error;
+    }
+    };
+
+
+
     // Forgot password
     const forgotPasswordMutation = useMutation({
         mutationFn: (email) => axios.post('/api/auth/forgot-password', { email })
@@ -209,6 +227,7 @@ const logoutMutation = useMutation({
         forgotPassword: forgotPasswordMutation.mutateAsync,
         resetPassword: resetPasswordMutation.mutateAsync,
         verifyEmail: verifyEmailMutation.mutateAsync,
+        refreshUser,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

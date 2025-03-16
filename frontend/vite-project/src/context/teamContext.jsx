@@ -82,6 +82,7 @@ export const TeamProvider = ({ children }) => {
     try {
       const response = await API.get(`${BASE_URL}/${teamId}`);
       const data = response.data;
+      console.log("This ran 1")
       
       return {
         team: data?.data || null,

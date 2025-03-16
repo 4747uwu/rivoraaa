@@ -1,7 +1,6 @@
 import User from '../models/User.js';
-import redisClient  from '../config/redis.js';
+import redisClient from '../config/redis.js';
 import cloudinary from '../config/Cloudinary.js';
-// import { uploadBase64Image } from '../authmiddleware/multer.js';
 
 /**
  * Get user profile information
@@ -74,20 +73,87 @@ export const getUserProfile = async (req, res) => {
 };
 
 /**
- * Update user profile information
+ * Update user profile information including skills and interests
  */
 export const updateUserProfile = async (req, res) => {
     try {
-        const userId = req.user.id; // Get user ID from auth middleware
+        const userId = req.user.id;
         
         // Prepare profile update data
         const updateData = {
             name: req.body.name,
             username: req.body.username,
-            status: req.body.status,
             bio: req.body.bio,
             profession: req.body.profession
         };
+        
+        // Handle skills array
+        if (Array.isArray(req.body.skills)) {
+            // Filter out empty strings and limit to prevent abuse
+            updateData.skills = req.body.skills
+                .filter(skill => typeof skill === 'string' && skill.trim() !== '')
+                .map(skill => skill.trim())
+                .slice(0, 20); // Limit to 20 skills max
+        }
+        
+        // Handle interests array
+        if (Array.isArray(req.body.interests)) {
+            // Filter out empty strings and limit to prevent abuse
+            updateData.interests = req.body.interests
+                .filter(interest => typeof interest === 'string' && interest.trim() !== '')
+                .map(interest => interest.trim())
+                .slice(0, 20); // Limit to 20 interests max
+        }
+        
+        // Single skill operations
+        if (req.body.addSkill && typeof req.body.addSkill === 'string' && req.body.addSkill.trim() !== '') {
+            // Get current skills
+            const user = await User.findById(userId).select('skills');
+            const currentSkills = user.skills || [];
+            
+            // Add new skill if not already in the list
+            if (!currentSkills.includes(req.body.addSkill.trim())) {
+                updateData.skills = [...currentSkills, req.body.addSkill.trim()].slice(0, 20);
+            }
+        }
+        
+        if (req.body.removeSkill && typeof req.body.removeSkill === 'string') {
+            // Get current skills if not already fetched
+            if (!updateData.skills) {
+                const user = await User.findById(userId).select('skills');
+                updateData.skills = (user.skills || [])
+                    .filter(skill => skill !== req.body.removeSkill);
+            } else {
+                // Filter out the skill to remove
+                updateData.skills = updateData.skills
+                    .filter(skill => skill !== req.body.removeSkill);
+            }
+        }
+        
+        // Single interest operations
+        if (req.body.addInterest && typeof req.body.addInterest === 'string' && req.body.addInterest.trim() !== '') {
+            // Get current interests
+            const user = await User.findById(userId).select('interests');
+            const currentInterests = user.interests || [];
+            
+            // Add new interest if not already in the list
+            if (!currentInterests.includes(req.body.addInterest.trim())) {
+                updateData.interests = [...currentInterests, req.body.addInterest.trim()].slice(0, 20);
+            }
+        }
+        
+        if (req.body.removeInterest && typeof req.body.removeInterest === 'string') {
+            // Get current interests if not already fetched
+            if (!updateData.interests) {
+                const user = await User.findById(userId).select('interests');
+                updateData.interests = (user.interests || [])
+                    .filter(interest => interest !== req.body.removeInterest);
+            } else {
+                // Filter out the interest to remove
+                updateData.interests = updateData.interests
+                    .filter(interest => interest !== req.body.removeInterest);
+            }
+        }
         
         // Handle profile picture if uploaded
         if (req.file) {
@@ -114,6 +180,14 @@ export const updateUserProfile = async (req, res) => {
         Object.keys(updateData).forEach(key => 
             updateData[key] === undefined && delete updateData[key]
         );
+        
+        // If no updates, return early
+        if (Object.keys(updateData).length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "No valid update data provided"
+            });
+        }
         
         // Update user in database
         const updatedUser = await User.findByIdAndUpdate(

@@ -75,6 +75,7 @@ export const ProjectProvider = ({ children }) => {
   // Create project mutation
   const createProjectMutation = useMutation({
     mutationFn: async (projectData) => {
+      console.log('Creating project:', projectData);
       const response = await API.post('/api/projects', projectData, {
         headers: { 
           'Content-Type': 'application/json'

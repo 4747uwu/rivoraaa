@@ -5,6 +5,8 @@ const projectSchema = new mongoose.Schema(
     name: { type: String, required: true },
     description: { type: String, default: "" },
     owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // Project owner
+    visibility: { type: String, enum: ["public", "private", "internal"], default: "private" },
+    category: { type: String, default: "" }, // Project category or type
     currentStatus: { 
     type: String, 
     enum: ['available', 'in_progress', 'completed', 'deleted', 'archived'],

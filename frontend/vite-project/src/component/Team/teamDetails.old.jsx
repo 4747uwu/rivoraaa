@@ -1,9 +1,11 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
-  ArrowLeft, Edit, Trash2, Clock, Lock, Globe,
-  User, UserPlus, X, Users
+  ArrowLeft, Edit, Trash2, X, User,
+  UserPlus, Users, Clock, Check, Shield,
+  MessageSquare, Mail, MoreHorizontal, Activity,
+  Loader // Add this
 } from 'lucide-react';
 
 const TeamDetails = ({
@@ -37,9 +39,150 @@ const TeamDetails = ({
   buttonSecondary,
   buttonDanger,
   containerVariants,
-  itemVariants
+  itemVariants,
+  loading // Add this prop
 }) => {
-  if (!currentTeam) return null;
+
+  // Loading screen component
+  if (loading) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="min-h-[60vh] flex flex-col items-center justify-center"
+      >
+        <div className={`${glassCard} p-12 rounded-xl flex flex-col items-center`}>
+          <motion.div
+            animate={{ 
+              rotate: 360,
+              scale: [1, 1.1, 1]
+            }}
+            transition={{ 
+              rotate: { repeat: Infinity, duration: 1.5, ease: "linear" },
+              scale: { repeat: Infinity, duration: 1.5, ease: "easeInOut" }
+            }}
+            className="mb-6"
+          >
+            <Loader size={52} className="text-indigo-400" />
+          </motion.div>
+          <h3 className={`text-xl mb-2 ${headingClass}`}>Loading team...</h3>
+          <p className={`${subTextClass}`}>Please wait while we fetch the team details</p>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // Handle status indicators for team members (online, away, offline)
+  const getStatusIndicator = (member) => {
+    // This is a placeholder - in a real app, you'd use WebSocket/presence data
+    const statuses = ['online', 'away', 'offline'];
+    const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+    
+    const statusColors = {
+      online: 'bg-green-500',
+      away: 'bg-yellow-500',
+      offline: 'bg-gray-500'
+    };
+    
+    return (
+      <div className="flex items-center">
+        <span className={`w-2 h-2 rounded-full mr-1.5 ${statusColors[randomStatus]}`}></span>
+        <span className="text-sm capitalize">{randomStatus}</span>
+      </div>
+    );
+  };
+
+  const MemberCard = ({ member }) => {
+    const isCurrentUser = member.user._id === user._id;
+    const isTeamOwner = currentTeam?.owner?._id === member.user._id;
+    
+    return (
+      <motion.div 
+        variants={itemVariants}
+        className={`${glassCard} w-[350px] h-full rounded-lg p-4 flex items-start space-x-4 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-900/20`}
+      >
+        {/* Profile Image */}
+        <div className="w-16 h-16 rounded-full flex-shrink-0 bg-gradient-to-br from-gray-800 to-gray-700 overflow-hidden flex items-center justify-center border-2 border-indigo-500/20">
+          {member.user.profilePicture ? (
+            <img 
+              src={member.user.profilePicture} 
+              alt={member.user.name}
+              className="w-full h-full object-cover scale-150"
+            />
+          ) : (
+            <User size={20} className="text-gray-400" />
+          )}
+        </div>
+        
+        {/* Member Details */}
+        <div className="flex-grow">
+          <div className="flex justify-between">
+            <div>
+              <h3 className={textClass}>
+                {member.user.name}
+                {isCurrentUser && <span className="ml-2 text-xs bg-indigo-800/50 text-indigo-200 px-2 py-0.5 rounded">You</span>}
+                {isTeamOwner && <Shield size={14} className="inline ml-1 text-indigo-400" />}
+              </h3>
+              <p className="text-sm text-gray-400 truncate max-w-[160px]">@{member.user.username}</p>
+            </div>
+            {getStatusIndicator(member)}
+          </div>
+          
+          {/* Role Badge */}
+          <div className="mt-2">
+            <span className="bg-indigo-900/30 text-indigo-300 px-2 py-1 rounded text-xs">
+              {member.role}
+            </span>
+          </div>
+          
+          {/* Joined Date */}
+          <div className="mt-1 text-xs text-gray-500">
+            Joined {formatDate(member.joinedAt)}
+          </div>
+          
+          {/* Actions */}
+          <div className="mt-3 flex space-x-2">
+            {!isCurrentUser && (
+              <button className="p-1.5 rounded-full bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white transition-colors">
+                <MessageSquare size={14} />
+              </button>
+            )}
+            <button className="p-1.5 rounded-full bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white transition-colors">
+              <Mail size={14} />
+            </button>
+            
+            {/* Edit/Remove Actions (owner only) */}
+            {isOwner && !isCurrentUser && (
+              <>
+                <button 
+                  onClick={() => {
+                    setEditingMember(member);
+                    setRoleInput(member.role);
+                  }}
+                  className="p-1.5 rounded-full bg-indigo-800/30 hover:bg-indigo-700/50 text-indigo-300 hover:text-white transition-colors"
+                  title="Edit Role"
+                >
+                  <Edit size={14} />
+                </button>
+                <button 
+                  onClick={() => handleRemoveMember(member.user._id)}
+                  disabled={isLoadingRemoveMember}
+                  className="p-1.5 rounded-full bg-red-800/30 hover:bg-red-700/50 text-red-300 hover:text-white transition-colors"
+                  title="Remove Member"
+                >
+                  {isLoadingRemoveMember ? (
+                    <Clock size={14} className="animate-spin" />
+                  ) : (
+                    <X size={14} />
+                  )}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
 
   return (
     <>
@@ -55,46 +198,71 @@ const TeamDetails = ({
           initial="hidden"
           animate="visible"
           exit="exit"
-          className="space-y-6"
+          className="space-y-8"
         >
-          {/* Team Header Actions */}
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-            {/* Back Button */}
-            <div className="flex items-center">
-              <Link to="/teamBuilder" className="mr-4">
-                <motion.div
-                  whileHover={{ x: -4 }}
-                  className="flex items-center text-indigo-400 hover:text-indigo-300"
-                >
-                  <ArrowLeft size={16} className="mr-1" />
-                  <span>Back to Teams</span>
-                </motion.div>
-              </Link>
-            </div>
+          {/* Header Section */}
+          <div className="flex items-center justify-between">
+            <Link to="/teamBuilder" className="group">
+              <motion.div
+                whileHover={{ x: -4 }}
+                className="flex items-center text-indigo-400 group-hover:text-indigo-300"
+              >
+                <ArrowLeft size={16} className="mr-1" />
+                <span>Back to Teams</span>
+              </motion.div>
+            </Link>
 
-            {/* Team Actions */}
-            {isOwner && (
-              <div className="flex space-x-3">
+            <div className="flex space-x-3">
+              {isOwner && (
+                <>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setIsEditing(true)}
+                    className={buttonSecondary}
+                  >
+                    <div className="flex items-center">
+                      <Edit size={16} className="mr-2" />
+                      Edit Team
+                    </div>
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleDeleteTeam}
+                    disabled={isLoadingDeleteTeam}
+                    className={buttonDanger}
+                  >
+                    {isLoadingDeleteTeam ? (
+                      <div className="flex items-center justify-center">
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                          className="mr-2"
+                        >
+                          <Clock size={16} />
+                        </motion.div>
+                        Deleting...
+                      </div>
+                    ) : (
+                      <div className="flex items-center">
+                        <Trash2 size={16} className="mr-2" />
+                        Delete Team
+                      </div>
+                    )}
+                  </motion.button>
+                </>
+              )}
+
+              {!isOwner && isMember && (
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => setIsEditing(true)}
-                  className={buttonSecondary}
-                >
-                  <div className="flex items-center">
-                    <Edit size={16} className="mr-2" />
-                    Edit Team
-                  </div>
-                </motion.button>
-                
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleDeleteTeam}
-                  disabled={isLoadingDeleteTeam}
+                  onClick={handleLeaveTeam}
+                  disabled={isLoadingLeaveTeam}
                   className={buttonDanger}
                 >
-                  {isLoadingDeleteTeam ? (
+                  {isLoadingLeaveTeam ? (
                     <div className="flex items-center justify-center">
                       <motion.div
                         animate={{ rotate: 360 }}
@@ -103,155 +271,166 @@ const TeamDetails = ({
                       >
                         <Clock size={16} />
                       </motion.div>
-                      Deleting...
+                      Leaving...
                     </div>
                   ) : (
                     <div className="flex items-center">
-                      <Trash2 size={16} className="mr-2" />
-                      Delete Team
+                      <X size={16} className="mr-2" />
+                      Leave Team
                     </div>
                   )}
                 </motion.button>
-              </div>
-            )}
-
-            {/* Leave Team Button */}
-            {!isOwner && isMember && (
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleLeaveTeam}
-                disabled={isLoadingLeaveTeam}
-                className={buttonDanger}
-              >
-                {isLoadingLeaveTeam ? (
-                  <div className="flex items-center justify-center">
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                      className="mr-2"
-                    >
-                      <Clock size={16} />
-                    </motion.div>
-                    Leaving...
-                  </div>
-                ) : (
-                  <div className="flex items-center">
-                    <X size={16} className="mr-2" />
-                    Leave Team
-                  </div>
-                )}
-              </motion.button>
-            )}
+              )}
+            </div>
           </div>
 
+          {/* Team Info Card */}
+          <motion.div variants={itemVariants} className={`${glassCard} rounded-xl p-6`}>
+            <div className="flex items-center space-x-6">
+              {/* Team Avatar */}
+              <div className="w-24 h-24 rounded-xl bg-gradient-to-br from-indigo-500/30 to-purple-600/30 flex items-center justify-center border border-indigo-500/20">
+                {currentTeam?.avatar ? (
+                  <img 
+                    src={currentTeam?.avatar} 
+                    alt={currentTeam?.name} 
+                    className="w-full h-full object-cover rounded-xl"
+                  />
+                ) : (
+                  <Users size={36} className="text-indigo-300" />
+                )}
+              </div>
+              
+              {/* Team Details */}
+              <div className="flex-grow">
+                <div className="flex items-center space-x-3">
+                  <h1 className={`text-3xl font-bold ${headingClass}`}>
+                    {currentTeam?.name}
+                  </h1>
+                  <span className="bg-indigo-900/30 text-indigo-300 px-2 py-1 rounded text-sm">
+                    {currentTeam?.category}
+                  </span>
+                  {currentTeam?.isPrivate && (
+                    <span className="bg-gray-800/40 text-gray-300 px-2 py-1 rounded-md text-xs">
+                      Private
+                    </span>
+                  )}
+                </div>
+                
+                <p className={`mt-2 ${subTextClass}`}>
+                  {currentTeam?.description || "No description provided"}
+                </p>
+                
+                <div className="mt-3 flex items-center space-x-4 text-sm text-gray-400">
+                  <div className="flex items-center">
+                    <Users size={14} className="mr-1" />
+                    <span>{currentTeam?.members.length + 1} Members</span>
+                  </div>
+                  <div>
+                    Created {formatDate(currentTeam?.createdAt)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Meet the Team Section */}
           <motion.div variants={itemVariants}>
-                        <div className="flex justify-between items-center mb-4">
-                          <h3 className={`text-xl ${headingClass}`}>Team Members</h3>
-                          {isOwner && (
-                            <motion.button
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                              onClick={() => setShowMemberForm(true)}
-                              className={buttonPrimary}
-                            >
-                              <div className="flex items-center">
-                                <UserPlus size={16} className="mr-2" />
-                                Add Member
-                              </div>
-                            </motion.button>
-                          )}
-                        </div>
-                        
-                        {currentTeam.members.length === 0 ? (
-                          <div className={`${glassCard} rounded-lg p-6 text-center`}>
-                            <Users className="w-12 h-12 mx-auto text-gray-600 mb-2" />
-                            <h4 className={textClass}>No members yet</h4>
-                            <p className={subTextClass}>Add members to start collaborating</p>
-                          </div>
-                        ) : (
-                          <div className={`${glassCard} rounded-lg overflow-hidden`}>
-                            <table className="w-full">
-                              <thead className="border-b border-gray-800">
-                                <tr className="bg-gray-800/70 text-left">
-                                  <th className="px-6 py-3 text-sm font-medium text-gray-300">Member</th>
-                                  <th className="px-6 py-3 text-sm font-medium text-gray-300">Role</th>
-                                  <th className="px-6 py-3 text-sm font-medium text-gray-300">Joined</th>
-                                  {isOwner && (
-                                    <th className="px-6 py-3 text-sm font-medium text-gray-300 text-right">Actions</th>
-                                  )}
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-gray-800">
-                                {currentTeam.members.map((member) => (
-                                  <tr key={member._id} className="hover:bg-gray-800/30">
-                                    <td className="px-6 py-4">
-                                      <div className="flex items-center">
-                                        <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden">
-                                          {member.user.profilePicture ? (
-                                            <img 
-                                              src={member.user.profilePicture} 
-                                              alt={member.user.name} 
-                                              className="w-full h-full object-cover"
-                                            />
-                                          ) : (
-                                            <User size={16} className="text-gray-400" />
-                                          )}
-                                        </div>
-                                        <div className="ml-4">
-                                          <p className={textClass}>{member.user.name}</p>
-                                          <p className={`text-sm ${subTextClass}`}>@{member.user.username}</p>
-                                        </div>
-                                      </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                      <span className="bg-indigo-900/30 text-indigo-300 px-2 py-1 rounded text-sm">
-                                        {member.role}
-                                      </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-gray-400">
-                                      {formatDate(member.joinedAt)}
-                                    </td>
-                                    {isOwner && member.user._id !== user._id && (
-                                      <td className="px-6 py-4 text-right">
-                                        <div className="flex justify-end space-x-2">
-                                          <button
-                                            onClick={() => {
-                                              setEditingMember(member);
-                                              setRoleInput(member.role || 'Member');
-                                            }}
-                                            className="p-1 text-indigo-400 hover:text-indigo-300"
-                                            title="Edit Role"
-                                          >
-                                            <Edit size={16} />
-                                          </button>
-                                          <button
-                                            onClick={() => handleRemoveMember(member.user._id)}
-                                            className="p-1 text-red-400 hover:text-red-300"
-                                            title="Remove Member"
-                                            disabled={isLoadingRemoveMember}
-                                          >
-                                            {isLoadingRemoveMember ? (
-                                              <Clock size={16} className="animate-spin" />
-                                            ) : (
-                                              <X size={16} />
-                                            )}
-                                          </button>
-                                        </div>
-                                      </td>
-                                    )}
-                                    {isOwner && member.user._id === user._id && (
-                                      <td className="px-6 py-4 text-right">
-                                        <span className="text-sm text-gray-500">Team Owner</span>
-                                      </td>
-                                    )}
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
-                      </motion.div>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className={`text-2xl ${headingClass}`}>Meet the Team</h2>
+              {isOwner && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setShowMemberForm(true)}
+                  className={buttonPrimary}
+                >
+                  <div className="flex items-center">
+                    <UserPlus size={16} className="mr-2" />
+                    Add Member
+                  </div>
+                </motion.button>
+              )}
+            </div>
+
+            {/* Owner Card - Special Styling */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+              <motion.div 
+                variants={itemVariants}
+                className={`${glassCard} w-auto rounded-lg p-4 border-l-4 border-indigo-500 flex items-start space-x-4 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-900/20`}
+              >
+                <div className="w-16 h-16 rounded-full flex-shrink-0 bg-gradient-to-br from-gray-800 to-gray-700 overflow-hidden flex items-center justify-center border-2 border-indigo-500/20">
+                  {currentTeam?.owner.profilePicture ? (
+                    <img 
+                      src={currentTeam?.owner.profilePicture} 
+                      alt={currentTeam?.owner.name}
+                      className="w-full h-full object-cover scale-150"
+                    />
+                  ) : (
+                    <User size={20} className="text-gray-400" />
+                  )}
+                </div>
+                
+                <div className="flex-grow">
+                  <div className="flex justify-between">
+                    <div>
+                      <h3 className={textClass}>
+                        {currentTeam?.owner.name}
+                        {currentTeam?.owner._id === user._id && 
+                          <span className="ml-2 text-xs bg-indigo-800/50 text-indigo-200 px-2 py-0.5 rounded">You</span>
+                        }
+                      </h3>
+                      <p className="text-sm text-gray-400">@{currentTeam?.owner.username}</p>
+                    </div>
+                    <div className="flex items-center">
+                      <Shield size={16} className="text-indigo-400 mr-1.5" />
+                      <span className="text-indigo-300">Team Owner</span>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-3 flex space-x-2">
+                    {currentTeam?.owner._id !== user?._id && (
+                      <button className="p-1.5 rounded-full bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white transition-colors">
+                        <MessageSquare size={14} />
+                      </button>
+                    )}
+                    <button className="p-1.5 rounded-full bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white transition-colors">
+                      <Mail size={14} />
+                    </button>
+                  </div>
+                  
+                </div>
+                
+              </motion.div>
+              
+            </div>
+
+            {/* Team Members */}
+            {currentTeam?.members.length === 0 ? (
+              <div className={`${glassCard} rounded-lg p-10 text-center`}>
+                <Users className="w-12 h-12 mx-auto text-gray-600 mb-2" />
+                <h4 className={textClass}>No other members yet</h4>
+                <p className={subTextClass}>Add members to start collaborating</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {currentTeam?.members.map((member) => (
+                  <MemberCard key={member._id} member={member} />
+                ))}
+              </div>
+            )}
+          </motion.div>
+
+          {/* Stats/Activity Section (Optional) */}
+          <motion.div variants={itemVariants} className="mt-8">
+            <div className="flex items-center mb-4">
+              <Activity size={18} className="text-indigo-400 mr-2" />
+              <h3 className={`text-xl ${headingClass}`}>Team Activity</h3>
+            </div>
+            
+            <div className={`${glassCard} rounded-lg p-6 text-center`}>
+              <p className={subTextClass}>Team activity tracking coming soon</p>
+            </div>
+          </motion.div>
         </motion.div>
       )}
     </>

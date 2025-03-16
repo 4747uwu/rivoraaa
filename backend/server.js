@@ -22,10 +22,12 @@ import teamRoutes from './route/teamRoute.js'
 import errorHandler from "./middleware/errorHandler.js";
 import userPerformance from './route/userPerformance.js'
 import StorageRoute from './route/StorageRoute.js'
+import notificationRoute from './route/notificationRoute.js'
 import { initializeSocket } from "./config/socketConfig.js";
 import http from "http";
 import { createServer } from "http";
 import { Server } from 'socket.io';
+import socketService from "./Service/notificationSocket.js";
 
 
 
@@ -35,26 +37,14 @@ const app = express();
 app.use(express.json());
 
 const server = createServer(app);
+socketService.init(server);
+socketService._setupHeartbeat();
 
 
 
 
-// io.on('connection', (socket) => {
-//     console.log('User connected:', socket.id);
 
-//     socket.on('joinGroup', (groupId) => {
-//         socket.join(groupId);
-//         console.log(`Socket ${socket.id} joined group ${groupId}`);
-//     });
 
-//     socket.on('sendMessage', (data) => {
-//         io.to(data.groupId).emit('receiveMessage', data);
-//     });
-
-//     socket.on('disconnect', () => {
-//         console.log('User disconnected:', socket.id);
-//     });
-// });
 
 app.use(cors({
     // origin: "http://localhost:5173",
@@ -84,6 +74,7 @@ app.use(session({
 
 
 initializeSocket(server);
+// socketService(server);  
 
 app.get("/", (req, res) => { 
   res.send("Hello World!"); 
@@ -108,6 +99,7 @@ app.use('/api/teams', teamRoutes)
 app.use('/api/analytics', userPerformance)
 app.use('/api', StorageRoute)
 app.use('/api', teamTaskCalendarRoute)
+app.use('/api/notifications', notificationRoute);
 
 app.use(errorHandler);
 

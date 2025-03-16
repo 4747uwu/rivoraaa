@@ -11,6 +11,7 @@ import { ThemeProvider } from './context/themeContext.jsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ConnectionProvider } from './context/connectionContext.jsx'
 import { TeamProvider } from './context/teamContext.jsx'
+import NotificationProvider from './context/notificationContext.jsx'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,7 +32,9 @@ createRoot(document.getElementById('root')).render(
       <ProjectProvider>
         <ConnectionProvider>
           <TeamProvider>
-          <App />
+            <NotificationProvider>
+              <App />
+          </NotificationProvider>
           </TeamProvider>
         </ConnectionProvider>
       </ProjectProvider>

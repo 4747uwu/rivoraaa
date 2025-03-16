@@ -167,7 +167,7 @@ team: {
   ref: 'Team'
 },
 
-Skills: [{ type: String }],
+skills: [{ type: String }],
 interests: [{ type: String }],
 
 
@@ -264,19 +264,24 @@ connectionSettings: {
     }
   }],
 
-    notifications: [
-  {
-    message: { type: String, required: true }, // Notification text
-    type: { type: String, enum: ["task", "mention", "deadline", "general", "invitation", "update"] }, // More categories
-    isRead: { type: Boolean, default: false }, // Whether the notification has been seen
-    createdAt: { type: Date, default: Date.now }, // Timestamp when the notification was created
-    projectId: { type: mongoose.Schema.Types.ObjectId, ref: "Project" }, // Related project (if applicable)
-    triggeredBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Who triggered this notification
-    actionUrl: { type: String, default: "" }, // URL to direct the user (e.g., task, discussion, project page)
-    priority: { type: String, enum: ["low", "medium", "high"], default: "medium" }, // Importance level
-    expiresAt: { type: Date }, // Expiration date for temporary notifications
-  },
-],
+//     notifications: [
+//   {
+//     message: { type: String, required: true }, // Notification text
+//     type: { type: String, enum: ["task", "mention", "deadline", "general", "invitation", "update"] }, // More categories
+//     isRead: { type: Boolean, default: false }, // Whether the notification has been seen
+//     createdAt: { type: Date, default: Date.now }, // Timestamp when the notification was created
+//     projectId: { type: mongoose.Schema.Types.ObjectId, ref: "Project" }, // Related project (if applicable)
+//     triggeredBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Who triggered this notification
+//     actionUrl: { type: String, default: "" }, // URL to direct the user (e.g., task, discussion, project page)
+//     priority: { type: String, enum: ["low", "medium", "high"], default: "medium" }, // Importance level
+//     expiresAt: { type: Date }, // Expiration date for temporary notifications
+//   },
+// ],
+
+notifications: [{
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'Notification'
+}],
 
 // tasks: [{
 //     taskId: { type: mongoose.Schema.Types.ObjectId, ref: "Task" }, // Task reference

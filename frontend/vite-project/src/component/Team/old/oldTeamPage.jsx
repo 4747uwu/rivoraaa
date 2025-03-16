@@ -104,33 +104,32 @@ const TeamPage = () => {
     }
   };
 
-  // Define fetchTeams with useCallback to optimize rerenders
-  const fetchTeams = useCallback(async () => {
-    try {
-      setLoading(true);
-      const { ownedTeams: owned, memberTeams: member } = await getMyTeams(
-        pagination.page,
-        pagination.limit
-      );
-      setOwnedTeams(owned.data);
-      setMemberTeams(member.data);
-      setPagination(prev => ({
-        ...prev,
-        totalPages: Math.max(owned.pagination.totalPages, member.pagination.totalPages)
-      }));
-    } catch (error) {
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [pagination.page, pagination.limit, getMyTeams]);
-
   // Load teams list
   useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        setLoading(true);
+        const { ownedTeams: owned, memberTeams: member } = await getMyTeams(
+          pagination.page,
+          pagination.limit
+        );
+        setOwnedTeams(owned.data);
+        setMemberTeams(member.data);
+        setPagination(prev => ({
+          ...prev,
+          totalPages: Math.max(owned.pagination.totalPages, member.pagination.totalPages)
+        }));
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (!teamId) {
       fetchTeams();
     }
-  }, [teamId, fetchTeams]);
+  }, [pagination.page, pagination.limit, teamId]);
 
 
 
@@ -161,6 +160,26 @@ useEffect(() => {
     });
   }
 }, [currentTeam, isEditing]);
+
+const fetchTeams = async () => {
+  try {
+    setLoading(true);
+    const { ownedTeams: owned, memberTeams: member } = await getMyTeams(
+      pagination.page,
+      pagination.limit
+    );
+    setOwnedTeams(owned.data);
+    setMemberTeams(member.data);
+    setPagination(prev => ({
+      ...prev,
+      totalPages: Math.max(owned.pagination.totalPages, member.pagination.totalPages)
+    }));
+  } catch (error) {
+    setError(error.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
 // First, wrap fetchAvailableConnections in useCallback
 const fetchAvailableConnections = useCallback(async () => {
