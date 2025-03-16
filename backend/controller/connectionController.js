@@ -1,6 +1,7 @@
 import Connection from '../models/Connections.js';
 import User from '../models/User.js';
 import mongoose from 'mongoose';
+import notificationService from '../Service/notificationService.js';
 
 /**
  * Send a LinkUp request to another user
