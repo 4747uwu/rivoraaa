@@ -18,8 +18,9 @@ export const createProject = async (req, res) => {
                 message: 'User not authenticated'
             });
         }
+        console.log(req.body);  
 
-        const { name, description, deadline, priority } = req.body;
+        const { name, description, deadline, priority,visisbility, category, endDate } = req.body;
 
         // Validate required fields
         if (!name || !deadline) {
@@ -32,10 +33,10 @@ export const createProject = async (req, res) => {
         const newProject = await Project.create({
             name,
             description,
-            deadline: projectDeadline, // Use the determined deadline
+            deadline: deadline, // Use the determined deadline
             priority: priority || "medium", // Provide a default if not specified
-            visibility,
-            category,
+            visibility: visisbility || "private", // Provide a default if not specified
+            category: category || "other", 
             owner: req.user._id,
             members: [{userId: req.user._id, role: 'admin'}]
         });
