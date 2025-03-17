@@ -4,14 +4,15 @@ import {
   IoCheckmarkDoneOutline, IoTrashOutline, IoTimeOutline, IoFilterOutline,
   IoSearchOutline, IoCheckmarkCircleOutline, IoAlertCircleOutline,
   IoNotificationsOffOutline, IoCalendarOutline, IoArrowUpOutline,
-  IoWarningOutline, // ADD this icon instead
+  IoWarningOutline, 
   IoLinkOutline, IoPersonOutline,
-  IoHomeOutline // Add this import
+  IoHomeOutline,
+  IoRefreshOutline 
 } from 'react-icons/io5'; 
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Tooltip } from 'react-tooltip';
-import { useNavigate } from 'react-router-dom'; // Add this import
+import { useNavigate } from 'react-router-dom';
 
 const NotificationsPage = () => {
   const {
@@ -22,7 +23,9 @@ const NotificationsPage = () => {
     deleteNotification,
     loadMoreNotifications,
     handleNotificationClick,
-    getFormattedTime
+    getFormattedTime,
+    // unreadCount,
+    refetchNotifications 
   } = useNotification();
 
   // Extract the actual notifications array from the response structure
@@ -352,13 +355,24 @@ const NotificationsPage = () => {
               </h1>
             </div>
             
-            <button
-              onClick={markAllAsRead}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={unreadCount === 0}
-            >
-              Mark all as read
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Refresh Button */}
+              <button
+                onClick={refetchNotifications}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <IoRefreshOutline className="w-5 h-5" />
+                <span>Refresh</span>
+              </button>
+
+              <button
+                onClick={markAllAsRead}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={unreadCount === 0}
+              >
+                Mark all as read
+              </button>
+            </div>
           </div>
 
           {/* Enhanced Filters */}

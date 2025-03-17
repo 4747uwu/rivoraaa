@@ -7,6 +7,7 @@ import Group from '../models/Group.js';
 import mongoose from 'mongoose';
 import notificationService from '../Service/notificationService.js'; // Import notification service
 
+// Update createProject to include Redis cache setup
 export const createProject = async (req, res) => {
     try {
         // First verify user is authenticated
@@ -20,7 +21,7 @@ export const createProject = async (req, res) => {
         }
         console.log(req.body);  
 
-        const { name, description, deadline, priority,visisbility, category, endDate } = req.body;
+        const { name, description, deadline, priority, visibility, category, endDate } = req.body;
 
         // Validate required fields
         if (!name || !deadline) {
@@ -35,15 +36,25 @@ export const createProject = async (req, res) => {
             description,
             deadline: deadline, // Use the determined deadline
             priority: priority || "medium", // Provide a default if not specified
-            visibility: visisbility || "private", // Provide a default if not specified
+            visibility: visibility || "private", // Fixed typo in variable name
             category: category || "other", 
             owner: req.user._id,
             members: [{userId: req.user._id, role: 'admin'}]
         });
 
-        // Clear cache after successful creation
+        // Clear user's project list cache
         try {
-            await redisClient.del("projects:" + req.user._id);
+            // Create pattern to match all project list caches for this user
+            const pattern = `projects:${req.user._id}:*`;
+            
+            // Get all keys matching the pattern
+            const keys = await redisClient.keys(pattern);
+            
+            // Delete all matching keys
+            if (keys.length > 0) {
+                await redisClient.del(keys);
+                console.log(`Cleared ${keys.length} project cache keys`);
+            }
         } catch (redisError) {
             console.log(`Redis Error: ${redisError.message}`);
         }
@@ -56,7 +67,7 @@ export const createProject = async (req, res) => {
             content: `You have created a new project: "${name}"`,
             entityType: 'project',
             entityId: newProject._id,
-            actionUrl: `/projects/${newProject._id}`,
+            actionUrl: `/project/${newProject._id}`,
             metaData: {
                 projectName: name,
                 deadline: deadline,
@@ -79,11 +90,29 @@ export const createProject = async (req, res) => {
     }
 };
 
-// Improved getProjects function - no notification needed here
+// Update getProjects function to use Redis cache
+
 export const getProjects = async (req, res) => {
     try {
         const { search, status, priority, page = 1, limit = 10 } = req.query;
         const skip = (parseInt(page) - 1) * parseInt(limit);
+        const userId = req.user._id.toString();
+        
+        // Generate a cache key based on query parameters
+        const cacheKey = `projects:${userId}:${search || ''}:${status || ''}:${priority || ''}:${page}:${limit}`;
+        
+        // Try to get data from Redis first
+        try {
+            const cachedData = await redisClient.get(cacheKey);
+            if (cachedData) {
+                console.log('Cache hit for projects');
+                return res.json(JSON.parse(cachedData));
+            }
+            console.log('Cache miss for projects, fetching from database');
+        } catch (redisError) {
+            console.log(`Redis Error: ${redisError.message}`);
+            // Continue with database query if Redis fails
+        }
 
         // Build query object
         const query = {
@@ -108,7 +137,8 @@ export const getProjects = async (req, res) => {
             .limit(parseInt(limit))
             .sort({ createdAt: -1 });
 
-        return res.json({
+        // Construct response
+        const responseData = {
             success: true,
             projects,
             pagination: {
@@ -116,8 +146,20 @@ export const getProjects = async (req, res) => {
                 page: parseInt(page),
                 pages: Math.ceil(total / parseInt(limit))
             }
-        });
+        };
+        
+        // Store in Redis with expiration (30 minutes)
+        try {
+            await redisClient.setEx(
+                cacheKey,
+                1800, // 30 minutes in seconds
+                JSON.stringify(responseData)
+            );
+        } catch (redisError) {
+            console.log(`Redis Error: ${redisError.message}`);
+        }
 
+        return res.json(responseData);
     } catch (error) {
         console.error(`Error fetching projects: ${error.message}`);
         return res.status(500).json({
@@ -127,15 +169,32 @@ export const getProjects = async (req, res) => {
     }
 };
 
+// Update getProjectById to use Redis cache
 export const getProjectById = async (req, res) => {
   try {
-    const project = await Project.findById(req.params.id)
+    const projectId = req.params.id;
+    const cacheKey = `project:${projectId}`;
+    
+    // Try to get from Redis first
+    try {
+      const cachedProject = await redisClient.get(cacheKey);
+      if (cachedProject) {
+        console.log('Cache hit for project details');
+        return res.json(JSON.parse(cachedProject));
+      }
+      console.log('Cache miss for project details, fetching from database');
+    } catch (redisError) {
+      console.log(`Redis Error: ${redisError.message}`);
+    }
+    
+    // Fetch from database if not in cache
+    const project = await Project.findById(projectId)
       .populate({
         path: 'members.userId',
         select: 'username email profilePicture'
       })
       .populate('owner', 'username email profilePicture')
-      .lean(); // Add lean() for better performance
+      .lean();
 
     console.log('Backend project members:', project.members);
     
@@ -145,11 +204,24 @@ export const getProjectById = async (req, res) => {
         message: 'Project not found' 
       });
     }
-
-    res.json({ 
+    
+    const responseData = { 
       success: true, 
       project 
-    });
+    };
+    
+    // Store in Redis with expiration (15 minutes)
+    try {
+      await redisClient.setEx(
+        cacheKey,
+        900, // 15 minutes in seconds
+        JSON.stringify(responseData)
+      );
+    } catch (redisError) {
+      console.log(`Redis Error: ${redisError.message}`);
+    }
+
+    res.json(responseData);
   } catch (error) {
     console.error('Get project error:', error);
     res.status(500).json({ 
@@ -241,7 +313,7 @@ export const updateProject = async (req, res) => {
                         senderId: req.user.id,
                         entityType: 'project',
                         entityId: project._id,
-                        actionUrl: `/projects/${project._id}`,
+                        actionUrl: `/project/${project._id}`,
                         metaData: {
                             projectName: project.name,
                             updatedFields: changedFields,

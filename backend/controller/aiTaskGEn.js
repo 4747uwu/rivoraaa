@@ -9,43 +9,6 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 export const generateAITasks = async (projectId, projectName, projectDescription, teamMembers, projectDeadline, createdBy) => {
     try {
-        // First, find and remove all AI-generated tasks for this project
-        const aiGeneratedTasks = await Task.find({
-            projectId: projectId,
-            aiGenerated: true
-        });
-        
-        // If there are existing AI tasks, delete them and their references
-        if (aiGeneratedTasks.length > 0) {
-            console.log(`Found ${aiGeneratedTasks.length} AI-generated tasks to remove`);
-            
-            // Get all task IDs
-            const taskIdsToRemove = aiGeneratedTasks.map(task => task._id);
-            
-            // 1. Remove references from Project
-            await Project.findByIdAndUpdate(
-                projectId,
-                { 
-                    $pull: { 
-                        tasks: { $in: taskIdsToRemove } 
-                    } 
-                }
-            );
-            
-            // 2. Find and delete all subtasks associated with these tasks
-            for (const task of aiGeneratedTasks) {
-                if (task.subtasks && task.subtasks.length > 0) {
-                    await Subtask.deleteMany({ _id: { $in: task.subtasks } });
-                    console.log(`Deleted ${task.subtasks.length} subtasks for task ${task._id}`);
-                }
-            }
-            
-            // 3. Delete the tasks themselves
-            await Task.deleteMany({ _id: { $in: taskIdsToRemove } });
-            console.log(`Removed ${taskIdsToRemove.length} AI-generated tasks`);
-        }
-
-        // Now generate new AI tasks
         const model = genAI.getGenerativeModel({model:"gemini-1.5-pro"});
 
         const prompt = `
@@ -76,7 +39,7 @@ export const generateAITasks = async (projectId, projectName, projectDescription
                 
                 }
               ]
-        `;
+        `
 
         const result = await model.generateContent(prompt);
         let responseText = result.response.text();
@@ -163,19 +126,11 @@ export const generateAITasks = async (projectId, projectName, projectDescription
             }
         );
 
-        // Return both removal info and new tasks
-        return {
-            removedTasks: aiGeneratedTasks.length,
-            newTasks: createdTasks
-        };
+        return createdTasks;
 
     } catch(err) {
-        console.error("AI Task Generation Error:", err);
+        console.error(err);
         console.error("AI Task Generation Failed");
-        return {
-            error: err.message,
-            removedTasks: 0,
-            newTasks: []
-        };
+        return [];
     }
 };

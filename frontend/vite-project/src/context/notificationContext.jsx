@@ -31,7 +31,7 @@ export const NotificationProvider = ({ children }) => {
     queryKey: ['notifications'],
     queryFn: async () => {
       if (!user) return [];
-      const { data } = await API.get('/api/notifications?limit=10');
+      const { data } = await axios.get('/api/notifications?limit=10');
       console.log('Notifications:', data.data);
       return data.data;
     },
