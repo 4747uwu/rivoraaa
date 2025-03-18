@@ -4,7 +4,8 @@ import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Menu, X, Home, Calendar, User, Settings, 
-  BarChart2, Files, Bell, Users, PlusCircle, Edit2, Trash2, Check, Moon, Sun
+  BarChart2, Files, Bell, Users, PlusCircle, Edit2, Trash2, Check, Moon, Sun,
+  Award, FileText, Clock, Zap, ArrowUp, ArrowDown, TrendingUp, ChevronRight
 } from "lucide-react";
 import { Calendar as CalendarIcon, Search, Activity } from 'lucide-react';
 import { useProjects } from './context/ProjectContext';
@@ -14,12 +15,16 @@ import Projects from './component/Projects.jsx';
 import UpcomingTasks from './component/Tasks/UpcomingTasks.jsx';
 import CalendarWidget from "./component/CalenderWidget.jsx";
 import { useAuth } from "./context/authContext.jsx";
+import AnimatedGreeting from "./AnimatedGreeting.jsx";
+import Sidebar from "./sideNavbar.jsx";
+import Header from "./Header.jsx";
+import QuotesWidget from "./yayaComponent.jsx";
 
 // Enhanced getThemeClasses function with improved dark mode styling
 const getThemeClasses = (darkMode) => ({
   background: darkMode 
     ? 'bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A]' 
-    : 'bg-gradient-to-br from-gray-50 via-white to-gray-50',
+    : 'bg-gradient-to-br from-gray-600 via-white to-gray-50',
   sidebar: darkMode 
     ? 'bg-[#0F172A]/95 backdrop-blur-lg border-r border-indigo-500/20' 
     : 'bg-white/95',
@@ -54,6 +59,7 @@ const Dashboard = () => {
   const themeClasses = getThemeClasses(darkMode);
   const{user} = useAuth();
   console.log(user);
+
   
 
   // Navigation items
@@ -106,83 +112,18 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className={`min-h-screen ${themeClasses.background} flex`}>
+    <div className={`min-h-screen ${themeClasses.background} flex px-4`}>
       {/* Sidebar */}
-      <motion.div
-        initial={{ x: -300 }}
-        animate={{ x: sidebarOpen ? 0 : -300 }}
-        transition={{ duration: 0.3, ease: "easeInOut" }}
-        className={`fixed inset-y-0 left-0 z-50 w-64 ${themeClasses.sidebar} border-r ${themeClasses.border} shadow-lg backdrop-blur-lg `}
-      >
-        <div className="flex flex-col h-full">
-          {/* Logo/Header */}
-          <div className="flex items-center justify-between p-4 border-b border-purple-500/20">
-            <motion.h2 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent"
-            >
-              Project Manager
-            </motion.h2>
-            <button onClick={() => setSidebarOpen(false)} className="lg:hidden">
-              <X className="w-6 h-6 text-gray-400 hover:text-purple-400 transition-colors" />
-            </button>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto p-4">
-            <ul className="space-y-2">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.path;
-                return (
-                  <motion.li
-                    key={item.path}
-                    whileHover={{ x: 5 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Link
-                      to={item.path}
-                      className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
-                        isActive
-                          ? themeClasses.navActive
-                          : themeClasses.navInactive
-                      }`}
-                    >
-                      <Icon className={`w-5 h-5 ${isActive ? "text-purple-400" : ""}`} />
-                      <span className="font-medium">{item.text}</span>
-                    </Link>
-                  </motion.li>
-                );
-              })}
-            </ul>
-          </nav>
-
-          {/* User Profile Section */}
-          {user && (
-            <div className="border-t border-purple-500/20 p-4 ">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
-                  <User className="w-6 h-6 text-purple-400" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium text-gray-300">
-                    {user.name}
-                  </p>
-                  <p className="text-sm text-purple-400">Online</p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+      <motion.div>
+        <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       </motion.div>
 
       {/* Main Content */}
       <div className={`flex-1 transition-all duration-300 ${
-        sidebarOpen ? "ml-64" : "ml-0"
+        sidebarOpen ? "ml-72" : "ml-0"
       }`}>
         {/* Header Section */}
-        <header className={`${themeClasses.card} border-b ${themeClasses.border} sticky top-0 z-40 px-6 py-4 backdrop-blur-md shadow-sm`}>
+        {/* <header className={`${themeClasses.card} border-b ${themeClasses.border} sticky top-0 z-40 px-6 py-4 backdrop-blur-md shadow-sm`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button onClick={() => setSidebarOpen(!sidebarOpen)}>
@@ -231,42 +172,157 @@ const Dashboard = () => {
               </button>
             </div>
           </div>
-        </header>
+        </header> */}
+
+        <Header 
+          sidebarOpen={sidebarOpen} 
+          setSidebarOpen={setSidebarOpen} 
+          themeClasses={themeClasses} 
+        />
 
         {/* Main Content Area */}
-        <main className="p-6 space-y-6">
-          {/* Analytics Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <AnalyticCard
-              darkMode={darkMode}
-              title="Total Projects"
-              value={analyticsData.totalProjects}
-              icon={Files}
-              trend="+5%"
-            />
-            <AnalyticCard
-              darkMode={darkMode}
-              title="Completed"
-              value={analyticsData.completedProjects}
-              icon={Check}
-              trend="+12%"
-              trendUp={true}
-            />
-            <AnalyticCard
-              darkMode={darkMode}
-              title="In Progress"
-              value={analyticsData.inProgressProjects}
-              icon={Activity}
-              trend="-3%"
-              trendUp={false}
-            />
-            <AnalyticCard
-              darkMode={darkMode}
-              title="Team Members"
-              value={12}
-              icon={Users}
-              trend="+2"
-            />
+        <main className="p-5 pt-2 space-y-4">
+          {/* ===== NEW USER PROFILE & ANALYTICS SECTION ===== */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+            {/* User Profile Compact Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`${themeClasses.card} rounded-xl border ${themeClasses.border} overflow-hidden backdrop-blur-sm shadow-lg`}
+            >
+              <div className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                {/* Left: User Info Section */}
+                <div className="flex items-center gap-4">
+                  {/* User Avatar */}
+                  <div className="w-20 h-20 rounded-xl overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center border-2 border-indigo-500/30 shadow-lg">
+                    {user?.profilePicture ? (
+                      <img 
+                        src={user.profilePicture} 
+                        alt="Profile" 
+                        className="w-full h-full object-cover scale-150 object-center"
+                      />
+                    ) : (
+                      <span className="text-2xl font-bold text-white">{user?.name?.charAt(0) || 'U'}</span>
+                    )}
+                  </div>
+                  
+                  {/* User Info with Animated Greeting */}
+                <div className="">
+                  <h3 className="text-xl font-bold text-gray-100">
+                    <div className="flex flex- items-baseline gap-2">
+                      <div className="inline-block flex flex-col">
+                        <AnimatePresence mode="wait">
+                          <motion.span
+                            key={Math.random()} // Force re-render for animation
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            transition={{ duration: 0.5 }}
+                            className="inline-block"
+                          >
+                            <AnimatedGreeting />
+                          </motion.span>
+                        </AnimatePresence>
+                         <span className="text-gray-100">{user?.name || 'User'}!</span>
+                      </div>
+                     
+                    </div>
+                  </h3>
+                  <p className="text-sm text-indigo-400 flex items-center gap-1">
+                    {/* <span className="w-2 h-2 rounded-full bg-green-500"></span> */}
+                    LinkUps- <div>
+                      <span className="text-gray-100 font-bold">{ user.connections.linkUps.length || 0}</span>
+                      </div>
+                  </p>
+                </div>
+              </div>
+
+                {/* Center: Recent Trend */}
+                <div className="flex flex-col sticky fixed  items-center">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium text-gray-300 mr-2">Recent Trend</h4>
+                    <div className="flex items-center text-xs text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">
+                      <ArrowUp className="w-3 h-3 mr-1" /> 8%
+                    </div>
+                  </div>
+                  
+                  {/* Mini Chart */}
+                  <div className="h-10 flex items-end gap-1">
+                    {[35, 45, 30, 50, 65, 45, 70].map((height, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ height: 0 }}
+                        animate={{ height: `${height}%` }}
+                        transition={{ duration: 0.5, delay: i * 0.1 }}
+                        className="w-3 rounded-t bg-gradient-to-t from-indigo-500/60 to-purple-500/60"
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Right: Stats Grid */}
+                <div className="grid grid-cols-3 gap-2">
+                  {/* Total Projects */}
+                  <motion.div 
+                    whileHover={{ scale: 1.05 }}
+                    className="bg-indigo-500/10 rounded-lg p-2 border border-indigo-500/20"
+                  >
+                    <div className="flex items-center justify-center mb-1">
+                      <FileText className="w-4 h-4 text-indigo-400" />
+                    </div>
+                    <div className="text-center">
+                      <h4 className="text-base font-bold text-gray-200">{projects?.length || 0}</h4>
+                      <p className="text-xs text-gray-400">Total</p>
+                    </div>
+                  </motion.div>
+                  
+                  {/* Completed */}
+                  <motion.div 
+                    whileHover={{ scale: 1.05 }}
+                    className="bg-green-500/10 rounded-lg p-2 border border-green-500/20"
+                  >
+                    <div className="flex items-center justify-center mb-1">
+                      <Check className="w-4 h-4 text-green-400" />
+                    </div>
+                    <div className="text-center">
+                      <h4 className="text-base font-bold text-gray-200">
+                        {projects?.filter(p => p.status === 'completed').length || 0}
+                      </h4>
+                      <p className="text-xs text-gray-400">Complete</p>
+                    </div>
+                  </motion.div>
+                  
+                  {/* In Progress */}
+                  <motion.div 
+                    whileHover={{ scale: 1.05 }}
+                    className="bg-blue-500/10 rounded-lg p-2 border border-blue-500/20"
+                  >
+                    <div className="flex items-center justify-center mb-1">
+                      <Activity className="w-4 h-4 text-blue-400" />
+                    </div>
+                    <div className="text-center">
+                      <h4 className="text-base font-bold text-gray-200">
+                        {projects?.filter(p => p.status === 'in_progress').length || 0}
+                      </h4>
+                      <p className="text-xs text-gray-400">Active</p>
+                    </div>
+                  </motion.div>
+                </div>
+              </div>
+
+              
+            </motion.div>
+
+            {/* Projects Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`${themeClasses.card} h-[120px] rounded-xl border ${themeClasses.border} overflow-hidden backdrop-blur-sm shadow-lg flex items-center justify-between p-0`}
+            >
+              <QuotesWidget/>
+              
+           
+            </motion.div>
           </div>
 
           {/* Main Content Grid */}
@@ -274,14 +330,11 @@ const Dashboard = () => {
             {/* Projects Section (3/4 width) */}
             <div className="lg:col-span-3 space-y-6">
                 <Projects darkMode={darkMode} />
-             
-              
             </div>
 
-            {/* Right Sidebar (1/4 width) - Keep this section unchanged */}
+            {/* Right Sidebar (1/4 width) */}
             <div className="lg:col-span-1 space-y-6">
               {/* Calendar Widget */}
-              
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -289,9 +342,6 @@ const Dashboard = () => {
               >
                 <CalendarWidget darkMode={darkMode} />
               </motion.div>
-                
-                
-             
 
               {/* Upcoming Tasks */}
               <motion.div
@@ -305,6 +355,7 @@ const Dashboard = () => {
             </div>
           </div>
         </main>
+        
         {showNewProjectModal && (
           <CreateProjectForm onClose={() => setShowNewProjectModal(false)} />
         )}
@@ -313,34 +364,6 @@ const Dashboard = () => {
   );
 };
 
-// Analytics Card Component
-const AnalyticCard = ({ title, value, icon: Icon, trend, trendUp, darkMode }) => {
-  const themeClasses = getThemeClasses(darkMode);
-  
-  return (
-    <motion.div
-      whileHover={{ y: -5, transition: { duration: 0.2 } }}
-      className={`${themeClasses.card} rounded-xl border ${themeClasses.border} p-6 
-                  backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300`}
-    >
-      <div className="flex items-center justify-between mb-4">
-        <h3 className={`${themeClasses.subtext} font-medium`}>{title}</h3>
-        <div className={`p-2 rounded-lg ${darkMode ? 'bg-purple-500/10' : 'bg-purple-100'}`}>
-          <Icon className="w-5 h-5 text-purple-500" />
-        </div>
-      </div>
-      <div className="flex items-end justify-between">
-        <p className={`${themeClasses.text} text-2xl font-bold`}>{value}</p>
-        <span className={`text-sm px-2 py-1 rounded-full ${
-          trendUp 
-            ? 'bg-green-500/10 text-green-400' 
-            : 'bg-red-500/10 text-red-400'
-        }`}>
-          {trend}
-        </span>
-      </div>
-    </motion.div>
-  );
-};
+// No longer need the AnalyticCard component since we replaced it
 
 export default Dashboard;

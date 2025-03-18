@@ -8,27 +8,94 @@ import { useAuth } from '../../context/authContext';
 import { X, Clock, Check, Search, User } from 'lucide-react';
 import { toast } from 'react-toastify';
 
-const backgroundGradient = `bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A]`;
-const highlightGradient = `bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-indigo-500/10`;
+const backgroundGradient = `bg-gradient-to-br from-black via-gray-900 to-black`;
+const highlightGradient = `bg-gradient-to-r from-gray-800/10 via-gray-700/10 to-gray-800/10`;
 
 const glassCard = `
-  bg-[#1E293B]/50
+  bg-gray-900/30
   backdrop-blur-xl
-  shadow-[0_8px_32px_rgb(0,0,0,0.15)]
+  shadow-[0_8px_32px_rgb(0,0,0,0.2)]
   border
-  border-indigo-500/20
-  hover:border-indigo-500/30
+  border-gray-800/30
+  hover:border-gray-700/30
   transition-all
   duration-300
   group
 `;
 
 const textClass = 'text-gray-100 font-medium';
-const headingClass = 'bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent';
-const subTextClass = 'text-gray-400/90';
-const buttonPrimary = 'bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200';
-const buttonSecondary = 'bg-gray-700 hover:bg-gray-600 text-gray-200 font-medium py-2 px-4 rounded-lg transition-colors duration-200';
-const buttonDanger = 'bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200';
+const headingClass = 'text-gray-100 font-bold';
+const subTextClass = 'text-gray-400';
+const buttonPrimary = 'bg-gray-800 hover:bg-gray-700 text-gray-100 font-medium py-2 px-4 rounded-lg transition-colors duration-200 border border-gray-700/50';
+const buttonSecondary = 'bg-gray-900 hover:bg-gray-800 text-gray-300 font-medium py-2 px-4 rounded-lg transition-colors duration-200 border border-gray-800/50';
+const buttonDanger = 'bg-red-900/50 hover:bg-red-800/50 text-red-200 font-medium py-2 px-4 rounded-lg transition-colors duration-200 border border-red-700/30';
+
+// Update the input and select styles in renderTeamForm
+const inputStyles = `
+  w-full 
+  bg-gray-900/50 
+  border 
+  border-gray-800/50 
+  rounded-lg 
+  py-2 
+  px-3 
+  text-gray-200 
+  placeholder-gray-600
+  focus:outline-none 
+  focus:ring-2 
+  focus:ring-gray-700
+  focus:border-gray-700
+`;
+
+// Update the checkbox styles
+const checkboxStyles = `
+  w-4 
+  h-4 
+  rounded 
+  bg-gray-900 
+  border-gray-700 
+  text-gray-600 
+  focus:ring-gray-700
+`;
+
+// Update search input styles
+const searchInputStyles = `
+  w-full 
+  pl-10 
+  pr-4 
+  py-2 
+  bg-gray-900/50 
+  border 
+  border-gray-800/50 
+  rounded-lg 
+  focus:outline-none 
+  focus:ring-2 
+  focus:ring-gray-700 
+  text-gray-200 
+  placeholder-gray-600
+`;
+
+// Update member card styles
+const memberCardStyles = `
+  p-3 
+  rounded-lg 
+  cursor-pointer 
+  flex 
+  items-center 
+  transition-colors
+  duration-200
+`;
+
+const selectedMemberStyles = `
+  bg-gray-800/50 
+  border 
+  border-gray-700/50
+`;
+
+const unselectedMemberStyles = `
+  bg-gray-900/30 
+  hover:bg-gray-800/30
+`;
 
 const TeamPage = () => {
   const navigate = useNavigate();
@@ -383,7 +450,7 @@ const renderTeamForm = () => (
               onChange={handleInputChange}
               placeholder="Enter team name"
               required
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg py-2 px-3 text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className={inputStyles}
             />
           </div>
           
@@ -394,7 +461,7 @@ const renderTeamForm = () => (
               value={teamFormData.category}
               onChange={handleInputChange}
               required
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg py-2 px-3 text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className={inputStyles}
             >
               <option value="" disabled>Select a category</option>
               <option value="Development">Development</option>
@@ -417,7 +484,7 @@ const renderTeamForm = () => (
               onChange={handleInputChange}
               placeholder="Describe the team's purpose"
               rows={4}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg py-2 px-3 text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className={inputStyles}
             />
           </div>
           
@@ -428,7 +495,7 @@ const renderTeamForm = () => (
               name="isPrivate"
               checked={teamFormData.isPrivate}
               onChange={handleInputChange}
-              className="w-4 h-4 rounded bg-gray-800 border-gray-600 text-indigo-600 focus:ring-indigo-500"
+              className={checkboxStyles}
             />
             <label htmlFor="isPrivate" className={`ml-2 ${textClass}`}>
               Make team private
@@ -498,7 +565,7 @@ const renderTeamForm = () => (
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search connections..."
-            className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-gray-200"
+            className={searchInputStyles}
           />
         </div>
       </div>
@@ -519,10 +586,10 @@ const renderTeamForm = () => (
             <div 
               key={connection._id}
               onClick={() => setSelectedConnection(connection)}
-              className={`p-3 rounded-lg cursor-pointer flex items-center ${
+              className={`${memberCardStyles} ${
                 selectedConnection?._id === connection._id 
-                  ? 'bg-indigo-600/30 border border-indigo-500/50' 
-                  : 'bg-gray-800/50 hover:bg-gray-700/50'
+                  ? selectedMemberStyles 
+                  : unselectedMemberStyles
               }`}
             >
               <div className="w-10 h-10 rounded-full bg-gray-700 flex-shrink-0 flex items-center justify-center">
@@ -559,7 +626,7 @@ const renderTeamForm = () => (
               value={roleInput}
               onChange={(e) => setRoleInput(e.target.value)}
               placeholder="E.g. Developer, Designer, etc."
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg py-2 px-3 text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className={inputStyles}
             />
           </div>
           
@@ -625,7 +692,7 @@ const renderTeamForm = () => (
           value={roleInput}
           onChange={(e) => setRoleInput(e.target.value)}
           placeholder="E.g. Developer, Designer, etc."
-          className="w-full bg-gray-800 border border-gray-700 rounded-lg py-2 px-3 text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className={inputStyles}
         />
       </div>
       
@@ -660,7 +727,7 @@ const renderTeamForm = () => (
   
 
   return (
-    <div className={`min-h-screen ${backgroundGradient} py-8 px-4`}>
+    <div className={`min-h-screen bg-black py-8 px-4`}>
       <div className="max-w-6xl mx-auto">
         <AnimatePresence mode="wait">
           {teamId ? (

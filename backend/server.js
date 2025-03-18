@@ -24,6 +24,7 @@ import userPerformance from './route/userPerformance.js'
 import StorageRoute from './route/StorageRoute.js'
 import notificationRoute from './route/notificationRoute.js'
 import { initializeSocket } from "./config/socketConfig.js";
+import userControllerRoutes from './route/userControllerRoute.js'
 import http from "http";
 import { createServer } from "http";
 import { Server } from 'socket.io';
@@ -100,6 +101,7 @@ app.use('/api/analytics', userPerformance)
 app.use('/api', StorageRoute)
 app.use('/api', teamTaskCalendarRoute)
 app.use('/api/notifications', notificationRoute);
+app.use('/api/user', userControllerRoutes);
 
 app.use(errorHandler);
 

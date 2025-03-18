@@ -3,7 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Home, Calendar, User, Settings, BarChart2, 
-  Files, Users, X, ChevronRight, LogOut, Zap, Cable, Loader, Bell 
+  Files, Users, X, ChevronRight, LogOut, Zap, Cable, Loader, Bell,
+  Bookmark, Clock, Search, Heart, Briefcase
 } from 'lucide-react';
 
 import { useTheme } from './context/themeContext';
@@ -16,6 +17,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   const { darkMode } = useTheme();
   const { user, logout } = useAuth();
   const [activeSection, setActiveSection] = useState('main'); // 'main' or 'teams'
+  const [searchTerm, setSearchTerm] = useState('');
+  const [recentlyVisited, setRecentlyVisited] = useState([]);
+  const [quickAccess, setQuickAccess] = useState(true);
   
   const { getMyTeams } = useTeam();
   const [teamsData, setTeamsData] = useState(null);
@@ -36,7 +40,27 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     };
     
     fetchTeams();
+    
+    // Load recently visited from localStorage
+    const storedRecent = localStorage.getItem('recentlyVisited');
+    if (storedRecent) {
+      setRecentlyVisited(JSON.parse(storedRecent).slice(0, 3));
+    }
   }, []);
+
+  // Track visited pages
+  useEffect(() => {
+    const currentPage = navItems.find(item => item.path === location.pathname);
+    if (currentPage && !recentlyVisited.some(item => item.path === currentPage.path)) {
+      const updatedRecent = [
+        currentPage,
+        ...recentlyVisited.filter(item => item.path !== currentPage.path)
+      ].slice(0, 3);
+      
+      setRecentlyVisited(updatedRecent);
+      localStorage.setItem('recentlyVisited', JSON.stringify(updatedRecent));
+    }
+  }, [location.pathname]);
 
   // Navigation items
   const navItems = [
@@ -50,16 +74,23 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     { icon: Cable, text: "LinkUps", path: "/linkups", section: 'main' },
   ];
 
-  // Define color gradients for teams
-  const teamColors = [
-    "from-pink-500 to-purple-500",
-    "from-blue-500 to-indigo-500",
-    "from-green-500 to-emerald-500",
-    "from-yellow-500 to-orange-500",
-    "from-red-500 to-pink-500",
-    "from-indigo-500 to-purple-500",
-    "from-teal-500 to-green-500",
-    "from-orange-500 to-amber-500"
+  // Filter navigation items based on search term
+  const filteredNavItems = searchTerm 
+    ? navItems.filter(item => 
+        item.text.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : navItems;
+
+  // Define monochromatic team patterns
+  const teamPatterns = [
+    "bg-gradient-to-br from-white/20 to-transparent",
+    "bg-gradient-to-br from-white/15 to-transparent",
+    "bg-gradient-to-br from-white/10 to-transparent",
+    "bg-gradient-to-br from-white/5 to-transparent",
+    "bg-[radial-gradient(ellipse_at_top_right,_rgba(255,255,255,0.15),transparent)]",
+    "bg-[linear-gradient(45deg,rgba(255,255,255,0.1)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.1)_50%,rgba(255,255,255,0.1)_75%,transparent_75%)]",
+    "bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.1)_0%,transparent_70%)]",
+    "bg-gradient-to-tr from-white/10 via-white/5 to-transparent"
   ];
 
   // Get teams from both owned and member teams
@@ -68,20 +99,33 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   
   // Combine owned and member teams
   const allTeams = [...ownedTeams, ...memberTeams];
+  
+  // Filter teams based on search term if in teams section
+  const filteredTeams = searchTerm && activeSection === 'teams'
+    ? allTeams.filter(team => 
+        team.name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : allTeams;
 
   const themeClasses = {
     sidebar: darkMode 
-      ? 'bg-[#0F172A]/95 backdrop-blur-lg border-r border-indigo-500/20' 
-      : 'bg-white/95',
+      ? 'bg-black/95 backdrop-blur-lg border-r border-white/10' 
+      : 'bg-white/95 backdrop-blur-lg border-r border-black/10',
     text: darkMode ? 'text-gray-100' : 'text-gray-900',
     subtext: darkMode ? 'text-gray-400' : 'text-gray-600',
-    border: darkMode ? 'border-indigo-500/20' : 'border-gray-200',
+    border: darkMode ? 'border-white/10' : 'border-gray-200',
     navActive: darkMode 
-      ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' 
-      : 'bg-indigo-100 text-indigo-700 border border-indigo-200',
+      ? 'bg-white/10 text-white border border-white/20' 
+      : 'bg-black text-white border border-black',
     navInactive: darkMode 
-      ? 'text-gray-400 hover:bg-[#1E293B]/80 hover:text-indigo-300' 
-      : 'text-gray-600 hover:bg-gray-100 hover:text-indigo-700',
+      ? 'text-gray-400 hover:bg-white/5 hover:text-white' 
+      : 'text-gray-600 hover:bg-black/5 hover:text-black',
+    accent: darkMode ? 'bg-white/10' : 'bg-black/10',
+    header: darkMode 
+      ? 'from-white/10 to-transparent' 
+      : 'from-black/5 to-transparent',
+    iconBg: darkMode ? 'bg-white/10' : 'bg-black/10',
+    iconColor: darkMode ? 'text-white' : 'text-black',
   };
 
   // Handle navigation to create a new team
@@ -98,26 +142,48 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
       className={`fixed inset-y-0 left-0 z-50 w-72 ${themeClasses.sidebar} border-r ${themeClasses.border} shadow-lg backdrop-blur-lg`}
     >
       <div className="flex flex-col h-full">
-        {/* Logo/Header with animated gradient background */}
+        {/* Logo/Header with minimalist design */}
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 opacity-80 rounded-br-xl"></div>
+          <div className={`absolute inset-0 bg-gradient-to-r ${themeClasses.header} opacity-80 rounded-br-xl`}></div>
           <div className="flex items-center justify-between p-5 relative z-10">
             <div>
               <motion.h2 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent"
+                className={`text-2xl font-light tracking-wider ${themeClasses.text}`}
               >
-                Project Manager
+                Rivora
               </motion.h2>
-              <p className="text-xs text-gray-400 mt-1">Workspace</p>
+              <p className={`text-xs ${themeClasses.subtext} mt-1`}>Workspace</p>
             </div>
             <button 
               onClick={() => setSidebarOpen(false)} 
-              className="lg:hidden rounded-full p-1.5 bg-gray-800/30 hover:bg-gray-800/50 transition-colors"
+              className={`lg:hidden rounded-full p-1.5 ${themeClasses.accent} hover:opacity-80 transition-colors`}
             >
-              <X className="w-5 h-5 text-gray-300" />
+              <X className={`w-5 h-5 ${themeClasses.text}`} />
             </button>
+          </div>
+        </div>
+
+        {/* Search Bar - New Feature */}
+        <div className="px-4 py-2">
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${themeClasses.border} bg-opacity-50 focus-within:bg-opacity-100 transition-all`}>
+            <Search className={`w-4 h-4 ${themeClasses.subtext}`} />
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className={`bg-transparent border-none w-full text-sm outline-none ${themeClasses.text} placeholder:${themeClasses.subtext}`}
+            />
+            {searchTerm && (
+              <button 
+                onClick={() => setSearchTerm('')}
+                className="text-gray-400 hover:text-gray-300"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
         </div>
 
@@ -127,8 +193,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             onClick={() => setActiveSection('main')}
             className={`flex-1 py-1.5 px-4 rounded-md text-sm font-medium transition-all ${
               activeSection === 'main' 
-                ? 'bg-indigo-500/20 text-indigo-300' 
-                : 'hover:bg-gray-800/20 text-gray-400'
+                ? themeClasses.navActive
+                : `${themeClasses.navInactive} border border-transparent`
             }`}
           >
             Main
@@ -137,13 +203,48 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             onClick={() => setActiveSection('teams')}
             className={`flex-1 py-1.5 px-4 rounded-md text-sm font-medium transition-all ${
               activeSection === 'teams' 
-                ? 'bg-indigo-500/20 text-indigo-300' 
-                : 'hover:bg-gray-800/20 text-gray-400'
+                ? themeClasses.navActive
+                : `${themeClasses.navInactive} border border-transparent`
             }`}
           >
             Teams
           </button>
         </div>
+
+        {/* Quick Access - New Feature */}
+        {/* {quickAccess && recentlyVisited.length > 0 && !searchTerm && (
+          <div className="px-4 mb-2">
+            <div className="flex items-center justify-between">
+              <p className={`text-xs font-medium ${themeClasses.subtext} uppercase tracking-wider px-2 py-1`}>
+                Quick Access
+              </p>
+              <button 
+                onClick={() => setQuickAccess(!quickAccess)}
+                className={`text-xs ${themeClasses.subtext} hover:${themeClasses.text}`}
+              >
+                <Clock size={12} />
+              </button>
+            </div>
+            <div className="flex gap-2 mt-1 overflow-x-auto pb-2 px-1 no-scrollbar">
+              {recentlyVisited.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`flex flex-col items-center p-2 rounded-lg ${themeClasses.navInactive} min-w-[60px] border ${themeClasses.border}`}
+                  >
+                    <div className={`rounded-md p-1.5 mb-1 ${themeClasses.iconBg}`}>
+                      <Icon size={14} className={themeClasses.iconColor} />
+                    </div>
+                    <span className="text-xs truncate max-w-[50px]">{item.text}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )} */}
 
         {/* Navigation */}
         <div className="px-3 flex-1 overflow-hidden">
@@ -157,11 +258,18 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                 transition={{ duration: 0.2 }}
               >
                 <div className="flex items-center justify-between px-2 py-2">
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Navigation</p>
+                  <p className={`text-xs font-medium ${themeClasses.subtext} uppercase tracking-wider`}>
+                    Navigation
+                  </p>
+                  {searchTerm && (
+                    <span className={`text-xs ${themeClasses.subtext}`}>
+                      {filteredNavItems.length} found
+                    </span>
+                  )}
                 </div>
                 <nav className="overflow-y-auto">
                   <ul className="space-y-1">
-                    {navItems.map((item) => {
+                    {filteredNavItems.map((item) => {
                       const Icon = item.icon;
                       const isActive = location.pathname === item.path;
                       return (
@@ -172,6 +280,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                         >
                           <Link
                             to={item.path}
+                            onClick={() => setSidebarOpen(false)}
                             className={`flex items-center justify-between px-3 py-2.5 rounded-lg transition-all ${
                               isActive
                                 ? themeClasses.navActive
@@ -179,8 +288,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                             }`}
                           >
                             <div className="flex items-center gap-3">
-                              <div className={`rounded-md p-1.5 ${isActive ? 'bg-indigo-500/30' : 'bg-gray-800/20'}`}>
-                                <Icon className={`w-4 h-4 ${isActive ? "text-indigo-300" : "text-gray-400"}`} />
+                              <div className={`rounded-md p-1.5 ${isActive ? themeClasses.accent : 'bg-transparent'}`}>
+                                <Icon className={`w-4 h-4 ${isActive ? themeClasses.iconColor : themeClasses.subtext}`} />
                               </div>
                               <span className="font-medium text-sm">{item.text}</span>
                             </div>
@@ -188,7 +297,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                               <motion.div 
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
-                                className="w-1.5 h-1.5 rounded-full bg-indigo-400"
+                                className={`w-1.5 h-1.5 rounded-full ${darkMode ? 'bg-white' : 'bg-black'}`}
                               />
                             )}
                           </Link>
@@ -208,10 +317,12 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                 className="flex flex-col h-[calc(100vh-200px)]"
               >
                 <div className="flex items-center justify-between px-2 py-2">
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Your Teams</p>
+                  <p className={`text-xs font-medium ${themeClasses.subtext} uppercase tracking-wider`}>
+                    Your Teams
+                  </p>
                   {!loadingTeams && (
-                    <div className="text-xs text-gray-500">
-                      {allTeams.length} {allTeams.length === 1 ? 'team' : 'teams'}
+                    <div className={`text-xs ${themeClasses.subtext}`}>
+                      {filteredTeams.length} {filteredTeams.length === 1 ? 'team' : 'teams'}
                     </div>
                   )}
                 </div>
@@ -224,30 +335,34 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                         animate={{ rotate: 360 }}
                         transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
                       >
-                        <Loader size={20} className="text-indigo-400" />
+                        <Loader size={20} className={darkMode ? "text-white" : "text-black"} />
                       </motion.div>
                     </div>
                   ) : error ? (
                     <div className="py-4 text-center">
                       <p className="text-sm text-red-400">Failed to load teams</p>
                       <button 
-                        className="mt-2 text-xs text-indigo-400 hover:text-indigo-300"
+                        className={`mt-2 text-xs ${themeClasses.text} hover:opacity-80`}
                         onClick={() => window.location.reload()}
                       >
                         Retry
                       </button>
                     </div>
-                  ) : allTeams.length === 0 ? (
+                  ) : filteredTeams.length === 0 ? (
                     <div className="py-4 text-center">
-                      <p className="text-sm text-gray-400">No teams yet</p>
-                      <p className="mt-1 text-xs text-gray-500">Create one to get started</p>
+                      <p className={`text-sm ${themeClasses.text}`}>
+                        {searchTerm ? 'No matching teams' : 'No teams yet'}
+                      </p>
+                      <p className={`mt-1 text-xs ${themeClasses.subtext}`}>
+                        {searchTerm ? 'Try a different search term' : 'Create one to get started'}
+                      </p>
                     </div>
                   ) : (
                     <ul className="space-y-1">
-                      {allTeams.map((team, index) => {
+                      {filteredTeams.map((team, index) => {
                         const teamPath = `/teams/${team._id}`;
                         const isActive = location.pathname === teamPath;
-                        const colorIndex = index % teamColors.length;
+                        const patternIndex = index % teamPatterns.length;
                         const isOwned = ownedTeams.some(t => t._id === team._id);
                         
                         return (
@@ -266,41 +381,38 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                               }`}
                             >
                               <div className="flex items-center gap-3">
-                                <div className={`w-7 h-7 rounded-md bg-gradient-to-br ${teamColors[colorIndex]} flex items-center justify-center text-xs font-bold text-white relative`}>
+                                <div className={`w-7 h-7 rounded-md ${teamPatterns[patternIndex]} flex items-center justify-center text-xs font-bold ${themeClasses.text} relative border ${themeClasses.border}`}>
                                   {team.name?.charAt(0) || 'T'}
                                   {isOwned && (
-                                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-indigo-500 border border-indigo-700 rounded-full"></span>
+                                    <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 ${darkMode ? 'bg-white' : 'bg-black'} rounded-full`}></span>
                                   )}
                                 </div>
                                 <div className="max-w-[140px]">
                                   <p className="font-medium text-sm truncate" title={team.name}>
                                     {team.name}
                                   </p>
-                                  <p className="text-xs text-gray-500">
+                                  <p className={`text-xs ${themeClasses.subtext}`}>
                                     {team.members?.length + 1} members
                                   </p>
                                 </div>
                               </div>
-                              <ChevronRight className="w-4 h-4 text-gray-500" />
+                              <ChevronRight className={`w-4 h-4 ${themeClasses.subtext}`} />
                             </Link>
                           </motion.li>
                         );
                       })}
                     </ul>
                   )}
-                  <div className="pt-2 pb-1 bgf">
-                  <button 
-                    onClick={handleNewTeam}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg transition-colors"
-                  >
-                    <span>New Team</span>
-                    <span className="w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center">+</span>
-                  </button>
-                </div>
+                  <div className="pt-2 pb-1">
+                    <button 
+                      onClick={handleNewTeam}
+                      className={`w-full flex items-center justify-center gap-2 px-3 py-2 text-sm ${themeClasses.text} hover:${themeClasses.accent} rounded-lg transition-colors border ${themeClasses.border}`}
+                    >
+                      <span>New Team</span>
+                      <span className={`w-5 h-5 rounded-full ${themeClasses.accent} flex items-center justify-center`}>+</span>
+                    </button>
+                  </div>
                 </nav>
-                
-                {/* Create new team button */}
-                
               </motion.div>
             )}
           </AnimatePresence>
@@ -308,36 +420,36 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
 
         {/* User Profile Section */}
         {user && (
-          <div className="mt-auto border-t border-purple-500/20 p-3 mx-3">
-            <div className="bg-indigo-500/10 rounded-lg p-3 flex items-center justify-between">
+          <div className={`mt-auto border-t ${themeClasses.border} p-3 mx-3`}>
+            <div className={`${themeClasses.accent} rounded-lg p-3 flex items-center justify-between`}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center border border-purple-500/30">
+                <div className={`w-10 h-10 rounded-lg ${darkMode ? 'bg-white/10' : 'bg-black/10'} flex items-center justify-center border ${themeClasses.border} overflow-hidden`}>
                   {user.profilePicture ? (
                     <img
                       src={user.profilePicture}
                       alt="Profile"
-                      className="w-full h-full object-cover rounded-lg"
+                      className="w-full h-full object-cover"
                     />
                   ) : (
-                    <span className="text-lg font-bold text-white">{user.name?.charAt(0) || 'U'}</span>
+                    <span className={`text-lg font-bold ${themeClasses.text}`}>{user.name?.charAt(0) || 'U'}</span>
                   )}
                 </div>
                 <div>
-                  <p className="font-medium text-gray-200 text-sm">
+                  <p className={`font-medium ${themeClasses.text} text-sm`}>
                     {user.name}
                   </p>
                   <div className="flex items-center gap-1 mt-0.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                    <p className="text-xs text-gray-400">Online</p>
+                    <p className={`text-xs ${themeClasses.subtext}`}>Online</p>
                   </div>
                 </div>
               </div>
               <button 
                 onClick={logout}
-                className="p-2 rounded-md hover:bg-gray-800/30 transition-colors"
+                className={`p-2 rounded-md hover:${themeClasses.accent} transition-colors`}
                 title="Logout"
               >
-                <LogOut className="w-4 h-4 text-gray-400" />
+                <LogOut className={`w-4 h-4 ${themeClasses.subtext}`} />
               </button>
             </div>
           </div>

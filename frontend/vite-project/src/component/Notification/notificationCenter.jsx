@@ -14,6 +14,24 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { Tooltip } from 'react-tooltip';
 import { useNavigate } from 'react-router-dom';
 
+const theme = {
+  background: 'bg-black',
+  card: 'bg-gray-900/30',
+  cardHover: 'hover:bg-gray-800/40',
+  border: 'border-gray-800/50',
+  borderHover: 'hover:border-gray-700/50',
+  text: {
+    primary: 'text-gray-100',
+    secondary: 'text-gray-400',
+    muted: 'text-gray-600'
+  },
+  button: {
+    primary: 'bg-gray-800 hover:bg-gray-700',
+    secondary: 'bg-gray-900/50 hover:bg-gray-800/50',
+    accent: 'bg-blue-900/20 hover:bg-blue-800/30'
+  }
+};
+
 const NotificationsPage = () => {
   const {
     notifications: notificationData = {},
@@ -206,8 +224,9 @@ const NotificationsPage = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, x: -100 }}
-        className={`relative bg-gray-800 rounded-lg overflow-hidden transition-all
-          ${!notification.read ? 'border-l-4 border-blue-500' : ''}`}
+        className={`relative ${theme.card} rounded-lg overflow-hidden transition-all
+          border ${theme.border} ${theme.cardHover}
+          ${!notification.read ? 'border-l-4 border-blue-900/50' : ''}`}
       >
         
         <div className={getPriorityStyle(notification.priority)} />
@@ -330,25 +349,25 @@ const NotificationsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className={`min-h-screen ${theme.background} text-gray-100`}>
       {/* Header Section - Fixed at top */}
-      <div className="sticky top-0 bg-gray-900/95 backdrop-blur-sm z-10 border-b border-gray-800">
-        <div className="max-w-6xl mx-auto p-6">
+      <div className="sticky top-0 bg-black/95 backdrop-blur-sm z-10 border-b border-gray-800/50">
+        <div className="max-w-7xl mx-auto p-6 border-b border-gray-800/30">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
               {/* Add Dashboard button */}
               <button
                 onClick={() => navigate('/dashboard')}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-lg transition-colors"
+                className={`flex items-center gap-2 px-4 py-2 ${theme.button.secondary} rounded-lg transition-colors`}
               >
                 <IoHomeOutline className="w-5 h-5" />
                 <span>Dashboard</span>
               </button>
               
-              <h1 className="text-3xl font-bold text-blue-400">
+              <h1 className="text-3xl font-bold text-gray-100">
                 Notifications 
                 {unreadCount > 0 && (
-                  <span className="text-sm bg-blue-600 px-2 py-1 rounded-full ml-2">
+                  <span className="text-sm bg-blue-900/30 border border-blue-500/20 px-2 py-1 rounded-full ml-2 text-blue-400">
                     {unreadCount}
                   </span>
                 )}
@@ -359,7 +378,7 @@ const NotificationsPage = () => {
               {/* Refresh Button */}
               <button
                 onClick={refetchNotifications}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
+                className={`flex items-center gap-2 px-4 py-2 ${theme.button.secondary} rounded-lg transition-colors`}
               >
                 <IoRefreshOutline className="w-5 h-5" />
                 <span>Refresh</span>
@@ -367,7 +386,8 @@ const NotificationsPage = () => {
 
               <button
                 onClick={markAllAsRead}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`px-4 py-2 ${theme.button.accent} text-blue-400 rounded-lg transition-colors 
+                      disabled:opacity-50 disabled:cursor-not-allowed border border-blue-500/20`}
                 disabled={unreadCount === 0}
               >
                 Mark all as read
@@ -376,17 +396,18 @@ const NotificationsPage = () => {
           </div>
 
           {/* Enhanced Filters */}
-          <div className="bg-gray-800/50 backdrop-blur-sm p-4 rounded-lg mt-4">
+          <div className="bg-gray-900/20 backdrop-blur-sm p-4 rounded-lg mt-4 border border-gray-800/30">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Search */}
               <div className="relative">
-                <IoSearchOutline className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <IoSearchOutline className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
                 <input
                   type="text"
                   placeholder="Search notifications..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full pl-10 pr-4 py-2 bg-black/50 border border-gray-800/50 rounded-lg 
+                        focus:ring-2 focus:ring-gray-700/50 focus:border-gray-700/50 outline-none"
                 />
               </div>
 
@@ -394,7 +415,8 @@ const NotificationsPage = () => {
               <select
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value)}
-                className="bg-gray-700 px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="bg-black/50 border border-gray-800/50 px-4 py-2 rounded-lg 
+                        focus:ring-2 focus:ring-gray-700/50 focus:border-gray-700/50 outline-none"
               >
                 {types.map(type => (
                   <option key={type.value} value={type.value}>
@@ -407,7 +429,8 @@ const NotificationsPage = () => {
               <select
                 value={groupBy}
                 onChange={(e) => setGroupBy(e.target.value)}
-                className="bg-gray-700 px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="bg-black/50 border border-gray-800/50 px-4 py-2 rounded-lg 
+                        focus:ring-2 focus:ring-gray-700/50 focus:border-gray-700/50 outline-none"
               >
                 <option value="date">Group by Date</option>
                 <option value="type">Group by Type</option>
@@ -418,7 +441,8 @@ const NotificationsPage = () => {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-gray-700 px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="bg-black/50 border border-gray-800/50 px-4 py-2 rounded-lg 
+                        focus:ring-2 focus:ring-gray-700/50 focus:border-gray-700/50 outline-none"
               >
                 <option value="newest">Newest First</option>
                 <option value="oldest">Oldest First</option>
@@ -431,7 +455,7 @@ const NotificationsPage = () => {
               <button
                 onClick={() => setFilter('all')}
                 className={`px-4 py-2 rounded-lg transition-colors ${
-                  filter === 'all' ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'
+                  filter === 'all' ? 'bg-blue-900/30 text-blue-400 border border-blue-500/20' : 'bg-black/50 text-gray-400 border border-gray-800/50 hover:bg-gray-800/30'
                 }`}
               >
                 All
@@ -439,7 +463,7 @@ const NotificationsPage = () => {
               <button
                 onClick={() => setFilter('unread')}
                 className={`px-4 py-2 rounded-lg transition-colors ${
-                  filter === 'unread' ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'
+                  filter === 'unread' ? 'bg-blue-900/30 text-blue-400 border border-blue-500/20' : 'bg-black/50 text-gray-400 border border-gray-800/50 hover:bg-gray-800/30'
                 }`}
               >
                 Unread
@@ -447,7 +471,7 @@ const NotificationsPage = () => {
               <button
                 onClick={() => setFilter('read')}
                 className={`px-4 py-2 rounded-lg transition-colors ${
-                  filter === 'read' ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'
+                  filter === 'read' ? 'bg-blue-900/30 text-blue-400 border border-blue-500/20' : 'bg-black/50 text-gray-400 border border-gray-800/50 hover:bg-gray-800/30'
                 }`}
               >
                 Read
@@ -460,7 +484,7 @@ const NotificationsPage = () => {
       {/* Main content - Scrollable */}
       <div 
         ref={containerRef}
-        className="max-w-6xl mx-auto p-6 space-y-6"
+        className="max-w-7xl mx-auto p-6 space-y-6"
       >
         <AnimatePresence>
           {filteredNotifications.length > 0 ? (
@@ -515,9 +539,10 @@ const NotificationsPage = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             onClick={scrollToTop}
-            className="fixed bottom-8 right-8 p-3 bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg transition-colors"
+            className="fixed bottom-8 right-8 p-3 bg-blue-900/30 hover:bg-blue-800/40 
+                  rounded-full shadow-lg transition-colors border border-blue-500/20"
           >
-            <IoArrowUpOutline className="w-6 h-6" />
+            <IoArrowUpOutline className="w-6 h-6 text-blue-400" />
           </motion.button>
         )}
       </AnimatePresence>

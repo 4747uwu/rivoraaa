@@ -82,7 +82,7 @@ const Loginpage = () => {
         </div>
 
         {/* Gradient overlay for depth */}
-        {/* <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black/80" style={{ zIndex: 2 }} /> */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black/80" style={{ zIndex: 2 }} />
 
         {/* Content Container - Increased z-index */}
         <div className="relative z-10 h-full flex flex-col justify-center items-center px-16">

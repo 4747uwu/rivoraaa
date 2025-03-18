@@ -264,13 +264,13 @@ const ConnectionManager = () => {
   };
   
   return (
-    <div className="col-span-12 xl:col-span-9 2xl:col-span-10 bg-gray-900">
+    <div className="col-span-12 xl:col-span-9 2xl:col-span-10 bg-black">
       {/* Sidebar */}
      
       {/* Main Content Area */}
-      <div className="flex-1 h-screen overflow-auto bg-gray-900">
+      <div className="flex-1 h-screen overflow-auto bg-black">
         {/* Navigation Tabs */}
-        <div className="flex border-b border-gray-800 sticky top-0 bg-gray-900 z-10">
+        <div className="flex border-b border-purple-800 sticky top-0 bg-gray-1000 z-10">
           <motion.button
             whileHover={{ backgroundColor: "rgba(59, 130, 246, 0.2)" }}
             whileTap={{ scale: 0.97 }}

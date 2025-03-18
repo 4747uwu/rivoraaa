@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Home, Calendar, User, Settings, BarChart2, 
-  Files, Users, X, ChevronRight, LogOut, Zap, Cable 
+  Files, Users, X, ChevronRight, LogOut, Zap, Cable, Loader, Bell 
 } from 'lucide-react';
 
 import { useTheme } from './context/themeContext';
@@ -12,30 +12,62 @@ import { useTeam } from './context/teamContext';
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { darkMode } = useTheme();
   const { user, logout } = useAuth();
   const [activeSection, setActiveSection] = useState('main'); // 'main' or 'teams'
-  const { getMyTeams } = useTeam();
   
+  const { getMyTeams } = useTeam();
+  const [teamsData, setTeamsData] = useState(null);
+  const [loadingTeams, setLoadingTeams] = useState(true);
+  const [error, setError] = useState(null);
+  
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        setLoadingTeams(true);
+        const result = await getMyTeams();
+        setTeamsData(result);
+      } catch (err) {
+        setError(err);
+      } finally {
+        setLoadingTeams(false);
+      }
+    };
+    
+    fetchTeams();
+  }, []);
 
   // Navigation items
   const navItems = [
     { icon: Home, text: "Dashboard", path: "/dashboard", section: 'main' },
     { icon: Calendar, text: "Calendar", path: "/calender", section: 'main' },
     { icon: Files, text: "Projects", path: "/projects", section: 'main' },
-    { icon: Users, text: "Team", path: "/team", section: 'main' },
+    { icon: Users, text: "Invitation", path: "/team", section: 'main' },
     { icon: BarChart2, text: "TeamBuilder", path: "/teamBuilder", section: 'main' },
     { icon: User, text: "Profile", path: "/profile", section: 'main' },
-    { icon: Settings, text: "Settings", path: "/settings", section: 'main' },
-    { icon:Cable , text: "LinkUps", path: "/linkups", section: 'main' },
+    { icon: Bell, text: "Notification", path: "/notification", section: 'main' },
+    { icon: Cable, text: "LinkUps", path: "/linkups", section: 'main' },
   ];
 
-  // Mock team items for navigation
-  const teamItems = [
-    { id: 1, name: "Design Team", path: "/team/design", memberCount: 5, color: "from-pink-500 to-purple-500" },
-    { id: 2, name: "Development", path: "/team/dev", memberCount: 8, color: "from-blue-500 to-indigo-500" },
-    { id: 3, name: "Marketing", path: "/team/marketing", memberCount: 4, color: "from-green-500 to-emerald-500" },
+  // Define color gradients for teams
+  const teamColors = [
+    "from-pink-500 to-purple-500",
+    "from-blue-500 to-indigo-500",
+    "from-green-500 to-emerald-500",
+    "from-yellow-500 to-orange-500",
+    "from-red-500 to-pink-500",
+    "from-indigo-500 to-purple-500",
+    "from-teal-500 to-green-500",
+    "from-orange-500 to-amber-500"
   ];
+
+  // Get teams from both owned and member teams
+  const ownedTeams = teamsData?.ownedTeams?.data || [];
+  const memberTeams = teamsData?.memberTeams?.data || [];
+  
+  // Combine owned and member teams
+  const allTeams = [...ownedTeams, ...memberTeams];
 
   const themeClasses = {
     sidebar: darkMode 
@@ -50,6 +82,12 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     navInactive: darkMode 
       ? 'text-gray-400 hover:bg-[#1E293B]/80 hover:text-indigo-300' 
       : 'text-gray-600 hover:bg-gray-100 hover:text-indigo-700',
+  };
+
+  // Handle navigation to create a new team
+  const handleNewTeam = () => {
+    navigate('/teamBuilder');
+    setSidebarOpen(false);
   };
 
   return (
@@ -108,7 +146,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         </div>
 
         {/* Navigation */}
-        <div className="px-3">
+        <div className="px-3 flex-1 overflow-hidden">
           <AnimatePresence mode="wait">
             {activeSection === 'main' ? (
               <motion.div
@@ -167,53 +205,102 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.2 }}
+                className="flex flex-col h-[calc(100vh-200px)]"
               >
                 <div className="flex items-center justify-between px-2 py-2">
                   <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Your Teams</p>
-                  <button className="p-1 rounded-md hover:bg-gray-800/30">
-                    <Zap className="w-3 h-3 text-gray-400" />
+                  {!loadingTeams && (
+                    <div className="text-xs text-gray-500">
+                      {allTeams.length} {allTeams.length === 1 ? 'team' : 'teams'}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Team list with loading state */}
+                <nav className="overflow-y-auto flex-1">
+                  {loadingTeams ? (
+                    <div className="h-32 flex items-center justify-center">
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+                      >
+                        <Loader size={20} className="text-indigo-400" />
+                      </motion.div>
+                    </div>
+                  ) : error ? (
+                    <div className="py-4 text-center">
+                      <p className="text-sm text-red-400">Failed to load teams</p>
+                      <button 
+                        className="mt-2 text-xs text-indigo-400 hover:text-indigo-300"
+                        onClick={() => window.location.reload()}
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  ) : allTeams.length === 0 ? (
+                    <div className="py-4 text-center">
+                      <p className="text-sm text-gray-400">No teams yet</p>
+                      <p className="mt-1 text-xs text-gray-500">Create one to get started</p>
+                    </div>
+                  ) : (
+                    <ul className="space-y-1">
+                      {allTeams.map((team, index) => {
+                        const teamPath = `/teams/${team._id}`;
+                        const isActive = location.pathname === teamPath;
+                        const colorIndex = index % teamColors.length;
+                        const isOwned = ownedTeams.some(t => t._id === team._id);
+                        
+                        return (
+                          <motion.li
+                            key={team._id}
+                            whileHover={{ x: 5 }}
+                            whileTap={{ scale: 0.97 }}
+                          >
+                            <Link
+                              to={teamPath}
+                              onClick={() => setSidebarOpen(false)}
+                              className={`flex items-center justify-between px-3 py-2.5 rounded-lg ${
+                                isActive
+                                  ? themeClasses.navActive
+                                  : themeClasses.navInactive
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={`w-7 h-7 rounded-md bg-gradient-to-br ${teamColors[colorIndex]} flex items-center justify-center text-xs font-bold text-white relative`}>
+                                  {team.name?.charAt(0) || 'T'}
+                                  {isOwned && (
+                                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-indigo-500 border border-indigo-700 rounded-full"></span>
+                                  )}
+                                </div>
+                                <div className="max-w-[140px]">
+                                  <p className="font-medium text-sm truncate" title={team.name}>
+                                    {team.name}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {team.members?.length + 1} members
+                                  </p>
+                                </div>
+                              </div>
+                              <ChevronRight className="w-4 h-4 text-gray-500" />
+                            </Link>
+                          </motion.li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                  <div className="pt-2 pb-1 bgf">
+                  <button 
+                    onClick={handleNewTeam}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg transition-colors"
+                  >
+                    <span>New Team</span>
+                    <span className="w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center">+</span>
                   </button>
                 </div>
-                <nav className="overflow-y-auto">
-                  <ul className="space-y-1">
-                    {teamItems.map((team) => {
-                      const isActive = location.pathname === team.path;
-                      return (
-                        <motion.li
-                          key={team.id}
-                          whileHover={{ x: 5 }}
-                          whileTap={{ scale: 0.97 }}
-                        >
-                          <Link
-                            to={team.path}
-                            className={`flex items-center justify-between px-3 py-2.5 rounded-lg ${
-                              isActive
-                                ? themeClasses.navActive
-                                : themeClasses.navInactive
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className={`w-7 h-7 rounded-md bg-gradient-to-br ${team.color} flex items-center justify-center text-xs font-bold text-white`}>
-                                {team.name.charAt(0)}
-                              </div>
-                              <div>
-                                <p className="font-medium text-sm">{team.name}</p>
-                                <p className="text-xs text-gray-500">{team.memberCount} members</p>
-                              </div>
-                            </div>
-                            <ChevronRight className="w-4 h-4 text-gray-500" />
-                          </Link>
-                        </motion.li>
-                      );
-                    })}
-                    <li className="pt-1">
-                      <button className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg transition-colors">
-                        <span>New Team</span>
-                        <span className="w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center">+</span>
-                      </button>
-                    </li>
-                  </ul>
                 </nav>
+                
+                {/* Create new team button */}
+                
               </motion.div>
             )}
           </AnimatePresence>

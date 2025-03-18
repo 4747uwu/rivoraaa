@@ -9,7 +9,7 @@ const Invitations = () => {
 
   const getThemeClasses = (darkMode) => ({
     background: darkMode 
-      ? 'bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A]' 
+      ? 'bg-black' 
       : 'bg-gradient-to-br from-gray-50 via-white to-gray-50',
     sidebar: darkMode 
       ? 'bg-[#0F172A]/95 backdrop-blur-lg border-r border-indigo-500/20' 
@@ -38,7 +38,7 @@ const Invitations = () => {
   const themeClasses = getThemeClasses(darkMode);
 
   return (
-    <div className={`flex h-screen overflow-hidden ${themeClasses.background}`}>
+    <div className={`flex h-screen overflow-hidden bg-black`}>
       {/* Sidebar */}
       <Sidebar 
         sidebarOpen={sidebarOpen} 
@@ -47,7 +47,7 @@ const Invitations = () => {
       />
 
       {/* Main content area */}
-      <div className={`flex flex-col flex-1   duration-300 ease-in-out
+      <div className={`flex flex-col flex-1 bg-black   duration-300 ease-in-out
         `}>
         {/* Header */} 
           <Header 

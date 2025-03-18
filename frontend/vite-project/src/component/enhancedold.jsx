@@ -79,8 +79,8 @@ const Projects = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search projects..."
-              className="pl-10 w-full bg-gray-900/50 border border-white/10 focus:border-white/30 
-                       rounded-xl px-4 py-2.5 text-gray-100 focus:outline-none focus:ring-1 focus:ring-white/20"
+              className="pl-10 w-full bg-gray-800/70 border border-indigo-500/30 focus:border-indigo-500/70 
+                       rounded-xl px-4 py-2.5 text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500/30"
             />
             {searchTerm && (
               <button 
@@ -97,8 +97,8 @@ const Projects = () => {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full bg-gray-900/50 border border-white/10 focus:border-white/30 
-                       rounded-xl px-4 py-2.5 text-gray-100 focus:outline-none focus:ring-1 focus:ring-white/20 
+              className="w-full bg-gray-800/70 border border-indigo-500/30 focus:border-indigo-500/70 
+                       rounded-xl px-4 py-2.5 text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 
                        appearance-none hover:cursor-pointer"
             >
               <option value="">All Statuses</option>
@@ -113,8 +113,8 @@ const Projects = () => {
             <select
               value={filterPriority}
               onChange={(e) => setFilterPriority(e.target.value)}
-              className="w-full bg-gray-900/50 border border-white/10 focus:border-white/30 
-                       rounded-xl px-4 py-2.5 text-gray-100 focus:outline-none focus:ring-1 focus:ring-white/20 
+              className="w-full bg-gray-800/70 border border-indigo-500/30 focus:border-indigo-500/70 
+                       rounded-xl px-4 py-2.5 text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 
                        appearance-none hover:cursor-pointer"
             >
               <option value="">All Priorities</option>
@@ -126,13 +126,13 @@ const Projects = () => {
 
           {/* View mode toggle - Modified to include Zen view */}
           <div className="col-span-1 md:col-span-2 flex items-center">
-            <div className="flex items-center p-2.5 bg-gray-900/50 rounded-xl border border-white/10 w-full justify-center">
+            <div className="flex items-center p-2.5 bg-gray-800/70 rounded-xl border border-indigo-500/30 w-full justify-center">
               <button
                 onClick={() => setViewMode('grid')}
                 className={`p-1.5 rounded-lg transition-colors duration-200 flex-1 flex justify-center ${
                   viewMode === 'grid' 
-                    ? 'bg-white/10 text-white shadow-inner' 
-                    : 'text-gray-400 hover:text-white'
+                    ? 'bg-indigo-600/80 text-white shadow-inner' 
+                    : 'text-gray-400 hover:text-indigo-400'
                 }`}
                 title="Card Grid"
               >
@@ -142,8 +142,8 @@ const Projects = () => {
                 onClick={() => setViewMode('list')}
                 className={`p-1.5 rounded-lg transition-colors duration-200 flex-1 flex justify-center ${
                   viewMode === 'list' 
-                    ? 'bg-white/10 text-white shadow-inner' 
-                    : 'text-gray-400 hover:text-white'
+                    ? 'bg-indigo-600/80 text-white shadow-inner' 
+                    : 'text-gray-400 hover:text-indigo-400'
                 }`}
                 title="List View"
               >
@@ -153,8 +153,8 @@ const Projects = () => {
                 onClick={() => setViewMode('zen')}
                 className={`p-1.5 rounded-lg transition-colors duration-200 flex-1 flex justify-center ${
                   viewMode === 'zen' 
-                    ? 'bg-white/10 text-white shadow-inner' 
-                    : 'text-gray-400 hover:text-white'
+                    ? 'bg-indigo-600/80 text-white shadow-inner' 
+                    : 'text-gray-400 hover:text-indigo-400'
                 }`}
                 title="Zen Grid"
               >
@@ -165,9 +165,9 @@ const Projects = () => {
 
           <button
             onClick={() => setShowNewProjectModal(true)}
-            className="flex items-center gap-2 bg-white hover:bg-gray-200 
-                     text-black px-4 py-2 rounded-xl transition-all duration-300 shadow-lg
-                     border border-white/20 font-medium"
+            className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 
+                     text-white px-4 py-1 rounded-xl transition-all duration-300 shadow-lg shadow-indigo-500/20
+                     border border-indigo-500/30 font-medium"
           >
             <PlusCircle className="w-4 h-4" />
             <span>New</span>
@@ -381,25 +381,21 @@ const ZenProjectCard = ({ project, onEdit, onDelete }) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       whileHover={{ scale: 1.02 }}
-      className="bg-gradient-to-b from-gray-900/80 to-black rounded-xl overflow-hidden 
-                shadow-xl hover:shadow-2xl transition-all duration-300 h-[250px] 
-                flex flex-col group border border-white/10"
+      className="bg-gradient-to-b from-gray-800 to-gray-900 rounded-xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 h-[250px] flex flex-col group"
     >
       {/* Image section - 50% height with relative position for overlays */}
       <div className="relative h-[60%]">
         <img 
           src={projectImage} 
           alt={project.name || 'Project'}
-          className="w-full h-full object-cover object-center opacity-80"
+          className="w-full h-full object-cover object-center"
           onClick={() => navigate(`/project/${project._id}`)}
         />
         
         {/* Add image upload button on hover */}
-        <div className="absolute inset-0 bg-black/60 flex items-center justify-center 
-                      opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
              onClick={(e) => e.stopPropagation()}>
-          <label className="cursor-pointer p-2 bg-white/10 hover:bg-white/20 
-                         rounded-lg text-white text-xs flex items-center gap-1.5 shadow-lg">
+          <label className="cursor-pointer p-2 bg-indigo-600/80 hover:bg-indigo-600 rounded-lg text-white text-xs flex items-center gap-1.5 shadow-lg">
             {uploading ? (
               <>
                 <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -425,15 +421,13 @@ const ZenProjectCard = ({ project, onEdit, onDelete }) => {
         
         {/* Priority badge */}
         <div className="absolute top-4 left-4">
-          <span className={`px-3 py-1 rounded-full text-xs font-medium border 
-                        backdrop-blur-sm ${getPriorityColor()}`}>
+          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPriorityColor()} border shadow-md backdrop-blur-sm`}>
             {project.priority || 'Low'}
           </span>
         </div>
         
         {/* Action buttons, only visible on hover */}
-        <div className="absolute top-4 right-4 flex space-x-1 opacity-0 
-                      group-hover:opacity-100 transition-opacity duration-300">
+        <div className="absolute top-4 right-4 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <button 
             onClick={(e) => {
               e.stopPropagation();
@@ -459,8 +453,7 @@ const ZenProjectCard = ({ project, onEdit, onDelete }) => {
       
       {/* Text content section - 50% height */}
       <div 
-        className="p-4 flex flex-col h-[40%] border-t border-white/10 
-                    bg-gradient-to-b from-gray-900 to-black"
+        className="p-2 pt-0 flex flex-col h-[40%] border-t border-indigo-500/20"
         onClick={() => navigate(`/project/${project._id}`)}
       >
         {/* Project title */}

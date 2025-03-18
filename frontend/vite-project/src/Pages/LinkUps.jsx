@@ -9,7 +9,7 @@ const LinkUps = () => {
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
     return (
-        <div className="flex h-screen w-full bg-gray-950 overflow-hidden">
+        <div className="flex h-screen w-full bg-black overflow-hidden">
             {/* Mobile sidebar overlay */}
             {sidebarOpen && (
                 <div 
@@ -22,7 +22,7 @@ const LinkUps = () => {
             <div 
                 className={`${
                     sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-                } lg:translate-x-0 transition-transform duration-300 fixed lg:relative w-72 min-h-screen h-screen z-30 lg:block bg-gray-900 border-r border-gray-800`}
+                } lg:translate-x-0 transition-transform duration-300 fixed lg:relative w-72 min-h-screen h-screen z-30 bg-black border-r border-gray-800`}
             >
                 <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
             </div>

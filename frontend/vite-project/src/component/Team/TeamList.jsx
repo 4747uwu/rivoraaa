@@ -8,22 +8,30 @@ import {
 } from 'lucide-react';
 
 // Extracted reusable components for better performance
+// Update EmptyState component
 const EmptyState = memo(({ icon: Icon, title, description, actionButton, glassCard, textClass, subTextClass }) => (
-  <div className={`${glassCard} rounded-lg p-6 text-center`}>
+  <div className={`${glassCard} rounded-lg p-6 text-center bg-gradient-to-br from-gray-900 to-black border border-gray-800/50`}>
     <Icon className="w-12 h-12 mx-auto text-gray-600 mb-2" />
-    <h4 className={textClass}>{title}</h4>
-    <p className={subTextClass}>{description}</p>
-    {actionButton}
+    <h4 className="text-gray-400">{title}</h4>
+    <p className="text-gray-600">{description}</p>
+    {actionButton && (
+      <div className="mt-4">
+        {React.cloneElement(actionButton, {
+          className: "text-gray-400 hover:text-gray-300"
+        })}
+      </div>
+    )}
   </div>
 ));
 
+// Update FilterButton component
 const FilterButton = memo(({ label, isActive, onClick }) => (
   <button 
     onClick={onClick}
     className={`px-4 py-2 rounded-lg text-sm transition-all ${
       isActive 
-        ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30' 
-        : 'bg-gray-800/30 text-gray-400 hover:bg-gray-800/50'
+        ? 'bg-gray-800/50 text-gray-300 border border-gray-700/50' 
+        : 'bg-gray-900/30 text-gray-500 hover:bg-gray-800/30 hover:text-gray-400'
     }`}
   >
     {label}
@@ -50,20 +58,21 @@ const FilterButtons = memo(({ activeFilter, setActiveFilter }) => (
   </div>
 ));
 
+// Update SearchBar component
 const SearchBar = memo(({ searchQuery, setSearchQuery, glassCard }) => (
-  <div className={`${glassCard} rounded-lg flex items-center px-3 py-2 flex-1 sm:flex-auto`}>
-    <Search size={16} className="text-gray-400 mr-2" />
+  <div className={`${glassCard} rounded-lg flex items-center px-3 py-2 flex-1 sm:flex-auto bg-gray-900/50 border border-gray-800/50`}>
+    <Search size={16} className="text-gray-500 mr-2" />
     <input
       type="text"
       placeholder="Search teams..."
       value={searchQuery}
       onChange={(e) => setSearchQuery(e.target.value)}
-      className="bg-transparent outline-none text-gray-200 placeholder-gray-500 w-full"
+      className="bg-transparent outline-none text-gray-300 placeholder-gray-600 w-full"
     />
     {searchQuery && (
       <button 
         onClick={() => setSearchQuery('')}
-        className="text-gray-500 hover:text-gray-300"
+        className="text-gray-600 hover:text-gray-400"
       >
         <X size={14} />
       </button>
@@ -76,14 +85,14 @@ const TeamCard = memo(({ team, isOwned, user, glassCard, textClass, subTextClass
   // Generate a consistent color for each team (memoized)
   const teamColor = useMemo(() => {
     const colors = [
-      'from-black-500 to-purple-600',
-      'from-blue-500 to-purple-600',
-      'from-black-500 to-purple-600',
-      'from-black-500 to-teal-600',
-      'from-amber-500 to-orange-600',
-      'from-red-500 to-pink-600',
-      'from-teal-500 to-cyan-600',
-      'from-violet-500 to-purple-600',
+      'from-gray-800 to-gray-900',
+      'from-gray-900 to-black',
+      'from-black to-gray-900',
+      'from-gray-800 to-gray-950',
+      'from-gray-900 to-gray-800',
+      'from-black to-gray-800',
+      'from-gray-950 to-black',
+      'from-gray-800 to-black',
     ];
     
     // Use the sum of character codes as a hash function
@@ -101,9 +110,9 @@ const TeamCard = memo(({ team, isOwned, user, glassCard, textClass, subTextClass
 
   return (
     <motion.div
-      whileHover={{ y: -2, boxShadow: "0 8px 20px -5px rgba(79, 70, 229, 0.15)" }}
+      whileHover={{ y: -2, boxShadow: "0 8px 20px -5px rgba(0, 0, 0, 0.3)" }}
       transition={{ type: "spring", stiffness: 300 }}
-      className={`${glassCard} rounded-lg overflow-hidden`}
+      className={`${glassCard} rounded-lg overflow-hidden bg-gradient-to-br from-gray-900 to-black border border-gray-800/50`}
     >
       <Link to={`/teams/${team._id}`} className="flex items-center p-4 gap-4">
         {/* Team Icon - Left Side Rounded */}
@@ -275,7 +284,7 @@ const LeaderboardSection = memo(({
   ];
   
   return (
-    <motion.div variants={itemVariants} className={`${glassCard} rounded-lg p-6`}>
+    <motion.div variants={itemVariants} className={`${glassCard} rounded-lg p-6 bg-gradient-to-br from-gray-900 to-black border border-gray-800/50`}>
       <div className="flex items-center justify-between mb-6">
         <h3 className={`text-lg ${textClass} flex items-center gap-2`}>
           <Trophy className="w-5 h-5 text-yellow-400" />
@@ -294,10 +303,10 @@ const LeaderboardSection = memo(({
           >
             {/* Position marker */}
             <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center mr-3 
-              ${index === 0 ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
-                index === 1 ? 'bg-gray-400/20 text-gray-300 border border-gray-400/30' :
-                index === 2 ? 'bg-amber-600/20 text-amber-400 border border-amber-600/30' :
-                'bg-gray-700/40 text-gray-400'
+              ${index === 0 ? 'bg-gray-800/50 text-gray-300 border border-gray-700/50' :
+                index === 1 ? 'bg-gray-800/40 text-gray-400 border border-gray-700/40' :
+                index === 2 ? 'bg-gray-800/30 text-gray-500 border border-gray-700/30' :
+                'bg-gray-800/20 text-gray-600'
               }`}
             >
               {index + 1}
@@ -330,7 +339,7 @@ const LeaderboardSection = memo(({
                 </div>
                 <div 
                   className={`text-xs px-1.5 py-0.5 rounded ${
-                    index < 3 ? 'bg-indigo-500/20 text-indigo-300' : 'bg-gray-700/40 text-gray-400'
+                    index < 3 ? 'bg-gray-800/50 text-gray-300 border border-gray-700/50' : 'bg-gray-800/20 text-gray-500'
                   }`}
                 >
                   {index === 0 ? '🔥 Hot!' : 
@@ -341,7 +350,7 @@ const LeaderboardSection = memo(({
             </div>
             
             {/* Progress Bar - Absolute positioned at bottom */}
-            <div className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-indigo-600 to-purple-600" style={{
+            <div className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-gray-800 to-gray-700" style={{
               width: `${team.activity}%`
             }}></div>
           </div>

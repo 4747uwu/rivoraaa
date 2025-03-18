@@ -47,6 +47,20 @@
   animation: gradient 15s ease infinite;
 }
 
+@layer components {
+  .glass-card {
+    @apply backdrop-blur-lg bg-opacity-20 border border-white/10;
+  }
+
+  .hover-lift {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300;
+  }
+}
+
 @keyframes gradient {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }

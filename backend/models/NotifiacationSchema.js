@@ -25,6 +25,9 @@ const NotificationSchema = new Schema({
       'task_assigned',
       'task_completed',
       'task_deadline',
+      'task_status',
+      'task_progress',
+      'task_priority',
       'system'
     ]
   },

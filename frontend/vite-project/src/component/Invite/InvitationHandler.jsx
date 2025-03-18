@@ -258,24 +258,24 @@ const InvitationHandler = () => {
   
   // Status badge component with improved design
   const StatusBadge = ({ status, size = 'default' }) => {
-    let bgColor = 'bg-gray-100';
-    let textColor = 'text-gray-600';
+    let bgColor = 'bg-gray-800';
+    let textColor = 'text-gray-400';
     let icon = null;
     let label = 'Unknown';
     
     if (status === 'pending') {
-      bgColor = 'bg-blue-100';
-      textColor = 'text-blue-600';
+      bgColor = 'bg-blue-900/20';
+      textColor = 'text-blue-400';
       icon = <Clock size={size === 'small' ? 12 : 14} />;
       label = 'Pending';
     } else if (status === 'accepted') {
-      bgColor = 'bg-green-100';
-      textColor = 'text-green-600';
+      bgColor = 'bg-green-900/20';
+      textColor = 'text-green-400';
       icon = <CheckCircle size={size === 'small' ? 12 : 14} />;
       label = 'Accepted';
     } else if (status === 'declined' || status === 'rejected') {
-      bgColor = 'bg-red-100';
-      textColor = 'text-red-600';
+      bgColor = 'bg-red-900/20';
+      textColor = 'text-red-400';
       icon = <X size={size === 'small' ? 12 : 14} />;
       label = 'Declined';
     }
@@ -399,10 +399,10 @@ const InvitationHandler = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] p-4 md:p-6">
+    <div className="min-h-screen bg-black p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="bg-gray-800 rounded-xl shadow-md border border-gray-700 p-6 mb-6">
+        <div className="bg-gray-1000 rounded-xl shadow-md border border-gray-700 p-6 mb-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div>
               <div className="flex items-center">
@@ -589,14 +589,14 @@ const InvitationHandler = () => {
                 onClick={() => setActiveTab('accepted')}
                 className={`py-3 px-1 border-b-2 text-sm font-medium flex items-center
                         ${activeTab === 'accepted'
-                          ? 'border-green-500 text-green-400'
+                          ? 'border-white text-green-400'
                           : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
                         }`}
               >
                 <CheckCircle size={16} className="mr-1.5" />
                 Accepted
                 {acceptedCount > 0 && (
-                  <span className="ml-2 inline-flex items-center justify-center w-5 h-5 bg-green-100 text-green-600 text-xs font-medium rounded-full">
+                  <span className="ml-2 inline-flex items-center justify-center w-5 h-5 bg-black text-green-600 text-xs font-medium rounded-full">
                     {acceptedCount}
                   </span>
                 )}
@@ -631,7 +631,7 @@ const InvitationHandler = () => {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 key="empty-state"
-                className="bg-gray-800 rounded-xl shadow-md border border-gray-700 p-12 text-center"
+                className="bg-black rounded-xl shadow-md border border-gray-700 p-12 text-center"
               >
                 {activeTab === 'pending' ? (
                   <>
@@ -685,11 +685,11 @@ const InvitationHandler = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
-                      className={`bg-gray-800 rounded-xl shadow-md border 
-                               ${invitation.status === 'pending' ? 'border-blue-100 hover:border-blue-200' : 
-                                 invitation.status === 'accepted' ? 'border-green-00 hover:border-green-200' :
-                                 'border-gray-200 hover:border-gray-300'} 
-                               p-5 transition-all hover:shadow-md`}
+                      className={`bg-gray-800/50 rounded-xl shadow-md border 
+                               ${invitation.status === 'pending' ? 'border-blue-500/20 hover:border-blue-500/30' : 
+                                 invitation.status === 'accepted' ? 'border-white-500/20 hover:border-white-500/30' :
+                                 'border-gray-700 hover:border-gray-600'} 
+                               p-5 transition-all hover:shadow-lg backdrop-blur-sm`}
                     >
                       <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
                         <div className="flex-grow">
@@ -701,15 +701,15 @@ const InvitationHandler = () => {
                             <StatusBadge status={invitation.status} />
                             
                             <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium
-                                         ${invitation.role === 'admin' ? 'bg-amber-100 text-amber-700' : 
-                                           invitation.role === 'member' ? 'bg-blue-100 text-blue-700' :
-                                           'bg-emerald-100 text-emerald-700'}`}>
+                                         ${invitation.role === 'admin' ? 'bg-amber-900/20 text-amber-400' : 
+                                           invitation.role === 'member' ? 'bg-blue-900/20 text-blue-400' :
+                                           'bg-emerald-900/20 text-emerald-400'}`}>
                               {getRoleIcon(invitation.role)}
                               {invitation.role}
                             </div>
                             
                             {isTeamInvite && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-medium">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-900/20 text-purple-400 text-xs font-medium">
                                 <Users size={12} />
                                 Team invite
                               </span>
@@ -749,7 +749,7 @@ const InvitationHandler = () => {
                           </div>
                           
                           {invitation.message && (
-                            <div className="text-sm italic text-gray-400 bg-gray-700 p-3 rounded-md border border-gray-600">
+                            <div className="text-sm italic text-gray-300 bg-gray-800/50 p-3 rounded-md border border-gray-700">
                               "{invitation.message}"
                             </div>
                           )}
@@ -760,16 +760,16 @@ const InvitationHandler = () => {
                             <div className="flex flex-col gap-2">
                               <button
                                 onClick={() => handleInvitationResponse(id, 'accept')}
-                                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg
-                                         shadow-sm transition-colors flex items-center gap-2 w-full justify-center"
+                                className="px-4 py-2 bg-green-600/20 hover:bg-green-600/30 text-green-400 rounded-lg
+                                         border border-green-500/20 transition-colors flex items-center gap-2 w-full justify-center"
                               >
                                 <CheckCircle size={16} />
                                 <span>Accept</span>
                               </button>
                               <button
                                 onClick={() => handleInvitationResponse(id, 'reject')}
-                                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg
-                                         border border-gray-600 transition-colors flex items-center gap-2 w-full justify-center"
+                                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg
+                                         border border-gray-700 transition-colors flex items-center gap-2 w-full justify-center"
                               >
                                 <X size={16} />
                                 <span>Decline</span>
@@ -778,14 +778,14 @@ const InvitationHandler = () => {
                           ) : invitation.status === 'accepted' ? (
                             <Link
                               to={`/project/${typeof invitation.projectId === 'string' ? invitation.projectId : invitation.projectId?._id}`}
-                              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg
-                                     transition-colors flex items-center gap-2"
+                              className="px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg
+                                     border border-blue-500/20 transition-colors flex items-center gap-2"
                             >
                               <ArrowUpRight size={16} />
                               <span>View Project</span>
                             </Link>
                           ) : (
-                            <span className="text-sm text-gray-500">
+                            <span className="text-sm text-gray-400">
                               Declined on {new Date(invitation.respondedAt || invitation.updatedAt).toLocaleDateString()}
                             </span>
                           )}
@@ -821,11 +821,11 @@ const InvitationHandler = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
-                      className={`bg-gray-800 rounded-xl shadow-md border 
-                               ${invitation.status === 'pending' ? 'border-blue-100 hover:border-blue-200' : 
-                                 invitation.status === 'accepted' ? 'border-green-100 hover:border-green-200' :
-                                 'border-gray-200 hover:border-gray-300'} 
-                               p-5 transition-all hover:shadow-md`}
+                      className={`bg-gray-800/50 rounded-xl shadow-md border 
+                               ${invitation.status === 'pending' ? 'border-blue-500/20 hover:border-blue-500/30' : 
+                                 invitation.status === 'accepted' ? 'border-green-500/20 hover:border-green-500/30' :
+                                 'border-gray-700 hover:border-gray-600'} 
+                               p-5 transition-all hover:shadow-lg backdrop-blur-sm`}
                     >
                       <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
                         <div className="flex-grow">
@@ -837,15 +837,15 @@ const InvitationHandler = () => {
                             <StatusBadge status={invitation.status} />
                             
                             <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium
-                                         ${invitation.role === 'admin' ? 'bg-amber-100 text-amber-700' : 
-                                           invitation.role === 'member' ? 'bg-blue-100 text-blue-700' :
-                                           'bg-emerald-100 text-emerald-700'}`}>
+                                         ${invitation.role === 'admin' ? 'bg-amber-900/20 text-amber-400' : 
+                                           invitation.role === 'member' ? 'bg-blue-900/20 text-blue-400' :
+                                           'bg-emerald-900/20 text-emerald-400'}`}>
                               {getRoleIcon(invitation.role)}
                               {invitation.role}
                             </div>
                             
                             {isTeamInvite && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-medium">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-900/20 text-purple-400 text-xs font-medium">
                                 <Users size={12} />
                                 Team invite
                               </span>
@@ -885,7 +885,7 @@ const InvitationHandler = () => {
                           </div>
                           
                           {invitation.message && (
-                            <div className="text-sm italic text-gray-400 bg-gray-700 p-3 rounded-md border border-gray-600">
+                            <div className="text-sm italic text-gray-300 bg-gray-800/50 p-3 rounded-md border border-gray-700">
                               "{invitation.message}"
                             </div>
                           )}
@@ -896,16 +896,16 @@ const InvitationHandler = () => {
                             <div className="flex flex-col gap-2">
                               <button
                                 onClick={() => handleInvitationResponse(id, 'accept')}
-                                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg
-                                         shadow-sm transition-colors flex items-center gap-2 w-full justify-center"
+                                className="px-4 py-2 bg-green-600/20 hover:bg-green-600/30 text-green-400 rounded-lg
+                                         border border-green-500/20 transition-colors flex items-center gap-2 w-full justify-center"
                               >
                                 <CheckCircle size={16} />
                                 <span>Accept</span>
                               </button>
                               <button
                                 onClick={() => handleInvitationResponse(id, 'reject')}
-                                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg
-                                         border border-gray-600 transition-colors flex items-center gap-2 w-full justify-center"
+                                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg
+                                         border border-gray-700 transition-colors flex items-center gap-2 w-full justify-center"
                               >
                                 <X size={16} />
                                 <span>Decline</span>
@@ -914,14 +914,14 @@ const InvitationHandler = () => {
                           ) : invitation.status === 'accepted' ? (
                             <Link
                               to={`/project/${typeof invitation.projectId === 'string' ? invitation.projectId : invitation.projectId?._id}`}
-                              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg
-                                     transition-colors flex items-center gap-2"
+                              className="px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg
+                                     border border-blue-500/20 transition-colors flex items-center gap-2"
                             >
                               <ArrowUpRight size={16} />
                               <span>View Project</span>
                             </Link>
                           ) : (
-                            <span className="text-sm text-gray-500">
+                            <span className="text-sm text-gray-400">
                               Declined on {new Date(invitation.respondedAt || invitation.updatedAt).toLocaleDateString()}
                             </span>
                           )}
@@ -937,14 +937,14 @@ const InvitationHandler = () => {
         
         {/* Helpful tips section */}
         {activeTab === 'pending' && pendingCount > 0 && (
-          <div className="mt-6 bg-blue-50 border border-blue-100 rounded-xl p-4">
+          <div className="mt-6 bg-gray-800/50 border border-gray-700 rounded-xl p-4">
             <div className="flex items-start">
               <div className="flex-shrink-0 pt-0.5">
-                <Award size={20} className="text-blue-600" />
+                <HelpCircle size={20} className="text-gray-400" />
               </div>
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-blue-800">Project Collaboration Tips</h3>
-                <div className="mt-2 text-sm text-blue-700">
+                <h3 className="text-sm font-medium text-gray-200">Project Collaboration Tips</h3>
+                <div className="mt-2 text-sm text-gray-400">
                   <ul className="list-disc pl-5 space-y-1">
                     <li>Admin roles can manage project settings and invites</li>
                     <li>Member roles can contribute to project content</li>

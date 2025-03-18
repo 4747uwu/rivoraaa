@@ -5,6 +5,7 @@ import { FcGoogle } from 'react-icons/fc';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, ArrowRight, User, Loader, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-toastify';
+import Waves from '../Pages/creative/linebc';
 
 const Login = () => {
     const { login, register, googleLogin} = useAuth();
@@ -106,44 +107,49 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen w-full bg-gray-900">
-            {/* Animated background elements */}
+        <div className="min-h-screen w-full bg-white">
+            {/* Enhanced Background with Waves */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                {/* Animated glowing orbs */}
-                <div className="absolute top-1/4 left-1/4 w-32 h-32 rounded-full bg-blue-500/10 blur-xl animate-pulse"></div>
-                <div className="absolute top-3/4 right-1/4 w-40 h-40 rounded-full bg-purple-500/10 blur-xl animate-pulse" style={{animationDuration: '7s'}}></div>
-                <div className="absolute top-1/2 left-1/2 w-24 h-24 rounded-full bg-cyan-500/10 blur-xl animate-pulse" style={{animationDuration: '9s'}}></div>
-                
-                {/* Animated geometric elements */}
-                <div className="absolute top-10 right-10 w-20 h-20 border border-indigo-500/20 rotate-45 animate-spin" style={{animationDuration: '15s'}}></div>
-                <div className="absolute bottom-20 left-20 w-32 h-32 border border-cyan-500/20 rounded-full animate-ping" style={{animationDuration: '20s', opacity: '0.15'}}></div>
-                
-                {/* Particles effect - SVG dots */}
-                <svg className="absolute inset-0 w-full h-full opacity-30" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <pattern id="dots" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-                            <circle cx="2" cy="2" r="1" fill="rgba(79, 70, 229, 0.3)" />
-                        </pattern>
-                    </defs>
-                    <rect x="0" y="0" width="100%" height="100%" fill="url(#dots)" />
-                </svg>
-                
-                {/* Gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-br from-black to-gray-900 "></div>
+                {/* Waves Component - Inverted Direction */}
+                <div className="absolute inset-0" style={{ zIndex: 1, transform: 'scaleY(-1)' }}>
+                    <Waves
+                        lineColor="rgba(0, 0, 0, 0.03)"
+                        backgroundColor="transparent"
+                        waveSpeedX={-0.015}
+                        waveSpeedY={-0.008}
+                        waveAmpX={50}
+                        waveAmpY={25}
+                        friction={0.95}
+                        tension={0.02}
+                        maxCursorMove={150}
+                        xGap={16}
+                        yGap={40}
+                        style={{ 
+                            mixBlendMode: 'multiply',
+                            opacity: 0.7
+                        }}
+                    />
+                </div>
+
+                {/* Gradient Overlay */}
+                {/* <div 
+                    className="absolute inset-0 bg-gradient-to-t from-white via-white/50 to-white/90" 
+                    style={{ zIndex: 2 }} 
+                /> */}
             </div>
 
             {/* Main content */}
-            <div className="relative min-h-screen flex flex-col items-center justify-center p-4">
+            <div className="relative min-h-screen flex flex-col items-center justify-center p-4" style={{ zIndex: 10 }}>
                 {/* Logo and company name */}
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="mb-8 text-center"
                 >
-                    <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">
-                        ProjectFlow
+                    <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-700">
+                        Rivora
                     </h1>
-                    <p className="mt-2 text-gray-400">
+                    <p className="mt-2 text-gray-600">
                         {isLogin ? 'Welcome back' : 'Create your account'}
                     </p>
                 </motion.div>
@@ -152,7 +158,7 @@ const Login = () => {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="w-full max-w-md bg-gray-800/70 backdrop-blur-xl rounded-2xl shadow-2xl p-8 border border-gray-700/50"
+                    className="w-full max-w-md bg-black/95 backdrop-blur-xl rounded-2xl shadow-2xl p-8 border border-gray-900"
                 >
                     <AnimatePresence mode="wait">
                         {/* Email verification message */}
@@ -163,15 +169,15 @@ const Login = () => {
                                 exit={{ opacity: 0, y: -20 }}
                                 className="text-center py-6"
                             >
-                                <div className="w-16 h-16 bg-indigo-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <Mail className="h-8 w-8 text-indigo-400" />
+                                <div className="w-16 h-16 bg-gray-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <Mail className="h-8 w-8 text-gray-400" />
                                 </div>
                                 <h3 className="text-xl font-semibold text-gray-200 mb-2">
                                     Verify your email address
                                 </h3>
                                 <p className="text-gray-400 mb-6">
                                     We've sent a verification link to:
-                                    <span className="block font-medium mt-1 text-indigo-300">
+                                    <span className="block font-medium mt-1 text-gray-300">
                                         {formData.email}
                                     </span>
                                 </p>
@@ -181,7 +187,7 @@ const Login = () => {
                                 <div className="flex flex-col space-y-3">
                                     <button
                                         onClick={() => setShowVerifyMessage(false)}
-                                        className="text-indigo-400 hover:text-indigo-300 font-medium"
+                                        className="text-white hover:text-gray-300 font-medium"
                                     >
                                         Use a different email
                                     </button>
@@ -224,12 +230,12 @@ const Login = () => {
                                         {!isLogin && (
                                             <>
                                                 <div className="relative">
-                                                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-indigo-400 h-5 w-5" />
+                                                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                                                     <input
                                                         name="name"
                                                         type="text"
                                                         required
-                                                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/50 transition-all duration-200 bg-gray-700/50 text-gray-200 placeholder-gray-400"
+                                                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-700 focus:border-gray-600 focus:ring-2 focus:ring-gray-800/50 transition-all duration-200 bg-gray-900/50 text-gray-200 placeholder-gray-500"
                                                         placeholder="Full Name"
                                                         value={formData.name}
                                                         onChange={handleChange}
@@ -237,12 +243,12 @@ const Login = () => {
                                                     />
                                                 </div>
                                                 <div className="relative">
-                                                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-indigo-400 h-5 w-5" />
+                                                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                                                     <input
                                                         name="username"
                                                         type="text"
                                                         required
-                                                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/50 transition-all duration-200 bg-gray-700/50 text-gray-200 placeholder-gray-400"
+                                                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-700 focus:border-gray-600 focus:ring-2 focus:ring-gray-800/50 transition-all duration-200 bg-gray-900/50 text-gray-200 placeholder-gray-500"
                                                         placeholder="Username"
                                                         value={formData.username}
                                                         onChange={handleChange}
@@ -253,12 +259,12 @@ const Login = () => {
                                         )}
 
                                         <div className="relative">
-                                            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-indigo-400 h-5 w-5" />
+                                            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                                             <input
                                                 name="email"
                                                 type="email"
                                                 required
-                                                className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/50 transition-all duration-200 bg-gray-700/50 text-gray-200 placeholder-gray-400"
+                                                className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-700 focus:border-gray-600 focus:ring-2 focus:ring-gray-800/50 transition-all duration-200 bg-gray-900/50 text-gray-200 placeholder-gray-500"
                                                 placeholder="Email address"
                                                 value={formData.email}
                                                 onChange={handleChange}
@@ -267,12 +273,12 @@ const Login = () => {
                                         </div>
 
                                         <div className="relative">
-                                            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-indigo-400 h-5 w-5" />
+                                            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                                             <input
                                                 name="password"
                                                 type={showPassword ? "text" : "password"}
                                                 required
-                                                className="w-full pl-10 pr-12 py-3 rounded-lg border border-gray-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/50 transition-all duration-200 bg-gray-700/50 text-gray-200 placeholder-gray-400"
+                                                className="w-full pl-10 pr-12 py-3 rounded-lg border border-gray-700 focus:border-gray-600 focus:ring-2 focus:ring-gray-800/50 transition-all duration-200 bg-gray-900/50 text-gray-200 placeholder-gray-500"
                                                 placeholder="Password"
                                                 value={formData.password}
                                                 onChange={handleChange}
@@ -297,7 +303,7 @@ const Login = () => {
                                         <div className="flex items-center justify-start mb-2">
                                             <Link 
                                                 to="/forgotPassword"
-                                                className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors duration-200"
+                                                className="text-sm font-medium text-white hover:text-gray-300 transition-colors duration-200"
                                             >
                                                 Forgot your password?
                                             </Link>
@@ -310,7 +316,7 @@ const Login = () => {
                                         whileTap={{ scale: isLoading ? 1 : 0.99 }}
                                         type="submit"
                                         disabled={isLoading}
-                                        className="w-full flex items-center justify-center py-3 px-4 rounded-lg bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-gray-800 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-indigo-900/50"
+                                        className="w-full flex items-center justify-center py-3 px-4 rounded-lg bg-gradient-to-r from-gray-900 to-black hover:from-gray-800 hover:to-gray-900 text-white font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 focus:ring-offset-black transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-gray-900/50"
                                     >
                                         {isLoading ? (
                                             <>
@@ -332,7 +338,7 @@ const Login = () => {
                                         <div className="w-full border-t border-gray-700"></div>
                                     </div>
                                     <div className="relative flex justify-center text-sm">
-                                        <span className="px-4 bg-gray-800 text-gray-400">Or continue with</span>
+                                        <span className="px-4 bg-black text-gray-400">Or continue with</span>
                                     </div>
                                 </div>
 
@@ -353,7 +359,7 @@ const Login = () => {
                                 <div className="text-center mt-6">
                                     <button
                                         onClick={toggleMode}
-                                        className="text-sm font-medium text-indigo-400 hover:text-indigo-300"
+                                        className="text-sm font-medium text-white hover:text-gray-300"
                                         disabled={isLoading}
                                     >
                                         {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
@@ -366,7 +372,7 @@ const Login = () => {
                 
                 {/* Footer */}
                 <div className="mt-8 text-center text-gray-500 text-xs">
-                    <p>© 2024 ProjectFlow. All rights reserved.</p>
+                    <p>© 2024 Rivora. All rights reserved.</p>
                 </div>
             </div>
         </div>

@@ -79,8 +79,8 @@ const Projects = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search projects..."
-              className="pl-10 w-full bg-gray-800/70 border border-indigo-500/30 focus:border-indigo-500/70 
-                       rounded-xl px-4 py-2.5 text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500/30"
+              className="pl-10 w-full bg-gray-900/50 border border-white/10 focus:border-white/30 
+                       rounded-xl px-4 py-2.5 text-gray-100 focus:outline-none focus:ring-1 focus:ring-white/20"
             />
             {searchTerm && (
               <button 
@@ -97,8 +97,8 @@ const Projects = () => {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full bg-gray-800/70 border border-indigo-500/30 focus:border-indigo-500/70 
-                       rounded-xl px-4 py-2.5 text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 
+              className="w-full bg-gray-900/50 border border-white/10 focus:border-white/30 
+                       rounded-xl px-4 py-2.5 text-gray-100 focus:outline-none focus:ring-1 focus:ring-white/20 
                        appearance-none hover:cursor-pointer"
             >
               <option value="">All Statuses</option>
@@ -113,8 +113,8 @@ const Projects = () => {
             <select
               value={filterPriority}
               onChange={(e) => setFilterPriority(e.target.value)}
-              className="w-full bg-gray-800/70 border border-indigo-500/30 focus:border-indigo-500/70 
-                       rounded-xl px-4 py-2.5 text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 
+              className="w-full bg-gray-900/50 border border-white/10 focus:border-white/30 
+                       rounded-xl px-4 py-2.5 text-gray-100 focus:outline-none focus:ring-1 focus:ring-white/20 
                        appearance-none hover:cursor-pointer"
             >
               <option value="">All Priorities</option>
@@ -126,13 +126,13 @@ const Projects = () => {
 
           {/* View mode toggle - Modified to include Zen view */}
           <div className="col-span-1 md:col-span-2 flex items-center">
-            <div className="flex items-center p-2.5 bg-gray-800/70 rounded-xl border border-indigo-500/30 w-full justify-center">
+            <div className="flex items-center p-2.5 bg-gray-900/50 rounded-xl border border-white/10 w-full justify-center">
               <button
                 onClick={() => setViewMode('grid')}
                 className={`p-1.5 rounded-lg transition-colors duration-200 flex-1 flex justify-center ${
                   viewMode === 'grid' 
-                    ? 'bg-indigo-600/80 text-white shadow-inner' 
-                    : 'text-gray-400 hover:text-indigo-400'
+                    ? 'bg-white/10 text-white shadow-inner' 
+                    : 'text-gray-400 hover:text-white'
                 }`}
                 title="Card Grid"
               >
@@ -142,8 +142,8 @@ const Projects = () => {
                 onClick={() => setViewMode('list')}
                 className={`p-1.5 rounded-lg transition-colors duration-200 flex-1 flex justify-center ${
                   viewMode === 'list' 
-                    ? 'bg-indigo-600/80 text-white shadow-inner' 
-                    : 'text-gray-400 hover:text-indigo-400'
+                    ? 'bg-white/10 text-white shadow-inner' 
+                    : 'text-gray-400 hover:text-white'
                 }`}
                 title="List View"
               >
@@ -153,8 +153,8 @@ const Projects = () => {
                 onClick={() => setViewMode('zen')}
                 className={`p-1.5 rounded-lg transition-colors duration-200 flex-1 flex justify-center ${
                   viewMode === 'zen' 
-                    ? 'bg-indigo-600/80 text-white shadow-inner' 
-                    : 'text-gray-400 hover:text-indigo-400'
+                    ? 'bg-white/10 text-white shadow-inner' 
+                    : 'text-gray-400 hover:text-white'
                 }`}
                 title="Zen Grid"
               >
@@ -165,9 +165,9 @@ const Projects = () => {
 
           <button
             onClick={() => setShowNewProjectModal(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 
-                     text-white px-4 py-1 rounded-xl transition-all duration-300 shadow-lg shadow-indigo-500/20
-                     border border-indigo-500/30 font-medium"
+            className="flex items-center gap-2 bg-white hover:bg-gray-200 
+                     text-black px-4 py-2 rounded-xl transition-all duration-300 shadow-lg
+                     border border-white/20 font-medium"
           >
             <PlusCircle className="w-4 h-4" />
             <span>New</span>
@@ -292,7 +292,7 @@ const ZenProjectCard = ({ project, onEdit, onDelete }) => {
   const {fetchProjects} = useProjects();
   
   // Default project image if none provided
-  const projectImage = project.image || 'https://images.unsplash.com/photo-1606857521015-7f9fcf423740?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80';
+  const projectImage = project.image || 'https://images.unsplash.com/photo-1598350740831-b360a3283b24?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
   
   // Handle image upload
   const handleImageUpload = async (e) => {
@@ -381,21 +381,25 @@ const ZenProjectCard = ({ project, onEdit, onDelete }) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       whileHover={{ scale: 1.02 }}
-      className="bg-gradient-to-b from-gray-800 to-gray-900 rounded-xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 h-[250px] flex flex-col group"
+      className="bg-gradient-to-b from-gray-900/80 to-black rounded-xl overflow-hidden 
+                shadow-xl hover:shadow-2xl transition-all duration-300 h-[250px] 
+                flex flex-col group border border-white/10"
     >
       {/* Image section - 50% height with relative position for overlays */}
       <div className="relative h-[60%]">
         <img 
           src={projectImage} 
           alt={project.name || 'Project'}
-          className="w-full h-full object-cover object-center"
+          className="w-full h-full object-cover object-center opacity-80"
           onClick={() => navigate(`/project/${project._id}`)}
         />
         
         {/* Add image upload button on hover */}
-        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        <div className="absolute inset-0 bg-black/60 flex items-center justify-center 
+                      opacity-0 group-hover:opacity-100 transition-opacity duration-300"
              onClick={(e) => e.stopPropagation()}>
-          <label className="cursor-pointer p-2 bg-indigo-600/80 hover:bg-indigo-600 rounded-lg text-white text-xs flex items-center gap-1.5 shadow-lg">
+          <label className="cursor-pointer p-2 bg-white/10 hover:bg-white/20 
+                         rounded-lg text-white text-xs flex items-center gap-1 shadow-lg">
             {uploading ? (
               <>
                 <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -421,13 +425,15 @@ const ZenProjectCard = ({ project, onEdit, onDelete }) => {
         
         {/* Priority badge */}
         <div className="absolute top-4 left-4">
-          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPriorityColor()} border shadow-md backdrop-blur-sm`}>
+          <span className={`px-3 py-1 rounded-full text-xs font-medium border 
+                        backdrop-blur-sm ${getPriorityColor()}`}>
             {project.priority || 'Low'}
           </span>
         </div>
         
         {/* Action buttons, only visible on hover */}
-        <div className="absolute top-4 right-4 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div className="absolute top-4 right-4 flex space-x-1 opacity-0 
+                      group-hover:opacity-100 transition-opacity duration-300">
           <button 
             onClick={(e) => {
               e.stopPropagation();
@@ -453,7 +459,8 @@ const ZenProjectCard = ({ project, onEdit, onDelete }) => {
       
       {/* Text content section - 50% height */}
       <div 
-        className="p-2 pt-0 flex flex-col h-[40%] border-t border-indigo-500/20"
+        className="p-1 pl-2 pt-0 flex flex-col h-[40%] border-t border-white/10 
+                    bg-gradient-to-b from-gray-900 to-black"
         onClick={() => navigate(`/project/${project._id}`)}
       >
         {/* Project title */}
@@ -540,10 +547,10 @@ const ProjectList = ({ projects, onEdit, onDelete }) => {
   };
 
   return (
-    <div className="bg-gray-800/40 backdrop-blur-md rounded-xl border border-indigo-500/20 overflow-hidden shadow-lg">
+    <div className="bg-black backdrop-blur-md rounded-xl border border-[#333333] overflow-hidden shadow-lg">
       <div className="overflow-hidden">
-        {/* Header Section */}
-        <div className="bg-gradient-to-r from-indigo-900/50 to-purple-900/30 rounded-t-xl w-full backdrop-blur-sm">
+        {/* Header Section with refined styling */}
+        <div className="bg-gray-900 rounded-t-xl w-full backdrop-blur-sm">
           <div className="grid grid-cols-12 gap-3 px-6 py-4">
             <div className="col-span-3 text-xs font-medium text-gray-300 uppercase tracking-wider">Name</div>
             <div className="col-span-3 text-xs font-medium text-gray-300 uppercase tracking-wider">Description</div>
@@ -554,7 +561,7 @@ const ProjectList = ({ projects, onEdit, onDelete }) => {
           </div>
         </div>
 
-        {/* Project List */}
+        {/* Project List with alternating row colors */}
         <div>
           <AnimatePresence>
             {projects.map((project, index) => {
@@ -567,15 +574,15 @@ const ProjectList = ({ projects, onEdit, onDelete }) => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ delay: index * 0.05 }}
-                  className={`border-b border-indigo-500/10 ${
-                    index % 2 === 0 ? 'bg-gray-800/30' : 'bg-gray-800/50'
-                  } hover:bg-indigo-500/10 transition-all duration-300`}
+                  className={`border-b border-[#333333] ${
+                    index % 2 === 0 ? 'bg-black' : 'bg-black/50'
+                  } hover:bg-white/5 transition-all duration-300`}
                 >
                   <div className="grid grid-cols-12 gap-3 items-center px-6 py-4">
                     {/* Name */}
                     <div className="col-span-3 text-base font-medium text-gray-200 truncate">
                       <div className="flex items-center gap-2">
-                        <Tag className="w-4 h-4 text-indigo-400" />
+                        <Tag className="w-4 h-4 text-white/70" />
                         {project.name}
                       </div>
                     </div>
@@ -589,10 +596,10 @@ const ProjectList = ({ projects, onEdit, onDelete }) => {
                     <div className="col-span-1">
                       <span className={`px-3 py-1.5 inline-flex items-center gap-1 rounded-full text-xs font-medium shadow-sm ${
                         project.priority === 'high' 
-                          ? 'bg-red-500/10 text-red-400 border border-red-500/20' 
+                          ? 'bg-red-500/10 text-red-300 border border-red-500/20' 
                           : project.priority === 'medium'
-                          ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
-                          : 'bg-green-500/10 text-green-400 border border-green-500/20'
+                          ? 'bg-yellow-500/10 text-yellow-300 border border-yellow-500/20'
+                          : 'bg-green-500/10 text-green-300 border border-green-500/20'
                       }`}>
                         <Flag className="w-3 h-3" />
                         {project.priority}
@@ -602,16 +609,12 @@ const ProjectList = ({ projects, onEdit, onDelete }) => {
                     {/* Progress with bar */}
                     <div className="col-span-2">
                       <div className="flex items-center gap-2">
-                        <div className="w-full bg-gray-700/50 rounded-full h-1.5">
+                        <div className="w-full bg-[#2A2A2A] rounded-full h-1.5">
                           <motion.div 
                             initial={{ width: 0 }}
                             animate={{ width: `${progressPercent}%` }}
                             transition={{ duration: 1, ease: "easeOut" }}
-                            className={`h-full rounded-full ${
-                              progressPercent >= 75 ? 'bg-white' :
-                              progressPercent >= 30 ? 'bg-white' :
-                              'bg-white'
-                            }`}
+                            className="h-full rounded-full bg-white"
                           ></motion.div>
                         </div>
                         <span className="text-xs text-gray-300 font-medium w-8">
@@ -622,7 +625,7 @@ const ProjectList = ({ projects, onEdit, onDelete }) => {
                     
                     {/* Deadline */}
                     <div className="col-span-2 text-gray-400 text-sm flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-indigo-400" />
+                      <Calendar className="w-4 h-4 text-white/50" />
                       {formatDate(project.deadline)}
                     </div>
                     
@@ -630,23 +633,23 @@ const ProjectList = ({ projects, onEdit, onDelete }) => {
                     <div className="col-span-1 flex justify-end space-x-1">
                       <button 
                         onClick={() => navigate(`/project/${project._id}`)}
-                        className="p-2 text-gray-400 hover:text-indigo-400 transition-all duration-300
-                                hover:bg-indigo-500/10 rounded-lg"
+                        className="p-2 text-gray-400 hover:text-white transition-all duration-300
+                                hover:bg-white/10 rounded-lg"
                         title="View Project"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={() => onEdit(project)}
-                        className="p-2 text-gray-400 hover:text-purple-400 transition-all duration-300
-                                hover:bg-purple-500/10 rounded-lg"
+                        className="p-2 text-gray-400 hover:text-white transition-all duration-300
+                                hover:bg-white/10 rounded-lg"
                         title="Edit Project"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={() => onDelete(project._id)}
-                        className="p-2 text-gray-400 hover:text-red-400 transition-all duration-300
+                        className="p-2 text-gray-400 hover:text-red-300 transition-all duration-300
                                 hover:bg-red-500/10 rounded-lg"
                         title="Delete Project"
                       >
@@ -725,37 +728,49 @@ const ProjectCard = ({ project, onEdit, onDelete }) => {
     return 'text-gray-400';
   };
 
+  // Update card colors and gradients
+  const cardClasses = {
+    base: `bg-gray-1000 opacity-80 rounded-xl 
+           border border-[#292929] overflow-hidden shadow-lg backdrop-blur-sm 
+           hover:border-white/10 transition-all duration-300`,
+    text: {
+      primary: 'text-[#E0E0E0]',
+      secondary: 'text-[#B3B3B3]'
+    },
+    hover: 'hover:bg-[#1E1E1E]',
+    button: 'bg-white/5 hover:bg-white/10 text-[#E0E0E0]'
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       whileHover={{ y: -5 }}
-      className="bg-gradient-to-br from-gray-800/80 to-gray-900/90 rounded-xl border border-indigo-500/20 
-                overflow-hidden shadow-lg backdrop-blur-sm hover:border-purple-500/30 transition-all
-                duration-300 relative group"
+      className={`${cardClasses.base} relative group`}
     >
-      <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+      <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent 
+                    opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
       
       {/* Priority indicator */}
       <div className={`absolute top-0 left-0 w-1 h-full`} />
       
       <div className="p-6 relative z-10">
         <div className="flex justify-between items-start mb-4">
-          <h3 className="text-lg font-semibold text-gray-200 truncate">{project.name}</h3>
+          <h3 className={`text-lg font-semibold ${cardClasses.text.primary} truncate`}>{project.name}</h3>
           
           {/* Action buttons */}
           <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
             <button 
               onClick={() => onEdit(project)}
-              className="p-1.5 text-gray-400 hover:text-purple-400 hover:bg-purple-500/10 rounded-lg transition-all"
+              className={`p-1.5 ${cardClasses.button} hover:text-purple-400 hover:bg-purple-500/10 rounded-lg transition-all`}
               title="Edit Project"
             >
               <Edit2 className="w-4 h-4" />
             </button>
             <button 
               onClick={() => onDelete(project._id)}
-              className="p-1.5 ml-1 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+              className={`p-1.5 ml-1 ${cardClasses.button} hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all`}
               title="Delete Project"
             >
               <Trash2 className="w-4 h-4" />
@@ -764,7 +779,7 @@ const ProjectCard = ({ project, onEdit, onDelete }) => {
         </div>
 
         {/* Description */}
-        <p className="text-gray-400 text-sm mb-4 line-clamp-2">{project.description}</p>
+        <p className={`${cardClasses.text.secondary} text-sm mb-4 line-clamp-2`}>{project.description}</p>
         
         {/* Progress section with percentage display */}
         <div className="flex items-center justify-between mb-2">
@@ -777,15 +792,15 @@ const ProjectCard = ({ project, onEdit, onDelete }) => {
         </div>
         
         {/* Progress bar with animation */}
-        <div className="w-full h-2 bg-gray-700/50 rounded-full mb-4 overflow-hidden">
+        <div className="w-full h-2 bg-gray-800 rounded-full mb-4 overflow-hidden">
           <motion.div 
             initial={{ width: 0 }}
             animate={{ width: `${progressPercent}%` }}
             transition={{ duration: 1, ease: "easeOut" }}
             className={`h-full rounded-full ${
-              progressPercent >= 75 ? 'bg-gray-200' :
-              progressPercent >= 30 ? 'bg-gray-200' :
-              isLateOrAtRisk() ? 'bg-red-500' : 'bg-gray-200'
+              progressPercent >= 75 ? 'bg-white' :
+              progressPercent >= 30 ? 'bg-gray-300' :
+              isLateOrAtRisk() ? 'bg-red-500' : 'bg-gray-400'
             }`}
           ></motion.div>
         </div>

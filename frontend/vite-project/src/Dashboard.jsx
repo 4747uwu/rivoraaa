@@ -20,33 +20,71 @@ import Sidebar from "./sideNavbar.jsx";
 import Header from "./Header.jsx";
 import QuotesWidget from "./yayaComponent.jsx";
 
-// Enhanced getThemeClasses function with improved dark mode styling
+// Add this new component near your other components
+const ProgressRing = ({ progress, size = 60, strokeWidth = 4 }) => {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const offset = circumference - (progress / 100) * circumference;
+
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      <svg className="transform -rotate-90" width={size} height={size}>
+        <circle
+          className="text-white/5"
+          strokeWidth={strokeWidth}
+          stroke="currentColor"
+          fill="transparent"
+          r={radius}
+          cx={size / 2}
+          cy={size / 2}
+        />
+        <circle
+          className="text-white transition-all duration-1000 ease-in-out"
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          stroke="currentColor"
+          fill="transparent"
+          r={radius}
+          cx={size / 2}
+          cy={size / 2}
+        />
+      </svg>
+      <span className="absolute text-sm font-medium text-white">
+        {progress}%
+      </span>
+    </div>
+  );
+};
+
+// Update the getThemeClasses function
 const getThemeClasses = (darkMode) => ({
   background: darkMode 
-    ? 'bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A]' 
-    : 'bg-gradient-to-br from-gray-600 via-white to-gray-50',
+    ? 'bg-gradient-to-br from-black via-[#111] to-black' 
+    : 'bg-gradient-to-br from-gray-100 via-white to-gray-50',
   sidebar: darkMode 
-    ? 'bg-[#0F172A]/95 backdrop-blur-lg border-r border-indigo-500/20' 
+    ? 'bg-black/95 backdrop-blur-lg border-r border-white/10' 
     : 'bg-white/95',
   card: darkMode 
-    ? 'bg-[#1E293B]/80 hover:bg-[#1E293B]/95 border border-indigo-500/20 backdrop-blur-md' 
+    ? 'bg-[#111]/80 hover:bg-[#111]/95 border border-white/10 backdrop-blur-md' 
     : 'bg-white/90',
   text: darkMode ? 'text-gray-100' : 'text-gray-900',
   subtext: darkMode ? 'text-gray-400' : 'text-gray-600',
-  border: darkMode ? 'border-indigo-500/20' : 'border-gray-200',
-  input: darkMode ? 'bg-[#1E293B]/80 focus:bg-[#1E293B] border-indigo-500/20' : 'bg-gray-100',
-  shadow: darkMode ? 'shadow-lg shadow-indigo-500/10' : 'shadow-md',
-  highlight: darkMode ? 'bg-indigo-500/10 text-indigo-300' : 'bg-indigo-100 text-indigo-700',
+  border: darkMode ? 'border-white/10' : 'border-gray-200',
+  input: darkMode ? 'bg-black/50 focus:bg-black/70 border-white/10' : 'bg-gray-100',
+  shadow: darkMode ? 'shadow-lg shadow-black/20' : 'shadow-md',
+  highlight: darkMode ? 'bg-white/5 text-white' : 'bg-black/5 text-black',
   button: darkMode 
-    ? 'bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-400/30' 
-    : 'bg-indigo-500 hover:bg-indigo-600 text-white',
+    ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20' 
+    : 'bg-black hover:bg-gray-900 text-white',
   navActive: darkMode 
-    ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' 
-    : 'bg-indigo-100 text-indigo-700 border border-indigo-200',
+    ? 'bg-white/10 text-white border border-white/20' 
+    : 'bg-black text-white border border-black',
   navInactive: darkMode 
-    ? 'text-gray-400 hover:bg-[#1E293B]/80 hover:text-indigo-300' 
-    : 'text-gray-600 hover:bg-gray-100 hover:text-indigo-700',
-  cardHover: darkMode ? 'hover:border-indigo-500/40 hover:shadow-indigo-500/20' : 'hover:border-indigo-200',
+    ? 'text-gray-400 hover:bg-white/5 hover:text-white' 
+    : 'text-gray-600 hover:bg-black/5 hover:text-black',
+  cardHover: darkMode ? 'hover:border-white/20 hover:shadow-white/5' : 'hover:border-black/20',
 });
 
 const Dashboard = () => {
@@ -122,58 +160,8 @@ const Dashboard = () => {
       <div className={`flex-1 transition-all duration-300 ${
         sidebarOpen ? "ml-72" : "ml-0"
       }`}>
-        {/* Header Section */}
-        {/* <header className={`${themeClasses.card} border-b ${themeClasses.border} sticky top-0 z-40 px-6 py-4 backdrop-blur-md shadow-sm`}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button onClick={() => setSidebarOpen(!sidebarOpen)}>
-                <Menu className="w-6 h-6 text-gray-400 hover:text-purple-400" />
-              </button>
-              <h1 className="text-2xl font-bold text-gray-200">
-                Welcome back, {user?.name}
-              </h1>
-            </div>
-            
-            <div className="flex items-center space-x-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="Search projects..."
-                  className={`${themeClasses.input} text-gray-200 pl-10 pr-4 py-2 rounded-lg border border-transparent focus:border-purple-500 focus:outline-none w-64 transition-all duration-200`}
-                />
-              </div>
-              <button className="relative group">
-                <Bell className="w-6 h-6 text-gray-400 group-hover:text-purple-400 transition-colors" />
-                <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute -top-1 -right-1 w-4 h-4 bg-purple-500 rounded-full text-xs text-white flex items-center justify-center"
-                >
-                  3
-                </motion.span>
-              </button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={toggleTheme}
-                className={`p-2 rounded-lg ${
-                  darkMode ? 'bg-gray-700/50 text-yellow-400 hover:bg-gray-700' : 'bg-gray-200/50 text-gray-900 hover:bg-gray-300'
-                } transition-all duration-200`}
-                aria-label="Toggle theme"
-              >
-                {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-              </motion.button>
-              <button
-                onClick={handleLogout}
-                className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors duration-200 border border-purple-500/30"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </header> */}
-
+        {/* <ProgressRing progress={analyticsData.projectProgress} size={60} strokeWidth={4} /> */}
+        
         <Header 
           sidebarOpen={sidebarOpen} 
           setSidebarOpen={setSidebarOpen} 

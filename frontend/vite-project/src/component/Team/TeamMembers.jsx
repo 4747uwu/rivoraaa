@@ -416,8 +416,9 @@ const TeamManagement = ({ projectMembers = [], tasks = [], currentUser = {}, pro
     setSelectedTaskMember(member);
   };
 
+  // Update the main container styles
   return (
-    <div className="bg-white h-[900px] rounded-lg border border-gray-200 shadow-sm overflow-hidden flex flex-col h-full">
+    <div className="bg-gray-900 rounded-lg border border-gray-800 shadow-lg overflow-hidden flex flex-col h-full">
       <style jsx>{`
         .fixed-dropdown {
           position: absolute;
@@ -425,50 +426,51 @@ const TeamManagement = ({ projectMembers = [], tasks = [], currentUser = {}, pro
         }
       `}</style>
       
-      {/* Header remains the same */}
-      <div className="p-6 border-b border-gray-200">
+      {/* Header section */}
+      <div className="p-6 border-b border-gray-800">
         <div className="flex justify-between items-center">
-          <h2 className="text-lg font-bold text-gray-800 flex items-center">
-            <Users className="mr-2 text-blue-500" size={20} />
+          <h2 className="text-lg font-bold text-gray-100 flex items-center">
+            <Users className="mr-2 text-blue-400" size={20} />
             Project Team ({projectMembers.length} members)
           </h2>
           
-          {/* Add Leave Project button */}
+          {/* Leave Project button */}
           {currentUserMember && (
             <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                handleLeaveProjectRequest();
-              }}
-              className="text-sm flex items-center py-1.5 px-3 text-red-600 border border-red-200 rounded hover:bg-red-50"
+              onClick={handleLeaveProjectRequest}
+              className="text-sm flex items-center py-1.5 px-3 text-red-400 border border-red-500/20 
+                       rounded hover:bg-red-500/10 transition-colors"
             >
               <LogOut size={16} className="mr-1.5" />
               Leave Project
             </button>
           )}
         </div>
-        
-        {/* Search and filters remain the same */}
+
+        {/* Search and filters */}
         <div className="mt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="relative w-full sm:w-64">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search size={18} className="text-gray-400" />
+              <Search size={18} className="text-gray-500" />
             </div>
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="pl-10 pr-4 py-2 w-full bg-gray-800 border border-gray-700 rounded-lg 
+                       text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 
+                       focus:ring-blue-500 focus:border-blue-500"
               placeholder="Search members..."
             />
           </div>
           
           <div className="flex items-center gap-2 self-end">
-            <span className="text-sm text-gray-600">Sort by:</span>
+            <span className="text-sm text-gray-400">Sort by:</span>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="py-2 pl-3 pr-8 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="py-2 pl-3 pr-8 bg-gray-800 border border-gray-700 rounded-lg text-gray-100
+                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="username">Name</option>
               <option value="role">Role</option>
@@ -478,41 +480,41 @@ const TeamManagement = ({ projectMembers = [], tasks = [], currentUser = {}, pro
             
             <button
               onClick={() => setSortOrder(order => order === 'asc' ? 'desc' : 'asc')}
-              className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="p-2 border border-gray-700 rounded-lg hover:bg-gray-800 transition-colors"
             >
-              <ArrowUpDown size={16} className={sortOrder === 'asc' ? 'text-gray-600' : 'text-blue-600'} />
+              <ArrowUpDown size={16} className={sortOrder === 'asc' ? 'text-gray-400' : 'text-blue-400'} />
             </button>
           </div>
         </div>
       </div>
-      
-      {/* Members list with flex-grow to take available space */}
+
+      {/* Table styles */}
       <div className="flex-grow overflow-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-gray-800">
+          <thead className="bg-gray-800/50">
             <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Member
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Role
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Task Stats
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Completion
               </th>
               {isAdmin && (
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Actions
                 </th>
               )}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-gray-900 divide-y divide-gray-800">
             {filteredMembers.map((member) => (
-              <tr key={member._id} className="hover:bg-gray-50">
+              <tr key={member._id} className="hover:bg-gray-800/50 transition-colors">
                 {/* Wrap the member and task stats columns in a clickable div */}
                 <td 
                   colSpan={isAdmin ? 4 : 5} 
@@ -537,8 +539,8 @@ const TeamManagement = ({ projectMembers = [], tasks = [], currentUser = {}, pro
                           )}
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{member.username}</div>
-                          <div className="text-sm text-gray-500">{member.email}</div>
+                          <div className="text-sm font-medium text-gray-200">{member.username}</div>
+                          <div className="text-sm text-gray-400">{member.email}</div>
                         </div>
                       </div>
                     </div>
@@ -570,7 +572,7 @@ const TeamManagement = ({ projectMembers = [], tasks = [], currentUser = {}, pro
                     <div className="px-6 py-4 whitespace-nowrap flex-1">
                       <div>
                         <div className="flex items-center">
-                          <span className="text-sm font-medium text-gray-700 mr-2">
+                          <span className="text-sm font-medium text-gray-200 mr-2">
                             {member.completionRate}%
                           </span>
                           <div className="w-24 bg-gray-200 rounded-full h-2">
@@ -603,31 +605,31 @@ const TeamManagement = ({ projectMembers = [], tasks = [], currentUser = {}, pro
         </table>
         
         {filteredMembers.length === 0 && (
-          <div className="py-8 text-center text-gray-500">
-            <Users size={40} className="mx-auto mb-4 text-gray-300" />
+          <div className="py-8 text-center text-gray-400">
+            <Users size={40} className="mx-auto mb-4 text-gray-600" />
             <p>{searchTerm ? 'No members match your search' : 'No members in this project'}</p>
           </div>
         )}
       </div>
       
       {/* Legend at the bottom */}
-      <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 mt-auto">
-        <h3 className="text-sm font-medium text-gray-600 mb-2">Role Permissions:</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs text-gray-600">
+      <div className="px-6 py-4 bg-gray-800/50 border-t border-gray-800 mt-auto">
+        <h3 className="text-sm font-medium text-gray-300 mb-2">Role Permissions:</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs text-gray-400">
           <div className="flex items-start">
-            <Shield className="text-purple-500 mr-1 mt-0.5 flex-shrink-0" size={14} />
+            <Shield className="text-purple-400 mr-1 mt-0.5 flex-shrink-0" size={14} />
             <span>
               <span className="font-medium">Admin:</span> Full access including member management
             </span>
           </div>
           <div className="flex items-start">
-            <UserCheck className="text-blue-500 mr-1 mt-0.5 flex-shrink-0" size={14} />
+            <UserCheck className="text-blue-400 mr-1 mt-0.5 flex-shrink-0" size={14} />
             <span>
               <span className="font-medium">Member:</span> Can edit tasks and add comments
             </span>
           </div>
           <div className="flex items-start">
-            <UserX className="text-gray-500 mr-1 mt-0.5 flex-shrink-0" size={14} />
+            <UserX className="text-gray-400 mr-1 mt-0.5 flex-shrink-0" size={14} />
             <span>
               <span className="font-medium">Viewer:</span> Read-only access to project
             </span>
