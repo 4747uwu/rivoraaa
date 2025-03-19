@@ -208,7 +208,7 @@ const AIInsightsCard = ({ project, setProject, userHasPermission, currentUser })
   return (
     <>
       {/* Card */}
-      <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg p-4 border border-gray-700 text-white">
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg p-4 border border-gray-700 text-white z-10">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-medium text-gray-300">AI Insights</h3>
           <div className="h-5 w-5 rounded-full bg-blue-500 flex items-center justify-center">
@@ -330,16 +330,23 @@ const AIInsightsCard = ({ project, setProject, userHasPermission, currentUser })
 
       {/* Full Insights Modal */}
       {showFullInsights && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 ">
+          <div 
+            className="bg-[#0A0A0A] rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden 
+                     flex flex-col border border-gray-800/40 animate-scale-in"
+            style={{ transform: 'translateY(0)' }} // This ensures it's not affected by other transforms
+          >
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-lg font-semibold text-gray-900">AI Project Insights</h3>
-              <div className="flex items-center">
+            <div className="flex items-center justify-between p-4 border-b border-gray-800/60 z-[9999]">
+              <div className="flex items-center gap-2">
+                <Brain size={18} className="text-indigo-400" />
+                <h3 className="text-lg font-semibold text-white">AI Project Insights</h3>
+              </div>
+              <div className="flex items-center gap-3">
                 {/* Manual refresh button */}
                 <button
                   onClick={refreshData}
-                  className="text-gray-400 hover:text-gray-600 mr-3"
+                  className="p-2 rounded-full hover:bg-gray-800/80 text-gray-400 hover:text-indigo-300 transition-colors"
                   title="Refresh insights"
                   disabled={isRefreshing}
                 >
@@ -353,51 +360,78 @@ const AIInsightsCard = ({ project, setProject, userHasPermission, currentUser })
                 </button>
                 <button
                   onClick={() => setShowFullInsights(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="p-2 rounded-full hover:bg-gray-800/80 text-gray-400 hover:text-white transition-colors"
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
               </div>
             </div>
 
-            <div className="flex-1 overflow-auto p-6">
+            <div className="flex-1 overflow-auto p-6 bg-[#0A0A0A]">
               {isGenerating || isRefreshing ? (
                 <>
-                  {/* Skeleton for deadline prediction */}
-                  <DeadlineSkeleton />
+                  {/* Skeleton for deadline prediction - dark theme */}
+                  <div className="mb-8 animate-pulse">
+                    <div className="h-4 bg-gray-800 rounded w-1/4 mb-2"></div>
+                    <div className="bg-[#111111] p-4 rounded-lg border border-gray-800/60">
+                      <div className="flex justify-between items-center">
+                        <div className="w-1/3">
+                          <div className="h-3 bg-gray-800 rounded w-2/3 mb-2"></div>
+                          <div className="h-5 bg-gray-800 rounded w-full"></div>
+                        </div>
+                        <div className="text-2xl text-gray-700 mx-4">→</div>
+                        <div className="w-1/3">
+                          <div className="h-3 bg-gray-800 rounded w-2/3 mb-2"></div>
+                          <div className="h-5 bg-gray-800 rounded w-full"></div>
+                        </div>
+                        <div className="ml-4 px-8 py-2 rounded-full border border-gray-800 bg-gray-900">
+                          <div className="h-4 bg-gray-800 rounded w-full"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                   
-                  {/* Tab navigation skeleton */}
+                  {/* Tab navigation skeleton - dark theme */}
                   <div className="mb-6">
-                    <div className="flex space-x-2 mb-4 border-b">
+                    <div className="flex space-x-2 mb-4 border-b border-gray-800/60">
                       {insightOptions.map(option => (
                         <div 
                           key={option.id} 
                           className="px-4 py-2 border-b-2 border-transparent"
                         >
                           <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 bg-gray-200 rounded-full"></div>
-                            <div className="h-4 bg-gray-200 rounded w-16"></div>
+                            <div className="w-4 h-4 bg-gray-800 rounded-full"></div>
+                            <div className="h-4 bg-gray-800 rounded w-16"></div>
                           </div>
                         </div>
                       ))}
                     </div>
 
-                    <div className="bg-white border border-gray-200 rounded-lg p-5">
-                      <InsightSkeleton />
+                    <div className="bg-[#111111] border border-gray-800/60 rounded-lg p-5">
+                      <div className="animate-pulse">
+                        <div className="h-6 bg-gray-800 rounded w-1/4 mb-4"></div>
+                        <div className="space-y-3">
+                          <div className="h-4 bg-gray-800 rounded w-5/6"></div>
+                          <div className="h-4 bg-gray-800 rounded w-full"></div>
+                          <div className="h-4 bg-gray-800 rounded w-4/6"></div>
+                          <div className="h-4 bg-gray-800 rounded w-3/4"></div>
+                          <div className="h-4 bg-gray-800 rounded w-full"></div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </>
               ) : (
                 <>
-                  {/* Deadline prediction (actual content) */}
+                  {/* Deadline prediction - dark theme */}
                   {aiInsights.predictedDeadline && (
                     <div className="mb-8">
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">Completion Prediction</h4>
-                      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                      <h4 className="text-sm font-medium text-gray-400 mb-2">Completion Prediction</h4>
+                      <div className="bg-[#111111] p-4 rounded-lg border border-gray-800/60">
                         <div className="flex justify-between items-center">
                           <div>
                             <div className="text-sm text-gray-500">Official Deadline</div>
-                            <div className="font-medium text-lg text-gray-900">
+                            <div className="font-medium text-lg text-white">
                               {project?.deadline ? new Date(project.deadline).toLocaleDateString('en-US', {
                                 month: 'short',
                                 day: 'numeric',
@@ -405,27 +439,21 @@ const AIInsightsCard = ({ project, setProject, userHasPermission, currentUser })
                               }) : 'Not set'}
                             </div>
                           </div>
-                          <div className="text-2xl text-gray-300 mx-4">→</div>
+                          <div className="text-2xl text-gray-700 mx-4">→</div>
                           <div>
                             <div className="text-sm text-gray-500">Predicted Completion</div>
-                            <div className="font-medium text-lg text-gray-900">
+                            <div className="font-medium text-lg text-white">
                               {formatPredictedDate()}
                             </div>
                           </div>
                           {deadlineComparison && (
                             <div
-                              className={`text-sm font-medium ${
+                              className={`text-sm font-medium ml-4 px-3 py-1 rounded-full border ${
                                 deadlineComparison.color.includes('red')
-                                  ? 'text-red-600'
+                                  ? 'text-red-400 border-red-900/50 bg-red-900/20'
                                   : deadlineComparison.color.includes('green')
-                                  ? 'text-green-600'
-                                  : 'text-blue-600'
-                              } ml-4 px-3 py-1 rounded-full border ${
-                                deadlineComparison.color.includes('red')
-                                  ? 'border-red-200 bg-red-50'
-                                  : deadlineComparison.color.includes('green')
-                                  ? 'border-green-200 bg-green-50'
-                                  : 'border-blue-200 bg-blue-50'
+                                  ? 'text-green-400 border-green-900/50 bg-green-900/20'
+                                  : 'text-blue-400 border-blue-900/50 bg-blue-900/20'
                               }`}
                             >
                               {deadlineComparison.text}
@@ -436,17 +464,17 @@ const AIInsightsCard = ({ project, setProject, userHasPermission, currentUser })
                     </div>
                   )}
 
-                  {/* Tabbed Insights (actual content) */}
+                  {/* Tabbed Insights - dark theme */}
                   <div className="mb-6">
-                    <div className="flex space-x-2 mb-4 border-b">
+                    <div className="flex space-x-2 mb-4 border-b border-gray-800/60">
                       {insightOptions.map(option => (
                         <button
                           key={option.id}
                           onClick={() => setActiveInsight(option.id)}
                           className={`px-4 py-2 text-sm font-medium flex items-center gap-2 border-b-2 ${
                             activeInsight === option.id
-                              ? 'border-blue-600 text-blue-600'
-                              : 'border-transparent text-gray-600 hover:text-gray-900'
+                              ? 'border-indigo-500 text-indigo-400'
+                              : 'border-transparent text-gray-500 hover:text-gray-300'
                           }`}
                         >
                           {option.icon}
@@ -455,8 +483,8 @@ const AIInsightsCard = ({ project, setProject, userHasPermission, currentUser })
                       ))}
                     </div>
 
-                    <div className="bg-white border border-gray-200 rounded-lg p-5">
-                      <div className="prose max-w-none text-gray-700">
+                    <div className="bg-[#111111] border border-gray-800/60 rounded-lg p-5">
+                      <div className="text-gray-300 space-y-2">
                         <div>
                           {getActiveContent().split('\n').map((line, idx) => (
                             <React.Fragment key={idx}>
@@ -473,12 +501,12 @@ const AIInsightsCard = ({ project, setProject, userHasPermission, currentUser })
 
               <div className="text-sm text-gray-500 mt-4 flex items-center justify-between">
                 <span>Last updated: {isGenerating || isRefreshing ? 
-                  <div className="h-3 bg-gray-200 rounded w-32 inline-block align-middle"></div> : 
+                  <div className="h-3 bg-gray-800 rounded w-32 inline-block align-middle"></div> : 
                   getLastUpdatedTime()}
                 </span>
                 <button
                   onClick={refreshData}
-                  className="text-blue-500 hover:text-blue-700 text-xs flex items-center gap-1"
+                  className="text-indigo-400 hover:text-indigo-300 text-xs flex items-center gap-1"
                   disabled={isRefreshing}
                 >
                   {isRefreshing ? (
@@ -493,12 +521,12 @@ const AIInsightsCard = ({ project, setProject, userHasPermission, currentUser })
               </div>
             </div>
 
-            {/* Modal Footer */}
-            <div className="border-t p-4 bg-gray-50 flex justify-end space-x-3">
+            {/* Modal Footer - dark theme */}
+            <div className="border-t border-gray-800/60 p-4 bg-[#0D0D0D] flex justify-end space-x-3">
               {userHasPermission(currentUser, project, 'admin') && (
                 <button
                   onClick={handleGenerateInsights}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 
                              text-white rounded-lg flex items-center justify-center 
                              gap-2 transition-colors text-sm font-medium"
                   disabled={isGenerating || isRefreshing}
@@ -527,8 +555,8 @@ const AIInsightsCard = ({ project, setProject, userHasPermission, currentUser })
               )}
               <button
                 onClick={() => setShowFullInsights(false)}
-                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 
-                           text-gray-800 rounded-lg flex items-center 
+                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 
+                           text-gray-300 rounded-lg flex items-center 
                            gap-2 transition-colors text-sm font-medium"
               >
                 <span>Close</span>

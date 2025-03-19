@@ -25,6 +25,8 @@ export const createProject = async (req, res) => {
             });
         }
 
+        console.log('User in request:', req.body);
+
         const newProject = await Project.create({
             name,
             description,

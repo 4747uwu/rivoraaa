@@ -406,8 +406,8 @@ const CreateProjectForm = ({ onClose }) => {
     }
     
     // Convert the startDate to deadline format expected by backend
-    if (!projectData.startDate) {
-      toast.error("Start date is required");
+    if (!projectData.endDate && !projectData.startDate) {
+      toast.error("Please provide a deadline date");
       setCurrentStep(1);
       return;
     }
@@ -422,7 +422,7 @@ const CreateProjectForm = ({ onClose }) => {
       formData.append('description', projectData.description || '');
       
       // Use startDate as deadline since backend expects deadline
-      formData.append('deadline', projectData.startDate);
+      formData.append('deadline', projectData.endDate);
       
       // Add priority (default to medium if not provided)
       formData.append('priority', projectData.priority || 'medium');
@@ -432,9 +432,9 @@ const CreateProjectForm = ({ onClose }) => {
       formData.append('category', projectData.category);
       
       // Optional end date
-      if (projectData.endDate) {
-        formData.append('endDate', projectData.endDate);
-      }
+      // if (projectData.endDate) {
+      //   formData.append('endDate', projectData.endDate);
+      // }
       
       // Cover image
       if (projectData.coverImage) {
@@ -672,7 +672,7 @@ const CreateProjectForm = ({ onClose }) => {
         </div>
         <div>
           <label className="block text-gray-300 text-sm font-medium mb-2">
-            Target End Date <span className="text-gray-500">(Optional)</span>
+            Target End Date <span className="text-gray-500">(Required)</span>
           </label>
           <div className="relative">
             <Target className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={16} />

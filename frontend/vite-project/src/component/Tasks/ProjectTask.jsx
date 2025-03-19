@@ -545,7 +545,7 @@ const TaskFormModal = React.memo(({ onClose, initialData = null, handleCreateTas
   }, []);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
       <div className="bg-white rounded-xl p-4 w-full max-w-lg">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-900">
@@ -959,7 +959,7 @@ const ProjectTasks = ({
 
         {/* Existing search and filters */}
         <div className="flex justify-between items-center py-2 px-4">
-          <div className="relative w-[49%]">
+          <div className="relative w-[20%] z-0">
             <input
               type="text"
               placeholder="Search tasks..."
@@ -1015,7 +1015,7 @@ const ProjectTasks = ({
                         flex flex-col border border-gray-800/40 shadow-lg"
             >
               {/* Column Header with Task Count and Add Button */}
-              <div className="flex justify-between items-center mb-4 sticky top-0 bg-[#121212] z-10 pb-2 
+              <div className="flex justify-between items-center mb-4  top-0 bg-[#121212] z-0 pb-2 
                                 border-b-2 border-gray-800/40">
                   <div className="flex items-center">
                     <h2 className="font-semibold text-gray-200">{column.label}</h2>

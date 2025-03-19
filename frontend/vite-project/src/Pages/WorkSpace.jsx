@@ -134,7 +134,7 @@ const WorkSpace = () => {
   return (
     <div className="min-h-screen bg-[#121212] flex flex-col">
       {/* Top Navigation Bar */}
-      <div className="bg-[#1A1A1A]/95 backdrop-blur-sm border-b border-gray-800/40 sticky top-0 z-[9999] shadow-lg">
+      <div className="bg-[#1A1A1A]/95 backdrop-blur-sm border-b border-gray-800/40 sticky top-0 z-[50] shadow-lg">
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Left: Back Button & Project Title */}
