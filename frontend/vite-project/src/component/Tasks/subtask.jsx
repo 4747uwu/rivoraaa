@@ -106,9 +106,10 @@ const SubTask = ({ taskId, onTaskUpdate, task, currentUser }) => {
   };
 
   const ProgressBar = ({ progress }) => (
-    <div className="w-full bg-gray-100 rounded-full h-1.5 mt-2">
+    <div className="w-full bg-gray-800/50 rounded-full h-1.5 mt-2">
       <div
-        className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
+        className="bg-gradient-to-r from-indigo-500 to-purple-500 h-1.5 rounded-full 
+                 transition-all duration-300 shadow-[0_0_8px_rgba(99,102,241,0.3)]"
         style={{ width: `${progress}%` }}
       />
     </div>
@@ -140,31 +141,36 @@ const SubTask = ({ taskId, onTaskUpdate, task, currentUser }) => {
       {/* Compact View with Progress Bar */}
       <div 
         onClick={() => setIsModalOpen(true)}
-        className="flex flex-col py-1 px-3 bg-white border-[0.05rem] border-gray-200 rounded-lg 
-                   hover:bg-gray-100 cursor-pointer group"
+        className="flex flex-col py-1 px-3 bg-[#1A1A1A]/60 backdrop-blur-sm 
+                 border-[0.05rem] border-white/10 rounded-lg 
+                 hover:bg-[#1A1A1A]/80 cursor-pointer group transition-all
+                 duration-200 hover:border-indigo-500/30"
       >
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">Subtasks</span>
-            <span className="text-xs bg-white px-2 py-0 rounded-full text-gray-600 border">
+            <span className="text-sm font-medium text-gray-300">Subtasks</span>
+            <span className="text-xs bg-[#121212]/80 px-2 py-0 rounded-full 
+                         text-gray-400 border border-gray-800/40">
               {completedCount}/{subtasks.length}
             </span>
           </div>
-          <Plus size={16} className="text-gray-400 group-hover:text-blue-500" />
+          <Plus size={16} className="text-gray-500 group-hover:text-indigo-400" />
         </div>
         <ProgressBar progress={progress} />
       </div>
 
       {/* Modal View */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg w-full max-w-md m-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm 
+                     flex items-center justify-center z-50">
+          <div className="bg-[#121212] rounded-lg w-full max-w-md m-4 
+                       border border-white/10 shadow-xl">
             {/* Modal Header with Progress */}
-            <div className="p-4 border-b">
+            <div className="p-4 border-b border-gray-800/40">
               <div className="flex justify-between items-center mb-2">
                 <div>
-                  <h3 className="text-lg font-semibold">Subtasks</h3>
-                  <div className="text-sm text-gray-500">
+                  <h3 className="text-lg font-semibold text-gray-200">Subtasks</h3>
+                  <div className="text-sm text-gray-400">
                     {completedCount} of {subtasks.length} completed
                   </div>
                 </div>
@@ -173,7 +179,8 @@ const SubTask = ({ taskId, onTaskUpdate, task, currentUser }) => {
                     setIsModalOpen(false);
                     setShowAddForm(false);
                   }}
-                  className="p-1 hover:bg-gray-100 rounded-full"
+                  className="p-1 hover:bg-white/5 rounded-full 
+                         text-gray-400 hover:text-gray-200 transition-colors"
                 >
                   <X size={20} />
                 </button>
@@ -184,41 +191,46 @@ const SubTask = ({ taskId, onTaskUpdate, task, currentUser }) => {
             {/* Add Button or Form - Now with permission check */}
             {isUserAssigned() ? (
               !showAddForm ? (
-                <div className="p-4 border-b">
+                <div className="p-4 border-b border-gray-800/40">
                   <button
                     onClick={() => setShowAddForm(true)}
-                    className="w-full py-2 px-4 bg-blue-50 text-blue-600 rounded-lg 
-                             hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
+                    className="w-full py-2 px-4 bg-indigo-500/10 text-indigo-400 
+                           rounded-lg hover:bg-indigo-500/20 transition-colors 
+                           flex items-center justify-center gap-2"
                   >
                     <Plus size={18} />
                     Add Subtask
                   </button>
                 </div>
               ) : (
-                <form onSubmit={handleAddSubtask} className="p-4 border-b space-y-4">
+                <form onSubmit={handleAddSubtask} className="p-4 border-b border-gray-800/40 space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
                       Title
                     </label>
                     <input
                       type="text"
                       value={newSubtask.title}
                       onChange={(e) => setNewSubtask({ ...newSubtask, title: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg 
-                               focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 bg-[#1A1A1A] border border-gray-800/40 
+                             rounded-lg focus:outline-none focus:ring-2 
+                             focus:ring-indigo-500/30 text-gray-200 
+                             placeholder-gray-500"
                       placeholder="Enter subtask title"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
                       Description
                     </label>
                     <textarea
                       value={newSubtask.description}
                       onChange={(e) => setNewSubtask({ ...newSubtask, description: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg 
-                               focus:outline-none focus:ring-2 focus:ring-blue-500 h-24"
+                      className="w-full px-3 py-2 bg-[#1A1A1A] border border-gray-800/40 
+                             rounded-lg focus:outline-none focus:ring-2 
+                             focus:ring-indigo-500/30 h-24 text-gray-200 
+                             placeholder-gray-500"
                       placeholder="Enter subtask description"
                     />
                   </div>
@@ -226,17 +238,18 @@ const SubTask = ({ taskId, onTaskUpdate, task, currentUser }) => {
                     <button
                       type="button"
                       onClick={() => setShowAddForm(false)}
-                      className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                      className="px-4 py-2 text-gray-400 hover:bg-white/5 rounded-lg 
+                             transition-colors"
                       disabled={addSubtaskMutation.isPending}
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className={`px-4 py-2 bg-blue-500 text-white rounded-lg 
-                               hover:bg-blue-600 transition-colors ${
-                                 addSubtaskMutation.isPending ? 'opacity-70 cursor-not-allowed' : ''
-                               }`}
+                      className={`px-4 py-2 bg-indigo-500 text-white rounded-lg 
+                             hover:bg-indigo-600 transition-colors ${
+                               addSubtaskMutation.isPending ? 'opacity-70 cursor-not-allowed' : ''
+                             }`}
                       disabled={addSubtaskMutation.isPending}
                     >
                       {addSubtaskMutation.isPending ? 'Adding...' : 'Add Subtask'}
@@ -245,9 +258,9 @@ const SubTask = ({ taskId, onTaskUpdate, task, currentUser }) => {
                 </form>
               )
             ) : (
-              <div className="p-4 border-b">
-                <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 
-                              rounded-lg p-3">
+              <div className="p-4 border-b border-gray-800/40">
+                <div className="flex items-center gap-2 text-sm text-gray-400 
+                            bg-white/5 rounded-lg p-3">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
                           d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -258,7 +271,7 @@ const SubTask = ({ taskId, onTaskUpdate, task, currentUser }) => {
             )}
 
             {/* Subtasks List - Update to show creator info */}
-            <div className="max-h-[400px] overflow-y-auto">
+            <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
               {subtasks.length === 0 ? (
                 <div className="p-8 text-center text-gray-500">
                   No subtasks yet. Add some to track progress!
@@ -267,7 +280,8 @@ const SubTask = ({ taskId, onTaskUpdate, task, currentUser }) => {
                 subtasks.map((subtask) => (
                   <div
                     key={subtask._id}
-                    className="p-4 border-b last:border-b-0 hover:bg-gray-50 group"
+                    className="p-4 border-b border-gray-800/40 last:border-b-0 
+                           hover:bg-white/5 group transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -280,8 +294,8 @@ const SubTask = ({ taskId, onTaskUpdate, task, currentUser }) => {
                           className={`w-5 h-5 rounded border-2 flex items-center justify-center 
                                     transition-colors ${
                             subtask.status === 'completed'
-                              ? 'bg-blue-500 border-blue-500 text-white'
-                              : 'border-gray-300 hover:border-blue-500'
+                              ? 'bg-indigo-500 border-indigo-500 text-white'
+                              : 'border-gray-600 hover:border-indigo-500'
                           } ${updateProgressMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                           {subtask.status === 'completed' && <Check size={14} />}
@@ -289,8 +303,8 @@ const SubTask = ({ taskId, onTaskUpdate, task, currentUser }) => {
                         <div>
                           <h4 className={`font-medium ${
                               subtask.status === 'completed' 
-                                  ? 'text-gray-400 line-through' 
-                                  : 'text-gray-700'
+                                  ? 'text-gray-500 line-through' 
+                                  : 'text-gray-200'
                           }`}>
                             {subtask.title}
                           </h4>
@@ -306,8 +320,9 @@ const SubTask = ({ taskId, onTaskUpdate, task, currentUser }) => {
                         <button
                           onClick={() => handleRemoveSubtask(subtask._id)}
                           disabled={removeSubtaskMutation.isPending}
-                          className={`opacity-0 group-hover:opacity-100 p-1 hover:bg-red-50 
-                                   rounded-full text-red-500 transition-all ${
+                          className={`opacity-0 group-hover:opacity-100 p-1 
+                                   hover:bg-red-500/10 rounded-full text-red-400 
+                                   transition-all ${
                                    removeSubtaskMutation.isPending ? 'cursor-not-allowed opacity-50' : ''
                                   }`}
                         >

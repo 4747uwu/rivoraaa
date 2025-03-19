@@ -19,6 +19,7 @@ import AnimatedGreeting from "./AnimatedGreeting.jsx";
 import Sidebar from "./sideNavbar.jsx";
 import Header from "./Header.jsx";
 import QuotesWidget from "./yayaComponent.jsx";
+import ProjectTimelineBar from "./component/ProjectTimeline.jsx";
 
 // Add this new component near your other components
 const ProgressRing = ({ progress, size = 60, strokeWidth = 4 }) => {
@@ -301,6 +302,7 @@ const Dashboard = () => {
               
             </motion.div>
 
+
             {/* Projects Card */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -312,6 +314,8 @@ const Dashboard = () => {
            
             </motion.div>
           </div>
+                      <ProjectTimelineBar />
+
 
           {/* Main Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">

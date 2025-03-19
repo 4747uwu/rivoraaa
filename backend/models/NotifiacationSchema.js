@@ -18,6 +18,7 @@ const NotificationSchema = new Schema({
       'team_join',
       'team_leave',
       'team_role_change',
+
       'project_invite',
       'project_update',
       'message',
@@ -28,6 +29,8 @@ const NotificationSchema = new Schema({
       'task_status',
       'task_progress',
       'task_priority',
+      'task_update',
+      'task_delete',
       'system'
     ]
   },

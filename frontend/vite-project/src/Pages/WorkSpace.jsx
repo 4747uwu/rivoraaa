@@ -16,6 +16,13 @@ import TeamManagement from '../component/Team/TeamMembers';
 import { useAuth } from '../context/authContext';
 import API from '../api/api';
 
+const formatDueDate = (date) => {
+  const d = new Date(date);
+  const day = d.getDate();
+  const month = d.toLocaleString('default', { month: 'long' });
+  return `Due ${day} ${month}`;
+};
+
 const WorkSpace = () => {
   const { projectId } = useParams();
   const [activeTab, setActiveTab] = useState('Dashboard');
@@ -37,7 +44,6 @@ const WorkSpace = () => {
     };
   }, [selectedProject]);
 
-  // This effect will run when the refresh trigger changes
   useEffect(() => {
     if (projectId) {
       // Fetch fresh project data
@@ -112,7 +118,6 @@ const WorkSpace = () => {
                   refetchTasks()
                 ]);
                 
-                // Force a re-render of the component by updating the trigger
                 setRefreshTrigger(prev => prev + 1);
               } catch (error) {
                 console.error("Error refreshing data after role update:", error);
@@ -127,28 +132,32 @@ const WorkSpace = () => {
   const activeComponent = navigation.find(item => item.name === activeTab)?.component;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-[#121212] flex flex-col">
       {/* Top Navigation Bar */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
+      <div className="bg-[#1A1A1A]/95 backdrop-blur-sm border-b border-gray-800/40 sticky top-0 z-[9999] shadow-lg">
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Left: Back Button & Project Title */}
             <div className="flex items-center space-x-4">
               <button 
                 onClick={() => navigate('/dashboard')}
-                className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
+                className="p-2 rounded-full hover:bg-white/5 text-gray-400 
+                         transition-all duration-200 hover:text-gray-200
+                         hover:shadow-inner active:scale-95"
                 aria-label="Back to Projects"
               >
                 <ArrowLeft size={18} />
               </button>
               
-              <div className="flex items-center">
-                <h1 className="text-xl font-semibold text-gray-900">
+              <div className="flex items-center space-x-3">
+                <h1 className="text-xl font-semibold text-gray-100 tracking-tight">
                   {projectData?.name || 'Project Workspace'}
                 </h1>
                 {projectData?.deadline && (
-                  <span className="ml-2 px-2.5 py-0.5 bg-blue-50 text-blue-700 text-xs font-medium rounded-full border border-blue-100">
-                    Due {new Date(projectData.deadline).toLocaleDateString()}
+                  <span className="px-3 py-1 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 
+                               text-indigo-400 text-xs font-medium rounded-full 
+                               border border-indigo-500/20 shadow-inner shadow-indigo-500/5">
+                    {formatDueDate(projectData.deadline)}
                   </span>
                 )}
               </div>
@@ -158,7 +167,7 @@ const WorkSpace = () => {
             <nav className="flex items-center">
               <div className="hidden md:flex space-x-1">
                 {navigation.map((item) => {
-                  if (!item.component) return null; // Skip items without components
+                  if (!item.component) return null;
                   
                   const Icon = item.icon;
                   const isActive = activeTab === item.name;
@@ -167,28 +176,38 @@ const WorkSpace = () => {
                     <button
                       key={item.name}
                       onClick={() => setActiveTab(item.name)}
-                      className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all duration-200
-                        ${isActive 
-                          ? 'text-blue-700 bg-blue-50 shadow-sm' 
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                        }`}
+                      className={`flex items-center px-4 py-2 text-sm font-medium rounded-md 
+                                transition-all duration-200 relative group
+                                ${isActive 
+                                  ? 'text-indigo-400 bg-gradient-to-r from-indigo-500/10 to-purple-500/10' 
+                                  : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+                                }`}
                     >
                       <Icon 
-                        className={`mr-2 ${isActive ? 'text-blue-600' : 'text-gray-400'}`}
+                        className={`mr-2 transition-transform group-hover:scale-110 duration-200
+                                  ${isActive ? 'text-indigo-400' : 'text-gray-500'}`}
                         size={18}
                       />
                       {item.name}
+                      {isActive && (
+                        <span className="absolute bottom-0 left-0 w-full h-0.5 
+                                     bg-gradient-to-r from-indigo-500 to-purple-500" />
+                      )}
                     </button>
                   );
                 })}
               </div>
 
-              {/* Mobile Navigation Dropdown */}
+              {/* Mobile Navigation Dropdown - Updated styling */}
               <div className="md:hidden relative">
                 <select
                   value={activeTab}
                   onChange={(e) => setActiveTab(e.target.value)}
-                  className="appearance-none bg-white border border-gray-200 rounded-md py-2 pl-3 pr-10 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="appearance-none bg-[#1A1A1A] border border-gray-800/40 
+                           rounded-md py-2 pl-3 pr-10 text-sm font-medium text-gray-300
+                           focus:outline-none focus:ring-2 focus:ring-indigo-500/20 
+                           focus:border-indigo-500/30 transition-all duration-200
+                           hover:bg-white/5"
                 >
                   {navigation.map((item) => (
                     item.component && (
@@ -198,7 +217,8 @@ const WorkSpace = () => {
                     )
                   ))}
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                <div className="pointer-events-none absolute inset-y-0 right-0 
+                            flex items-center px-2 text-gray-500">
                   <ChevronRight size={16} className="transform rotate-90" />
                 </div>
               </div>
@@ -208,7 +228,7 @@ const WorkSpace = () => {
       </div>
       
       {/* Main Content Area */}
-      <div className="flex-1">
+      <div className="flex-1 bg-[#121212]">
         {activeComponent ? (
           <div className="h-full">
             {activeComponent}
@@ -216,11 +236,13 @@ const WorkSpace = () => {
         ) : (
           <div className="h-full flex items-center justify-center">
             <div className="text-center p-8">
-              <div className="p-4 bg-blue-50 rounded-full inline-block mb-4">
-                <FileText className="text-blue-600" size={24} />
+              <div className="p-4 bg-indigo-500/10 rounded-full inline-block mb-4">
+                <FileText className="text-indigo-400" size={24} />
               </div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Feature Coming Soon</h2>
-              <p className="text-gray-500 max-w-md">
+              <h2 className="text-xl font-semibold text-gray-200 mb-2">
+                Feature Coming Soon
+              </h2>
+              <p className="text-gray-400 max-w-md">
                 This section is currently under development and will be available soon.
               </p>
             </div>

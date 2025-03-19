@@ -76,53 +76,58 @@ const UserPerformanceReport = ({ userId, projectId }) => {
     }
   };
 
-  // If no user is selected, show a message
+  // Update the No User Selected view
   if (userId === 'all') {
     return (
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm"
+        className="bg-[#1A1A1A] rounded-lg p-6 border border-gray-800/40 
+                  shadow-lg backdrop-blur-sm"
       >
-        <div className="flex items-center justify-center h-40 text-gray-500 flex-col gap-3">
-          <UserCheck size={40} />
-          <p>Please select a specific user to view their performance report</p>
+        <div className="flex items-center justify-center h-40 text-gray-400 flex-col gap-3">
+          <UserCheck size={40} className="text-indigo-400/70" />
+          <p className="text-gray-400">Please select a specific user to view their performance report</p>
         </div>
       </motion.div>
     );
   }
 
-  // Show loading state
+  // Update the Loading state
   if (isLoading) {
     return (
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm"
+        className="bg-[#1A1A1A] rounded-lg p-6 border border-gray-800/40 
+                  shadow-lg backdrop-blur-sm"
       >
         <div className="flex items-center justify-center h-40">
-          <Loader size={40} className="animate-spin text-blue-500" />
+          <Loader size={40} className="animate-spin text-indigo-400" />
         </div>
       </motion.div>
     );
   }
 
-  // Show error state
+  // Update the Error state
   if (isError) {
     return (
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-red-50 rounded-lg p-6 border border-red-200"
+        className="bg-[#1A1A1A] rounded-lg p-6 border border-red-500/20 
+                  shadow-lg backdrop-blur-sm"
       >
-        <div className="flex items-center text-red-700 mb-4">
+        <div className="flex items-center text-red-400 mb-4">
           <AlertCircle className="mr-2" size={20} />
           <h3 className="font-semibold">Failed to load performance report</h3>
         </div>
-        <p className="text-red-600 mb-4">{error?.message || "Unknown error occurred"}</p>
+        <p className="text-red-400/80 mb-4">{error?.message || "Unknown error occurred"}</p>
         <button 
           onClick={refetch}
-          className="px-4 py-2 bg-white border border-red-300 rounded-md text-red-600 hover:bg-red-50"
+          className="px-4 py-2 bg-red-500/10 border border-red-500/20 
+                   rounded-md text-red-400 hover:bg-red-500/20 
+                   transition-all duration-200"
         >
           Try Again
         </button>
@@ -130,29 +135,31 @@ const UserPerformanceReport = ({ userId, projectId }) => {
     );
   }
 
-  // If no report exists yet, show generate button
+  // Update the Generate Report view
   if (!report || !report.analysis) {
     return (
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm"
+        className="bg-[#1A1A1A] rounded-lg p-6 border border-gray-800/40 
+                  shadow-lg backdrop-blur-sm"
       >
         <div className="text-center py-8">
-          <div className="bg-blue-50 inline-block p-3 rounded-full mb-4">
-            <Zap className="text-blue-500" size={30} />
+          <div className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 
+                       inline-block p-3 rounded-full mb-4 border border-indigo-500/20">
+            <Zap className="text-indigo-400" size={30} />
           </div>
-          <h3 className="text-xl font-semibold mb-2">Generate Performance Report</h3>
-          <p className="text-gray-600 mb-6 max-w-md mx-auto">
+          <h3 className="text-xl font-semibold mb-2 text-gray-200">Generate Performance Report</h3>
+          <p className="text-gray-400 mb-6 max-w-md mx-auto">
             Use our AI to generate a comprehensive performance report based on this user's tasks and activity.
           </p>
           <button
             onClick={generateNewReport}
             disabled={isGenerating}
-            className={`px-6 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium 
-                      hover:from-blue-700 hover:to-purple-700 transition-all duration-200 ${
-                        isGenerating ? 'opacity-70 cursor-not-allowed' : ''
-                      }`}
+            className={`px-6 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 
+                     text-white font-medium shadow-lg shadow-indigo-500/20
+                     hover:from-indigo-500 hover:to-purple-500 transition-all duration-200 
+                     ${isGenerating ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
             {isGenerating ? (
               <>
@@ -168,12 +175,14 @@ const UserPerformanceReport = ({ userId, projectId }) => {
     );
   }
 
-  // Display the full report when available
+  // Update the main report view
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden"
+      className="bg-gradient-to-br from-[#1A1A1A] to-[#141414] rounded-lg 
+                border border-gray-800/40 shadow-lg overflow-hidden
+                backdrop-blur-sm"
     >
       <PerformanceHeader 
         username={report.username} 

@@ -334,9 +334,10 @@ const ProjectDashboard = () => {
   const statusStyles = getStatusStyles(project.currentStatus);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-black p-2">
       {/* Project Header Card */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
+      <div className="bg-[#1A1A1A] rounded-xl shadow-lg border border-gray-800/40 
+                   mb-6 overflow-hidden mt-2 backdrop-blur-sm">
         {/* Project Banner */}
         {/* <div className="h-3 bg-gradient-to-r from-blue-500 to-indigo-600"></div> */}
         
@@ -345,7 +346,7 @@ const ProjectDashboard = () => {
           <div className="flex flex-col lg:flex-row justify-between items-start gap-4 mb-6">
             <div className="space-y-2">
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl font-bold text-gray-900">{project.name}</h1>
+                <h1 className="text-2xl font-bold text-white">{project.name}</h1>
                 
                 <div className={`${statusStyles.bg} ${statusStyles.text} px-3 py-1 rounded-full text-sm font-medium inline-flex items-center`}>
                   {statusStyles.icon}
@@ -358,7 +359,7 @@ const ProjectDashboard = () => {
                 </div>
               </div>
               
-              <p className="text-gray-600 max-w-2xl">{project.description}</p>
+              <p className="text-white max-w-2xl">{project.description}</p>
             </div>
             
             {/* Project Actions with Team Members */}
@@ -369,7 +370,7 @@ const ProjectDashboard = () => {
                   {project.members?.slice(0, 3).map((member) => (
                     <div
                       key={member.userId?._id || member.userId}
-                      className="w-9 h-9 rounded-full ring-2 ring-white bg-gray-50 
+                      className="w-10 h-10 rounded-full ring-1 ring-black bg-gray-50 
                             shadow-sm hover:z-10 transition-transform hover:scale-110
                             overflow-hidden relative group"
                       title={`${member.userId?.username || 'Unknown'} (${member.role})`}
@@ -395,7 +396,7 @@ const ProjectDashboard = () => {
                   
                   {project.members?.length > 3 && (
                     <div
-                      className="w-9 h-9 rounded-full ring-2 ring-white bg-gray-100 
+                      className="w-9 h-9 rounded-full ring-1 ring-white bg-gray-100 
                             flex items-center justify-center text-xs font-medium text-gray-600"
                     >
                       +{project.members?.length - 3}
@@ -404,9 +405,12 @@ const ProjectDashboard = () => {
                 </div>
 
                 {/* Tooltip on hover */}
-                <div className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg 
-                          border border-gray-200 p-2 w-64 opacity-0 group-hover:opacity-100 
-                          transition-opacity invisible group-hover:visible z-50">
+                <div className="absolute top-full right-0 mt-2 bg-[#1A1A1A] 
+                           rounded-lg shadow-xl border border-gray-800/40 
+                           p-3 w-64 opacity-0 group-hover:opacity-100 
+                           transition-all duration-200 invisible 
+                           group-hover:visible z-50 backdrop-blur-sm">
+
                   <div className="space-y-2">
                     {project.members?.map((member) => (
                       <div key={member.userId?._id} className="flex items-center gap-2 p-1">
@@ -424,10 +428,10 @@ const ProjectDashboard = () => {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
+                          <p className="text-sm font-medium text-white truncate">
                             {member.userId?.username || 'Unknown'}
                           </p>
-                          <p className="text-xs text-gray-500 capitalize">{member.role}</p>
+                          <p className="text-xs text-gray-100 capitalize">{member.role}</p>
                         </div>
                       </div>
                     ))}
@@ -440,9 +444,10 @@ const ProjectDashboard = () => {
                 <>
                 <button
                   onClick={() => setTeamDeployModalOpen(true)}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg 
-                            hover:bg-indigo-700 transition-colors flex items-center gap-2
-                            shadow-sm mr-2"
+                  className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 
+                           text-white rounded-lg hover:from-indigo-500 
+                           hover:to-indigo-600 transition-all duration-200 
+                           flex items-center gap-2 shadow-lg shadow-indigo-500/20"
                 >
                   <Users size={16} />
                   <span className="font-medium">Deploy Team</span>
@@ -450,9 +455,9 @@ const ProjectDashboard = () => {
 
                 <button
                   onClick={() => setShowInviteModal(true)}
-                  className="px-4 py-2 bg-black text-white rounded-lg 
-                          hover:bg-gray-800 transition-colors flex items-center gap-2
-                          shadow-sm"
+                  className="px-4 py-2 bg-[#232323] text-gray-200 rounded-lg 
+                           hover:bg-[#2A2A2A] transition-all duration-200 
+                           flex items-center gap-2 shadow-lg border border-gray-700/50"
                 >
                   <UserPlus size={16} />
                   <span className="font-medium">Invite</span>
@@ -466,19 +471,24 @@ const ProjectDashboard = () => {
           {/* Project Stats & Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             {/* Progress Card */}
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-medium text-gray-500">Overall Progress</h3>
+              <div className="bg-gradient-to-br from-[#121212] via-[#1A1A1A] to-[#141414] rounded-lg p-4 
+                relative before:absolute before:inset-0 before:-z-10 before:rounded-lg 
+                before:p-[2px] before:bg-gradient-to-r before:from-gray-800/10 
+                before:via-white/25 before:to-gray-800/20">
+
+                  <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium text-white">Overall Progress</h3>
                 <TrendingUp size={16} className="text-blue-500" />
               </div>
               <div className="mb-2">
                 <div className="flex justify-between text-xs mb-1">
-                  <span className="font-medium text-gray-700">{project.progress}% Complete</span>
-                  <span className="text-gray-500">100%</span>
+                  <span className="font-medium text-white">{project.progress}% Complete</span>
+                  <span className="text-white">100%</span>
                 </div>
                 <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                   <motion.div 
-                    className="h-full bg-blue-500 rounded-full"
+                    className="h-full bg-gradient-to-r from-black via-purple-500 to-purple-600 rounded-full 
+                               shadow-[0_0_12px_rgba(147,51,234,0.3)]"
                     initial={false}
                     animate={{ width: `${project.progress}%` }}
                     transition={{ 
@@ -489,7 +499,7 @@ const ProjectDashboard = () => {
                   />
                 </div>
               </div>
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-white mt-2">
                 {project.progress < 100 
                   ? `${100 - project.progress}% remaining to complete` 
                   : "Project is complete!"}
@@ -497,14 +507,18 @@ const ProjectDashboard = () => {
             </div>
             
             {/* Deadline Card */}
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+            <div className="bg-gradient-to-br from-[#121212] via-[#1A1A1A] to-[#141414] rounded-lg p-4 
+                relative before:absolute before:inset-0 before:-z-10 before:rounded-lg 
+                before:p-[2px] before:bg-gradient-to-r before:from-gray-800/10 
+                before:via-white/25 before:to-gray-800/20"
+              >
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-medium text-gray-500">Deadline</h3>
+                <h3 className="text-sm font-medium text-white">Deadline</h3>
                 <CalendarIcon size={16} className="text-blue-500" />
               </div>
               <div className="flex items-end justify-between">
                 <div>
-                  <p className="text-lg font-semibold text-gray-800">
+                  <p className="text-lg font-semibold text-white">
                     {new Date(project.deadline).toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
@@ -534,44 +548,9 @@ const ProjectDashboard = () => {
               </div>
             </div>
 
-            {/* AI Insights Card */}
-            {/* <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg p-4 border border-gray-700 text-white">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-medium text-gray-300">AI Insights</h3>
-                <div className="h-5 w-5 rounded-full bg-blue-500 flex items-center justify-center">
-                  <span className="text-xs font-bold">AI</span>
-                </div>
-              </div>
-              <div>
-                <p className="text-gray-300 text-sm mb-3">
-                  Based on current progress, this project {daysRemaining < 0 ? 'is overdue' : 
-                    project.progress < 30 && daysRemaining < 7 ? 'is at risk of delay' : 
-                    project.progress > 70 ? 'is on track for completion' : 
-                    'needs attention to meet deadline'}.
-                </p>
-                {userHasPermission(currentUser, project, 'admin') && (
-                  <button
-                    onClick={() => {
-                      // Toggle AI task generation modal here
-                      setShowAIModal ? setShowAIModal(true) : null;
-                    }}
-                    className="w-full mt-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 
-                            text-white rounded-lg flex items-center justify-center 
-                            gap-2 transition-colors text-sm font-medium"
-                  >
-                    <TrendingUp size={14} />
-                    <span>Generate Task Recommendations</span>
-                  </button>
-                )}
-              </div>
-            </div> */}
+            
 
-            {/* <AIInsightsCard
-              project={project}
-              setProject={setProject}
-              userHasPermission={userHasPermission}
-              currentUser={currentUser}
-            /> */}
+           
              <ProjectInsightCard 
             project={project} 
             setProject={setProject}

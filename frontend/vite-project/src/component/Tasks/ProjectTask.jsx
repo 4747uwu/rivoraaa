@@ -201,8 +201,9 @@ const TaskCard = React.memo(({
         exit={{ opacity: 0, y: -20 }}
         draggable
         onDragStart={(e) => handleDragStart(e, task._id)}
-        className="group relative bg-gray-50 rounded-lg p-4 border-[0.05rem] border-gray-200 
-                 hover:border-blue-200 hover:shadow-lg transition-all duration-200 
+        className="group relative bg-[#121212] rounded-lg p-4 
+                 border border-gray-800/40 hover:border-indigo-500/50
+                 hover:shadow-[0_0_15px_rgba(99,102,241,0.1)] transition-all duration-200 
                  cursor-move hover:scale-[1.02] overflow-hidden"
       >
         {/* Main Task Content - Clickable for Task Details */}
@@ -213,7 +214,7 @@ const TaskCard = React.memo(({
           {/* Priority Badge */}
           <div className="absolute -top-2 -right-[0.75] z-10">
             <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full 
-                           text-xs font-medium shadow-md border 
+                           text-xs font-medium shadow-md border border-gray-700/50 
                            ${getPriorityColor(task.priority)}`}>
               {task.priority}
             </span>
@@ -222,16 +223,16 @@ const TaskCard = React.memo(({
           {/* Task Content */}
           <div className="">
             <h3 className="flex items-center gap-2">
-              <span className="font-semibold text-black text-base group-hover:text-blue-600 
+              <span className="font-semibold text-gray-200 text-base group-hover:text-indigo-400 
                            transition-colors line-clamp-2 flex-1">
                 {task.title} 
-                <span className="text-s font-medium px-2 py-0.5 text-gray-600 rounded-full 
+                <span className="text-s font-medium px-2 py-0.5 text-gray-400 rounded-full 
                              inline-flex items-center">
                   {task.progress || 0}%
                 </span>
               </span>
             </h3>
-            <p className="text-sm text-gray-600 mt-1 line-clamp-2 pb-2 border-b border-gray-50">
+            <p className="text-sm text-gray-400 mt-1 line-clamp-2 pb-2 border-b border-gray-800/40">
               {task.description}
             </p>
           </div>
@@ -275,7 +276,8 @@ const TaskCard = React.memo(({
       {/* NON-DRAGGABLE SECTION - File Attachment UI */}
       {/* This section is completely outside the draggable div */}
       <div 
-        className="mt-2 py-2 px-3 bg-white rounded-lg border border-gray-200 flex items-center justify-between"
+        className="mt-2 py-2 px-3 bg-[#1A1A1A] rounded-lg 
+                     border border-gray-800/40 flex items-center justify-between"
         onClick={(e) => {
           e.stopPropagation();
           if (files.length > 0) {
@@ -288,8 +290,8 @@ const TaskCard = React.memo(({
         }}
       >
         <div className="flex items-center cursor-pointer">
-          <Paperclip size={16} className={`mr-2 ${files.length > 0 ? 'text-blue-500' : 'text-gray-400'}`} />
-          <span className="text-sm">
+          <Paperclip size={16} className={`mr-2 ${files.length > 0 ? 'text-indigo-400' : 'text-gray-500'}`} />
+          <span className="text-sm text-gray-300">
             {files.length > 0 
               ? `${files.length} attachment${files.length > 1 ? 's' : ''}` 
               : 'Add attachment'}
@@ -304,8 +306,8 @@ const TaskCard = React.memo(({
               e.stopPropagation();
               setIsFileUploaderOpen(true);
             }}
-            className="py-1 px-2 text-xs text-blue-600 hover:bg-blue-50 
-                      rounded-md border border-blue-200 transition-colors"
+            className="py-1 px-2 text-xs text-indigo-400 hover:bg-indigo-500/10 
+                      rounded-md border border-indigo-500/20 transition-colors"
           >
             <Plus size={14} />
           </button>
@@ -322,17 +324,18 @@ const TaskCard = React.memo(({
           <div className="relative">
             <button
               onClick={() => setShowAssignMenu(!showAssignMenu)}
-              className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-1.5 hover:bg-[#1A1A1A] rounded-full transition-colors"
               title="Assign members"
             >
-              <Plus size={16} className="text-gray-500" />
+              <Plus size={16} className="text-gray-400" />
             </button>
     
             {/* Assignment Menu */}
             {showAssignMenu && (
               <div 
                 ref={assignMenuRef}
-                className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
+                className="absolute right-0 mt-2 w-48 bg-[#1A1A1A] rounded-lg 
+                           shadow-lg border border-gray-800/40 py-1 z-50"
               >
                 {projectMembers?.map((member) => {
                   const memberUserId = member.userId?._id || member._id;
@@ -344,7 +347,8 @@ const TaskCard = React.memo(({
                     <button
                       key={memberUserId}
                       onClick={() => handleAssignmentToggle(memberUserId)}
-                      className="w-full px-4 py-2 text-sm text-left hover:bg-gray-50 flex items-center gap-2"
+                      className="w-full px-4 py-2 text-sm text-left hover:bg-[#232323] 
+                             text-gray-300 flex items-center gap-2"
                     >
                       <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
                         {member.userId?.username?.charAt(0).toUpperCase()}
@@ -363,15 +367,15 @@ const TaskCard = React.memo(({
           {/* More Options Button */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-1.5 hover:bg-[#1A1A1A] rounded-full transition-colors"
           >
-            <MoreHorizontal size={16} className="text-gray-500" />
+            <MoreHorizontal size={16} className="text-gray-400" />
           </button>
     
           {/* More Options Menu */}
           {menuOpen && (
             <div 
-              className="absolute right-0 mt-8 w-36 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
+              className="absolute right-0 mt-8 w-36 bg-[#1A1A1A] rounded-lg shadow-lg border border-gray-800/40 py-1 z-50"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -379,7 +383,7 @@ const TaskCard = React.memo(({
                   onEdit(task);
                   setMenuOpen(false);
                 }}
-                className="w-full px-4 py-2 text-sm text-left hover:bg-gray-50 text-gray-700"
+                className="w-full px-4 py-2 text-sm text-left hover:bg-[#232323] text-gray-300"
               >
                 Edit Task
               </button>
@@ -927,15 +931,16 @@ const ProjectTasks = ({
       )}
 
       {/* Header Controls */}
-      <div className="flex flex-col gap-2 bg-white rounded-lg p-0 border border-gray-200">
+      <div className="flex flex-col gap-2 bg-[#121212] rounded-lg p-4 
+                       border border-gray-800/40">
         {/* Tab Navigation */}
-        <div className="flex border-b border-gray-200">
+        <div className="flex border-b border-gray-800/40">
           <button
             onClick={() => setViewMode('board')}
             className={`px-4 py-3 font-medium text-sm ${
               viewMode === 'board'
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'text-indigo-400 border-b-2 border-indigo-400'
+                : 'text-gray-400 hover:text-gray-300'
             }`}
           >
             Task Board
@@ -944,8 +949,8 @@ const ProjectTasks = ({
             onClick={() => setViewMode('performance')}
             className={`px-4 py-3 font-medium text-sm ${
               viewMode === 'performance'
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'text-indigo-400 border-b-2 border-indigo-400'
+                : 'text-gray-400 hover:text-gray-300'
             }`}
           >
             Performance Analytics
@@ -953,16 +958,20 @@ const ProjectTasks = ({
         </div>
 
         {/* Existing search and filters */}
-        <div className="flex justify-between items-center py-0 px-4">
-          <div className="relative w-[49%] border px-2 border-gray-100 rounded-lg">
+        <div className="flex justify-between items-center py-2 px-4">
+          <div className="relative w-[49%]">
             <input
               type="text"
               placeholder="Search tasks..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 px-0 py-1 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50 transition-all"
+              className="w-full pl-10 pr-4 py-2 bg-[#1A1A1A] rounded-lg 
+                         border border-gray-800/40 text-gray-200 
+                         placeholder-gray-500 focus:outline-none 
+                         focus:border-indigo-500/50 focus:ring-2 
+                         focus:ring-indigo-500/20 transition-all"
             />
-            <SearchIcon className="absolute ml-2 left-3 top-2 text-gray-400" size={18} />
+            <SearchIcon className="absolute left-3 top-2.5 text-gray-500" size={18} />
           </div>
           <TaskControls 
             sortBy={sortBy}
@@ -1002,16 +1011,17 @@ const ProjectTasks = ({
               key={column.id}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, column.id)}
-              className="bg-white rounded-xl p-4 min-h-[calc(80vh-80px)] flex flex-col 
-                        border border-gray-200 shadow-sm"
+              className="bg-[#121212] rounded-xl p-4 min-h-[calc(80vh-80px)] 
+                        flex flex-col border border-gray-800/40 shadow-lg"
             >
               {/* Column Header with Task Count and Add Button */}
-              <div className="flex justify-between items-center mb-4 sticky top-0 bg-white z-10 pb-2 
-                                border-b-2 border-gray-100">
+              <div className="flex justify-between items-center mb-4 sticky top-0 bg-[#121212] z-10 pb-2 
+                                border-b-2 border-gray-800/40">
                   <div className="flex items-center">
-                    <h2 className="font-semibold text-gray-900">{column.label}</h2>
-                    <span className="ml-2 px-2.5 py-0.5 bg-gray-200 rounded-full text-xs font-medium 
-                                  text-black border border-gray-200">
+                    <h2 className="font-semibold text-gray-200">{column.label}</h2>
+                    <span className="ml-2 px-2.5 py-0.5 bg-[#1A1A1A] rounded-full 
+                               text-xs font-medium text-gray-300 
+                               border border-gray-800/40">
                       {filteredTasks.filter(task => task.status === column.id).length}
                     </span>
                   </div>
@@ -1041,7 +1051,7 @@ const ProjectTasks = ({
                 </div>
         
                 {/* Tasks Container */}
-                <div className="space-y-4 flex-1 overflow-y-auto">
+                <div className="space-y-4 flex-1 overflow-y-auto custom-scrollbar">
                   <AnimatePresence>
                     {getFilteredAndSortedTasks()
                       .filter(task => task.status === column.id)
