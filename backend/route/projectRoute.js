@@ -28,11 +28,15 @@ router.post('/:teamId/deploy/:projectId', authMiddlewareHybrid, deployTeamToProj
 router.get('/:teamId/deployments', authMiddlewareHybrid, getTeamDeployments);
 router.patch('/projects/:projectId/members/:userId/role', authMiddlewareHybrid, updateMemberRole);
 
-// Remove a member from a project
+router.delete('/projects/:projectId/leave-project', authMiddlewareHybrid, leaveProject); 
+
+
 router.delete('/projects/:projectId/members/:userId', authMiddlewareHybrid, removeMember);
 
-// Leave a project (remove yourself)
-router.delete('/projects/:projectId/members/leave', authMiddlewareHybrid, leaveProject);
+
+
+
+
 
 
 //some zen mode route's yayaya

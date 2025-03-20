@@ -4,6 +4,7 @@ import { Invitation } from "../models/Invitation.js";
 import Project from "../models/Project.js";
 import User from "../models/User.js";
 import notificationService from "../Service/notificationService.js"; // Import notification service
+import Group from "../models/Group.js";
 
 export const searchUser = async (req, res) => {
     try {
@@ -217,6 +218,13 @@ export const respondToInvitation = async (req, res) => {
             );
 
             if (!isAlreadyMember) {
+                // First, find the default group
+                const defaultGroup = await Group.findOne({
+                    projectId: invitation.projectId._id,
+                    isDefault: true
+                });
+
+                // Add user to project members
                 await Project.findByIdAndUpdate(
                     invitation.projectId._id,
                     {
@@ -229,8 +237,32 @@ export const respondToInvitation = async (req, res) => {
                         }
                     }
                 );
+
+                // If default group exists, add user to it
+                if (defaultGroup) {
+                    try {
+                        await Group.findByIdAndUpdate(
+                            defaultGroup._id,
+                            {
+                                $push: {
+                                    members: {
+                                        userId,
+                                        role: invitation.role,
+                                        joinedAt: new Date()
+                                    }
+                                }
+                            }
+                        );
+                        console.log('User added to default group successfully');
+                    } catch (groupError) {
+                        console.error('Error adding user to default group:', groupError);
+                        // You might want to handle this error appropriately
+                    }
+                } else {
+                    console.warn('No default group found for project:', invitation.projectId._id);
+                }
             }
-            
+
             // Create notification for project owner that invitation was accepted
             const currentUser = await User.findById(userId).select('name username');
             

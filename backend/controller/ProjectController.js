@@ -36,6 +36,26 @@ export const createProject = async (req, res) => {
             members: [{userId: req.user._id, role: 'admin'}]
         });
 
+         const defaultGroup = await Group.create({
+          name: 'General',
+          projectId: project._id,
+          isDefault: true,
+          members: [
+            {
+              userId: req.user._id,
+              role: 'admin',
+              joinedAt: new Date()
+            }
+          ],
+          createdBy: req.user._id,
+          description: 'Default project discussion group'
+        });
+
+        // Add group reference to project
+        await Project.findByIdAndUpdate(project._id, {
+          $push: { groups: defaultGroup._id }
+        });
+
         // Clear cache after successful creation
         try {
             await redisClient.del("projects:" + req.user._id);
@@ -46,7 +66,10 @@ export const createProject = async (req, res) => {
         return res.status(201).json({
             success: true,
             message: 'Project created successfully',
-            project: newProject
+            project: {
+            ...newProject.toObject(),
+            defaultGroup: defaultGroup
+      }
         });
 
 d    } catch (error) {
@@ -510,6 +533,7 @@ export const updateMemberRole = async (req, res) => {
 // };
 
 export const removeMember = async (req, res) => {
+  console.log('Remove member request:', req.params);  
   try {
     const { projectId, userId } = req.params;
     
@@ -607,28 +631,46 @@ export const removeMember = async (req, res) => {
   }
 };
 
-// Leave a project (remove yourself)
-// 
+
 
 // Leave a project (remove yourself)
 export const leaveProject = async (req, res) => {
+  console.log('Leave project request:', req.params);
   try {
     const { projectId } = req.params;
-    const currentUserId = req.user.id;
+    console.log('Leave project request:', req.params);
+    const currentUserId = req.user._id || req.user.id;
+    
+    console.log('Current user ID:', currentUserId);
+    console.log('Project ID from params:', projectId);
     
     // Check if project exists
     const project = await Project.findById(projectId);
     if (!project) {
-      return res.status(404).json({ message: 'Project not found' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'Project not found' 
+      });
     }
     
-    // Find the current user in the project members
-    const memberIndex = project.members.findIndex(
-      m => m.userId.toString() === currentUserId || m._id.toString() === currentUserId
-    );
+    // Find the current user in the project members - fix the comparison
+    const memberIndex = project.members.findIndex(m => {
+      const memberId = m.userId.toString();
+      const userIdMatch = memberId === currentUserId.toString();
+      const matchResult = userIdMatch;
+      
+      console.log(`Comparing member ${memberId} with user ${currentUserId.toString()}: ${matchResult}`);
+      
+      return matchResult;
+    });
+    
+    console.log('Member index found:', memberIndex);
     
     if (memberIndex === -1) {
-      return res.status(404).json({ message: 'You are not a member of this project' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'You are not a member of this project' 
+      });
     }
     
     // Check if user is leaving as the last admin
@@ -706,11 +748,16 @@ export const leaveProject = async (req, res) => {
     }
     
     return res.status(200).json({
+      success: true,
       message: 'You have left the project successfully. Tasks reassigned to project admin.',
       projectId: project._id
     });
   } catch (error) {
     console.error('Error leaving project:', error);
-    return res.status(500).json({ message: 'Failed to leave project', error: error.message });
+    return res.status(500).json({ 
+      success: false,
+      message: 'Failed to leave project', 
+      error: error.message 
+    });
   }
 };

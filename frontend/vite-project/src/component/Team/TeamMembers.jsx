@@ -10,6 +10,7 @@ import API from '../../api/api';
 import RoleChangeConfirmation from './RoleChangeConfirmation';
 import RemoveMemberConfirmation from './RemoveConfirmation';
 import MemberTaskList from './MemberTaskList';
+import { useNavigate } from 'react-router-dom';
 
 const ROLES = {
   ADMIN: 'admin',
@@ -33,6 +34,9 @@ const TeamManagement = ({ projectMembers = [], tasks = [], currentUser = {}, pro
   const [isLeaveConfirmOpen, setIsLeaveConfirmOpen] = useState(false);
   
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [leaveError, setLeaveError] = useState(null);
 
   // Current user's role in this project
   const currentUserRole = useMemo(() => {
@@ -161,25 +165,29 @@ const TeamManagement = ({ projectMembers = [], tasks = [], currentUser = {}, pro
     }
   });
 
-  // New mutation: Leave project (self removal)
+  // Update the leave project mutation
   const leaveProjectMutation = useMutation({
-    mutationFn: async ({ projectId }) => {
-      // Use the current user's ID for self-removal
-      const response = await API.delete(`/api/projects/${projectId}/members/leave`);
+    mutationFn: async () => {
+      const response = await API.delete(`/api/projects/${projectId}/leave-project`);
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Failed to leave project');
+      }
       return response.data;
     },
     onSuccess: () => {
       // Invalidate queries to update UI
       queryClient.invalidateQueries(['projects']);
+      queryClient.invalidateQueries(['project', projectId]);
       
-      // Redirect to projects page after leaving
-      if (window) {
-        window.location.href = '/dashboard'; 
-      }
+      // Show success message
+      toast?.success('Successfully left the project');
       
-      if (onUpdateSuccess) {
-        onUpdateSuccess();
-      }
+      // Redirect to dashboard
+      navigate('/dashboard');
+    },
+    onError: (error) => {
+      console.error('Failed to leave project:', error);
+      toast?.error(error.message || 'Failed to leave project');
     }
   });
 
@@ -213,7 +221,7 @@ const TeamManagement = ({ projectMembers = [], tasks = [], currentUser = {}, pro
     setIsRemoveConfirmOpen(true);
   };
 
-  // New function: Handle leave project request
+  // Update the leave project request handler
   const handleLeaveProjectRequest = () => {
     // Check if user is the last admin
     const adminCount = projectMembers.filter(m => 
@@ -222,7 +230,7 @@ const TeamManagement = ({ projectMembers = [], tasks = [], currentUser = {}, pro
     ).length;
     
     if (isAdmin && adminCount === 0) {
-      alert("You are the only admin of this project. You must promote another member to admin before leaving.");
+      toast?.error("You are the only admin. Please assign another admin before leaving.");
       return;
     }
     
@@ -265,18 +273,14 @@ const TeamManagement = ({ projectMembers = [], tasks = [], currentUser = {}, pro
     }
   };
 
-  // New function: Confirm leave project
+  // Update the confirm leave project function
   const confirmLeaveProject = async () => {
-    if (!projectId) return;
-    
     try {
-      await leaveProjectMutation.mutateAsync({
-        projectId
-      });
-      
+      await leaveProjectMutation.mutateAsync();
       setIsLeaveConfirmOpen(false);
     } catch (error) {
-      console.error('Failed to leave project:', error);
+      // Error is handled in mutation's onError
+      setIsLeaveConfirmOpen(false);
     }
   };
 
@@ -415,6 +419,45 @@ const TeamManagement = ({ projectMembers = [], tasks = [], currentUser = {}, pro
   const handleViewMemberTasks = (member) => {
     setSelectedTaskMember(member);
   };
+
+  // Add this useEffect to handle project leaving
+  useEffect(() => {
+    const leaveProject = async () => {
+      if (!isLeaving || !projectId) return;
+  
+      try {
+        console.log('Attempting to leave project:', projectId);
+        
+        const response = await API.delete(`/api/projects/${projectId}/members/leave`);
+        console.log('Leave project response:', response);
+  
+        if (response.data.success) {
+          // Invalidate queries
+          queryClient.invalidateQueries(['projects']);
+          queryClient.invalidateQueries(['project', projectId]);
+          
+          // Show success message
+          toast?.success('Successfully left the project');
+          
+          // Reset state
+          setIsLeaving(false);
+          setLeaveError(null);
+          
+          // Redirect
+          navigate('/dashboard');
+        } else {
+          throw new Error(response.data.message || 'Failed to leave project');
+        }
+      } catch (error) {
+        console.error('Leave project error:', error);
+        setLeaveError(error.message || 'Failed to leave project');
+        toast?.error(error.message || 'Failed to leave project');
+        setIsLeaving(false);
+      }
+    };
+  
+    leaveProject();
+  }, [isLeaving, projectId, queryClient, navigate]);
 
   // Update the main container styles
   return (
