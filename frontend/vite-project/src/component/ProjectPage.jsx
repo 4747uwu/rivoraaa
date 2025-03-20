@@ -336,7 +336,8 @@ const ProjectDashboard = () => {
   return (
     <div className="min-h-screen bg-black p-4">
       {/* Project Header Card */}
-      <div className="bg-black rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
+      <div className="bg-black rounded-xl shadow-lg border border-gray-800/90 mb-4 overflow-hidden">
+        
         {/* Project Banner */}
         {/* <div className="h-3 bg-gradient-to-r from-blue-500 to-indigo-600"></div> */}
         
@@ -464,75 +465,84 @@ const ProjectDashboard = () => {
           </div>
           
           {/* Project Stats & Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-0">
             {/* Progress Card */}
-            <div className="bg-black rounded-lg p-4 border border-gray-100">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-medium text-white">Overall Progress</h3>
-                <TrendingUp size={16} className="text-blue-500" />
-              </div>
-              <div className="mb-2">
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="font-medium text-gray-100">{project.progress}% Complete</span>
-                  <span className="text-white">100%</span>
-                </div>
-                <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <motion.div 
-                    className="h-full bg-blue-500 rounded-full"
-                    initial={false}
-                    animate={{ width: `${project.progress}%` }}
-                    transition={{ 
-                      type: "spring", 
-                      stiffness: 60, 
-                      damping: 15 
-                    }}
-                  />
-                </div>
-              </div>
-              <p className="text-xs text-gray-200 mt-2">
-                {project.progress < 100 
-                  ? `${100 - project.progress}% remaining to complete` 
-                  : "Project is complete!"}
-              </p>
-            </div>
+            <div className="bg-gradient-to-br from-[#121212] via-[#1A1A1A] to-[#141414] rounded-lg p-4 
+                            relative before:absolute before:inset-0 before:-z-10 before:rounded-lg 
+                            before:p-[2px] before:bg-gradient-to-r before:from-gray-800/10 
+                            before:via-white/25 before:to-gray-800/20">
             
-            {/* Deadline Card */}
-            <div className="bg-black rounded-lg p-4 border border-gray-100">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-medium text-white">Deadline</h3>
-                <CalendarIcon size={16} className="text-blue-500" />
-              </div>
-              <div className="flex items-end justify-between">
-                <div>
-                  <p className="text-lg font-semibold text-gray-800">
-                    {new Date(project.deadline).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric'
-                    })}
-                  </p>
-                  <p className={`text-sm ${daysRemaining < 0 ? 'text-red-500' : 
-                                          daysRemaining < 3 ? 'text-orange-500' : 
-                                          'text-gray-500'}`}>
-                    {daysRemaining < 0 
-                      ? `Overdue by ${Math.abs(daysRemaining)} days` 
-                      : daysRemaining === 0 
-                        ? 'Due today' 
-                        : `${daysRemaining} days remaining`}
-                  </p>
-                </div>
-                {daysRemaining < 3 && daysRemaining >= 0 && (
-                  <span className="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center">
-                    <Clock size={14} className="text-orange-500" />
-                  </span>
-                )}
-                {daysRemaining < 0 && (
-                  <span className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
-                    <AlertTriangle size={14} className="text-red-500" />
-                  </span>
-                )}
-              </div>
-            </div>
+                              <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-sm font-medium text-white">Overall Progress</h3>
+                            <TrendingUp size={16} className="text-blue-500" />
+                          </div>
+                          <div className="mb-2">
+                            <div className="flex justify-between text-xs mb-1">
+                              <span className="font-medium text-white">{project.progress}% Complete</span>
+                              <span className="text-white">100%</span>
+                            </div>
+                            <div className="w-full h-2 bg-gray-200 rounded-full ">
+                              <motion.div 
+                                className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 to-purple-600 rounded-full 
+                                           shadow-[0_0_12px_rgba(147,51,234,0.3)]"
+                                initial={false}
+                                animate={{ width: `${project.progress}%` }}
+                                transition={{ 
+                                  type: "spring", 
+                                  stiffness: 60, 
+                                  damping: 15 
+                                }}
+                              />
+                            </div>
+                          </div>
+                          <p className="text-xs text-white mt-2">
+                            {project.progress < 100 
+                              ? `${100 - project.progress}% remaining to complete` 
+                              : "Project is complete!"}
+                          </p>
+                        </div>
+                        
+                        {/* Deadline Card */}
+                        <div className="bg-gradient-to-br from-[#121212] via-[#1A1A1A] to-[#141414] rounded-lg p-4 
+                            relative before:absolute before:inset-0 before:-z-10 before:rounded-lg 
+                            before:p-[2px] before:bg-gradient-to-r before:from-gray-800/10 
+                            before:via-white/25 before:to-gray-800/20"
+                          >
+                          <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-sm font-medium text-white">Deadline</h3>
+                            <CalendarIcon size={16} className="text-blue-500" />
+                          </div>
+                          <div className="flex items-end justify-between">
+                            <div>
+                              <p className="text-lg font-semibold text-white">
+                                {new Date(project.deadline).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric'
+                                })}
+                              </p>
+                              <p className={`text-sm ${daysRemaining < 0 ? 'text-red-500' : 
+                                                      daysRemaining < 3 ? 'text-orange-500' : 
+                                                      'text-gray-500'}`}>
+                                {daysRemaining < 0 
+                                  ? `Overdue by ${Math.abs(daysRemaining)} days` 
+                                  : daysRemaining === 0 
+                                    ? 'Due today' 
+                                    : `${daysRemaining} days remaining`}
+                              </p>
+                            </div>
+                            {daysRemaining < 3 && daysRemaining >= 0 && (
+                              <span className="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center">
+                                <Clock size={14} className="text-orange-500" />
+                              </span>
+                            )}
+                            {daysRemaining < 0 && (
+                              <span className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
+                                <AlertTriangle size={14} className="text-red-500" />
+                              </span>
+                            )}
+                          </div>
+                        </div>
 
             {/* AI Insights Card */}
             {/* <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg p-4 border border-gray-700 text-white">

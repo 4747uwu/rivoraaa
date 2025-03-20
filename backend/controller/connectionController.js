@@ -10,40 +10,62 @@ import notificationService from '../Service/notificationService.js';
 export const sendLinkUpRequest = async (req, res) => {
   try {
     const { userId, message } = req.body;
-    const currentUserId = req.user._id;
+    const currentUserId = req.user?._id;
     
     // Basic validation
-    if (!currentUserId || !userId) {
-      return res.status(400).json({ message: "Invalid request" });
+    if (!currentUserId) {
+      return res.status(401).json({ message: "Authentication required. Please log in." });
+    }
+    
+    if (!userId) {
+      return res.status(400).json({ message: "Target user ID is required" });
     }
     
     if (currentUserId.toString() === userId) {
       return res.status(400).json({ message: "You cannot link up with yourself" });
     }
 
-    // Simple connection check
+    console.log(`Checking existing connection between ${currentUserId} and ${userId}`);
+
+    // Ensure field names match your schema and index
     const existingConnection = await Connection.findOne({
       $or: [
-        { followers: currentUserId, following: userId },
-        { followers: userId, following: currentUserId }
-      ]
+        // Use either follower/following (singular) OR followers/following (plural)
+        // based on what you decide in your schema
+        { follower: currentUserId, following: userId },  // If using singular
+        { follower: userId, following: currentUserId }   // If using singular
+        
+        // OR if you updated the index to use the plural form:
+        // { followers: currentUserId, following: userId },
+        // { followers: userId, following: currentUserId }
+      ],
+      connectionType: 'linkUps'
     });
     
     if (existingConnection) {
-      return res.status(400).json({ 
-        message: "A connection already exists with this user" 
-      });
+      console.log("Found existing connection:", existingConnection);
+      // Return appropriate message based on connection status
+      if (existingConnection.status === 'pending') {
+        return res.status(400).json({ message: "A connection request already exists between you and this user" });
+      } else if (existingConnection.status === 'accepted') {
+        return res.status(400).json({ message: "You're already connected with this user" });
+      } else {
+        return res.status(400).json({ message: "A connection already exists with this user" });
+      }
     }
     
-    // Create new connection
+    // Create new connection with field names matching the schema
     const connection = new Connection({
-      followers: currentUserId,
+      // Use field names that match your schema and index
+      follower: currentUserId,  // If using singular
       following: userId,
       connectionType: 'linkUps',
       status: 'pending',
       requestedAt: new Date(),
       message: message || ''
     });
+
+    console.log("Creating new connection:", connection);
 
     await connection.save();
     
@@ -66,7 +88,7 @@ export const sendLinkUpRequest = async (req, res) => {
       }
     });
 
-    // Send notification
+    // Keep notification service
     await notificationService.sendConnectionRequest(
       currentUserId,
       userId,
@@ -75,11 +97,23 @@ export const sendLinkUpRequest = async (req, res) => {
     
     return res.status(200).json({ 
       message: "LinkUp request sent",
-      connection
+      connection: {
+        _id: connection._id,
+        status: connection.status,
+        requestedAt: connection.requestedAt
+      }
     });
     
   } catch (error) {
     console.error("Error sending LinkUp request:", error);
+    
+    if (error.code === 11000) {
+      return res.status(400).json({ 
+        message: "A connection request already exists with this user",
+        error: error.message
+      });
+    }
+    
     return res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -112,8 +146,8 @@ export const acceptLinkUpRequest = async (req, res) => {
     connection.acceptedAt = new Date();
     await connection.save();
     
-    // Remove from pending lists
-    await User.findByIdAndUpdate(connection.followers, {
+    // Remove from pending lists - update 'followers' to 'follower'
+    await User.findByIdAndUpdate(connection.follower, {
       $pull: { 'connections.pending.sent': { connection: connectionId } }
     });
     
@@ -126,7 +160,7 @@ export const acceptLinkUpRequest = async (req, res) => {
       $push: { 'connections.linkUps': connection._id }
     });
     
-    await User.findByIdAndUpdate(connection.followers, {
+    await User.findByIdAndUpdate(connection.follower, {
       $push: { 'connections.linkUps': connection._id }
     });
     
@@ -134,7 +168,7 @@ export const acceptLinkUpRequest = async (req, res) => {
     const currentUser = await User.findById(currentUserId).select('name username profilePicture');
 
       await notificationService.createNotification({
-      recipientId: connection.followers,
+      recipientId: connection.follower,
       type: 'connection_accepted',
       title: 'Connection Request Accepted',
       content: `${currentUser.name} accepted your connection request`,
@@ -184,7 +218,7 @@ export const rejectLinkUpRequest = async (req, res) => {
     await connection.save();
     
     // Remove from pending lists
-    await User.findByIdAndUpdate(connection.followers, {
+    await User.findByIdAndUpdate(connection.follower, {
       $pull: { 'connections.pending.sent': { connection: connectionId } }
     });
     
@@ -211,11 +245,11 @@ export const removeLinkUp = async (req, res) => {
     const { userId } = req.params;
     const currentUserId = req.user._id;
     
-    // Find the connection
+    // Find the connection - update query to use 'follower' instead of 'followers'
     const connection = await Connection.findOne({
       $or: [
-        { followers: currentUserId, following: userId },
-        { followers: userId, following: currentUserId }
+        { follower: currentUserId, following: userId },
+        { follower: userId, following: currentUserId }
       ],
       connectionType: 'linkUps',
       status: 'accepted'
@@ -229,7 +263,7 @@ export const removeLinkUp = async (req, res) => {
     await Connection.findByIdAndDelete(connection._id);
     
     // Remove from linkUps lists for both users
-    await User.findByIdAndUpdate(connection.followers, {
+    await User.findByIdAndUpdate(connection.follower, {
       $pull: { 'connections.linkUps': connection._id }
     });
     
@@ -247,29 +281,22 @@ export const removeLinkUp = async (req, res) => {
 };
 
 /**
- * Get all LinkUps for the current user
+ * Get all LinkUps for the current user - Simplified version
  * @route GET /api/connections/linkups
  */
 export const getLinkUps = async (req, res) => {
   try {
     const currentUserId = req.user._id;
-    console.log("1. Getting LinkUps for user:", currentUserId);
     
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     
-    // Get user's linkUps
+    // First get the user's linkUp connection IDs
     const user = await User.findById(currentUserId)
-      .populate({
-        path: 'connections.linkUps',
-        populate: {
-          path: 'followers following',
-          select: 'name username profilePicture bio profession'
-        }
-      });
+      .select('connections.linkUps');
 
-    if (!user || !user.connections || !user.connections.linkUps) {
+    if (!user?.connections?.linkUps?.length) {
       return res.status(200).json({
         linkUps: [],
         count: 0,
@@ -278,20 +305,25 @@ export const getLinkUps = async (req, res) => {
       });
     }
 
-    const connections = user.connections.linkUps
-      .slice(skip, skip + limit);
-
-    // Format the linkUps data with null checks
+    // Get the connection documents directly
+    const connections = await Connection.find({
+      _id: { $in: user.connections.linkUps },
+      connectionType: 'linkUps',
+      status: 'accepted'
+    })
+    .populate('follower following', 'name username profilePicture bio profession')
+    .skip(skip)
+    .limit(limit);
+    
+    // Format the linkUps data
     const linkUps = connections
-      .filter(connection => connection && (connection.followers || connection.following))
       .map(connection => {
-        // Check if current user is follower or following
-        const isFollower = connection.followers?._id?.toString() === currentUserId.toString();
-        const otherUser = isFollower ? connection.following : connection.followers;
-
-        // Only return if we have valid otherUser data
+        // Determine which user to return (the one that's not the current user)
+        const isFollower = connection.follower?._id?.toString() === currentUserId.toString();
+        const otherUser = isFollower ? connection.following : connection.follower;
+        
         if (!otherUser?._id) return null;
-
+        
         return {
           connectionId: connection._id,
           user: {
@@ -307,6 +339,7 @@ export const getLinkUps = async (req, res) => {
       })
       .filter(Boolean); // Remove any null entries
 
+    // Get the total count of connections
     const totalCount = user.connections.linkUps.length;
     
     return res.status(200).json({
@@ -315,7 +348,6 @@ export const getLinkUps = async (req, res) => {
       currentPage: page,
       totalPages: Math.ceil(totalCount / limit)
     });
-
   } catch (error) {
     console.error("Error getting LinkUps:", error);
     return res.status(500).json({ 
@@ -326,50 +358,51 @@ export const getLinkUps = async (req, res) => {
 };
 
 /**
- * Get pending LinkUp requests (both sent and received)
- * @route GET /api/connections/linkup/pending
+ * Simplified version of getting pending requests
  */
 export const getPendingLinkUps = async (req, res) => {
   try {
     const currentUserId = req.user._id;
-    console.log("Current User ID:", currentUserId);
     
-    // Get user with pending connections
-    const user = await User.findById(currentUserId);
+    // Get user's connection request IDs
+    const user = await User.findById(currentUserId)
+      .select('connections.pending.received connections.pending.sent');
     
-    // Get received requests
-    const receivedRequests = await Promise.all(
-      user.connections.pending.received.map(async (item) => {
-        const connection = await Connection.findById(item.connection)
-          .populate('followers', 'name username profilePicture bio profession');
-          
-        return connection ? {
-          connectionId: connection._id,
-          user: connection.followers,
-          message: connection.message,
-          requestedAt: connection.requestedAt
-        } : null;
-      })
-    );
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
     
-    // Get sent requests
-    const sentRequests = await Promise.all(
-      user.connections.pending.sent.map(async (item) => {
-        const connection = await Connection.findById(item.connection)
-          .populate('following', 'name username profilePicture bio profession');
-          
-        return connection ? {
-          connectionId: connection._id,
-          user: connection.following,
-          message: connection.message,
-          requestedAt: connection.requestedAt
-        } : null;
-      })
-    );
+    // Get received requests - fetch all at once
+    const receivedRequestIds = user.connections.pending.received.map(item => item.connection);
+    const receivedConnections = await Connection.find({
+      _id: { $in: receivedRequestIds },
+      status: 'pending'
+    }).populate('follower', 'name username profilePicture bio profession');
+    
+    const receivedRequests = receivedConnections.map(connection => ({
+      connectionId: connection._id,
+      user: connection.follower,
+      message: connection.message,
+      requestedAt: connection.requestedAt
+    }));
+    
+    // Get sent requests - fetch all at once
+    const sentRequestIds = user.connections.pending.sent.map(item => item.connection);
+    const sentConnections = await Connection.find({
+      _id: { $in: sentRequestIds },
+      status: 'pending'
+    }).populate('following', 'name username profilePicture bio profession');
+    
+    const sentRequests = sentConnections.map(connection => ({
+      connectionId: connection._id,
+      user: connection.following,
+      message: connection.message,
+      requestedAt: connection.requestedAt
+    }));
     
     return res.status(200).json({
-      received: receivedRequests.filter(Boolean),
-      sent: sentRequests.filter(Boolean)
+      received: receivedRequests,
+      sent: sentRequests
     });
   } catch (error) {
     console.error("Error getting pending LinkUps:", error);
@@ -423,8 +456,8 @@ export const checkLinkUpStatus = async (req, res) => {
     // Check for any connection between the users
     const connection = await Connection.findOne({
       $or: [
-        { followers: currentUserId, following: userId },
-        { followers: userId, following: currentUserId }
+        { follower: currentUserId, following: userId },
+        { follower: userId, following: currentUserId }
       ],
       connectionType: 'linkUps'
     });
@@ -436,7 +469,7 @@ export const checkLinkUpStatus = async (req, res) => {
     let status;
     if (connection.status === 'pending') {
       // Check if current user is the requester or recipient
-      if (connection.followers.toString() === currentUserId.toString()) {
+      if (connection.follower.toString() === currentUserId.toString()) {
         status = 'request_sent';
       } else {
         status = 'request_received';
@@ -488,8 +521,8 @@ export const getUserProfile = async (req, res) => {
     // Check connection status between users
     const connection = await Connection.findOne({
       $or: [
-        { followers: currentUserId, following: userId },
-        { followers: userId, following: currentUserId }
+        { follower: currentUserId, following: userId },
+        { follower: userId, following: currentUserId }
       ],
       connectionType: 'linkUps'
     });
@@ -503,7 +536,7 @@ export const getUserProfile = async (req, res) => {
       
       if (connection.status === 'pending') {
         // Check if current user is the requester or recipient
-        connectionStatus = connection.followers.toString() === currentUserId.toString() 
+        connectionStatus = connection.follower.toString() === currentUserId.toString() 
           ? 'request_sent' 
           : 'request_received';
       } else {
@@ -594,7 +627,7 @@ export const getUserProfile = async (req, res) => {
       } else if (user.connectionSettings.whoCanConnect === 'followers') {
         // Check if current user is a follower
         const isFollower = await Connection.exists({
-          followers: currentUserId,
+          follower: currentUserId,
           following: userId,
           connectionType: 'followers',
           status: 'accepted'

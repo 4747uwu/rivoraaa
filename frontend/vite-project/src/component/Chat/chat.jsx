@@ -31,6 +31,7 @@ const ChatComponent = () => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [typingUsers, setTypingUsers] = useState({});
   const typingTimeoutRef = useRef({});
+  const [isLoadingMessages, setIsLoadingMessages] = useState(true);
 
   const { user } = useAuth();
   const { selectedProject } = useProjects();
@@ -168,7 +169,8 @@ const ChatComponent = () => {
   useEffect(() => {
     const loadMessages = async () => {
       if (!selectedGroup?._id) return;
-
+      setIsLoadingMessages(true);
+      
       try {
         const response = await fetch(`${backendUrl}/api/groups/${selectedGroup._id}/messages`, {
           credentials: 'include'
@@ -181,6 +183,8 @@ const ChatComponent = () => {
         }
       } catch (error) {
         console.error('Error loading messages:', error);
+      } finally {
+        setIsLoadingMessages(false);
       }
     };
 
@@ -345,15 +349,15 @@ const ChatComponent = () => {
   const groupedMessages = groupMessagesByDate(messages);
 
   return (
-    <div className="flex h-screen bg-gray-50 antialiased text-gray-800">
+    <div className="flex h-screen mb-0 bg-gray-50 antialiased text-gray-800">
       {/* Left Sidebar: Profile & Groups */}
-      <div className="w-80 flex flex-col bg-white border-r border-gray-100 shadow-sm">
+      <div className="w-80 flex flex-col bg-[#121212] border-r border-gray-800/40 shadow-lg">
         {/* User Profile Section */}
-        <div className="p-4 border-b border-gray-100">
+        <div className="p-4 border-b border-gray-800/40">
           <div className="relative">
             <div 
               onClick={() => setShowProfileMenu(!showProfileMenu)} 
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800/50 cursor-pointer transition-colors"
             >
               <div className="relative">
                 <img 
@@ -365,8 +369,8 @@ const ChatComponent = () => {
               </div>
               
               <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-gray-900 truncate">{user.username}</h3>
-                <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                <h3 className="font-medium text-gray-200 truncate">{user.username}</h3>
+                <p className="text-sm text-gray-400 truncate">{user.email}</p>
               </div>
               
               <button className="text-gray-400 hover:text-gray-600">
@@ -376,8 +380,10 @@ const ChatComponent = () => {
             
             {/* Profile dropdown menu */}
             {showProfileMenu && (
-              <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-100 rounded-lg shadow-lg z-10 py-1">
-                <button className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2">
+              <div className="absolute left-0 right-0 mt-1 bg-[#1A1A1A] border border-gray-800/40 
+                            rounded-lg shadow-lg z-10 py-1">
+                <button className="w-full text-left px-4 py-2 text-gray-300 hover:bg-gray-800/50 
+                                flex items-center gap-2">
                   <Settings size={16} />
                   <span>Settings</span>
                 </button>
@@ -396,11 +402,11 @@ const ChatComponent = () => {
         </div>
         
         {/* Project Info */}
-        <div className="p-4 bg-indigo-50 border-b border-indigo-100">
-          <div className="flex items-center justify-between">
+        <div className="p-4 bg-indigo-900/20 border-b border-gray-800/40">
+          <div className="flex items-center justify-between ">
             <div>
-              <p className="text-xs font-medium text-indigo-500 uppercase tracking-wider">Current Project</p>
-              <h3 className="font-medium text-gray-900 truncate">{selectedProject?.name}</h3>
+              <p className="text-xs font-medium text-indigo-100 uppercase tracking-wider">Current Project</p>
+              <h3 className="font-medium text-gray-100 truncate">{selectedProject?.name}</h3>
             </div>
             <button className="p-1 rounded-full hover:bg-indigo-100 text-indigo-500">
               <ChevronRight size={16} />
@@ -409,16 +415,17 @@ const ChatComponent = () => {
         </div>
         
         {/* Search and Create Group */}
-        <div className="p-4 space-y-3">
+        <div className="p-4 space-y-3 bg-black">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-100" size={16} />
             <input
               type="text"
               placeholder="Search conversations..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-full bg-gray-50 border border-gray-200 
-                       text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 
+              className="w-full pl-10 pr-4 py-2 rounded-full bg-[#1A1A1A] border border-gray-800/40 
+                       text-sm text-gray-200 placeholder-gray-500
+                       focus:outline-none focus:ring-2 focus:ring-indigo-500/50 
                        focus:border-transparent"
             />
           </div>
@@ -436,7 +443,7 @@ const ChatComponent = () => {
         
         {/* Groups List */}
         <div className="flex-1 overflow-y-auto py-2">
-          <h4 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+          <h4 className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
             Conversations
           </h4>
           
@@ -450,7 +457,7 @@ const ChatComponent = () => {
                 key={group._id} 
                 onClick={() => setSelectedGroup(group)}
                 className={`px-4 py-3 flex items-center gap-3 cursor-pointer 
-                         ${selectedGroup?._id === group._id ? 'bg-indigo-50' : 'hover:bg-gray-50'} 
+                         ${selectedGroup?._id === group._id ? 'bg-indigo-900/20' : 'hover:bg-gray-800/30'} 
                          transition-colors`}
               >
                 <div 
@@ -517,124 +524,168 @@ const ChatComponent = () => {
 
       {/* Main Chat Area */}
       {selectedGroup ? (
-        <div className="flex-1 flex flex-col">
-          {/* Chat Header */}
-          <div className="h-16 px-6 flex items-center justify-between border-b border-gray-200 bg-white shadow-sm z-10">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center 
-                            bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-sm`}>
-                <span className="text-white font-medium">
-                  {getInitials(selectedGroup.name)}
+        <div className="flex-1 h-full flex flex-col bg-[#121212]">
+          {/* Enhanced Chat Header */}
+          <div className="h-16 px-6 flex items-center justify-between border-b border-gray-800/40 
+                        bg-[#121212]/95 backdrop-blur-sm shadow-md z-10">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center 
+                             bg-gradient-to-br from-indigo-500 to-purple-600 
+                             shadow-lg shadow-indigo-500/20">
+                  <span className="text-white font-semibold">
+                    {getInitials(selectedGroup.name)}
+                  </span>
+                </div>
+                <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 
+                              rounded-full border-2 border-[#121212] flex items-center 
+                              justify-center text-[8px] text-white font-medium">
+                  {selectedGroup.members.length}
                 </span>
               </div>
               
               <div>
-                <h3 className="font-medium text-gray-900">{selectedGroup.name}</h3>
-                <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                  <Users size={12} />
-                  <span>{selectedGroup.members.length} members</span>
+                <h3 className="font-semibold text-gray-100">{selectedGroup.name}</h3>
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <div className="flex -space-x-1">
+                    {selectedGroup.members.slice(0, 3).map((member, idx) => (
+                      <div key={member._id} 
+                           className="w-4 h-4 rounded-full ring-2 ring-[#121212]"
+                           style={{ zIndex: 3 - idx }}>
+                        <img 
+                          src={member.profilePicture || `https://ui-avatars.com/api/?name=${member.username}&size=32`}
+                          alt={member.username}
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <span className="ml-1">
+                    {selectedGroup.members.length > 3 
+                      ? `+${selectedGroup.members.length - 3} others` 
+                      : 'members'}
+                  </span>
                 </div>
               </div>
             </div>
             
-            {/* Header Actions */}
-            <div className="flex items-center gap-2">
+            {/* Enhanced Header Actions */}
+            <div className="flex items-center gap-3">
               {selectedGroup.createdBy._id?.toString() === currentUser && (
                 <button
                   onClick={() => setShowAddMembersModal(true)}
-                  className="px-3 py-1.5 text-sm bg-indigo-50 text-indigo-600 font-medium rounded-full
-                           hover:bg-indigo-100 transition-colors flex items-center gap-1.5"
+                  className="px-3 py-1.5 text-sm bg-indigo-500/10 text-indigo-400 
+                           font-medium rounded-lg hover:bg-indigo-500/20 
+                           transition-colors flex items-center gap-1.5 border border-indigo-500/20"
                 >
                   <UserPlus size={14} />
                   <span>Add Members</span>
                 </button>
               )}
               
-              <button className="p-2 rounded-full hover:bg-gray-100 text-gray-500">
+              <button className="p-2 rounded-lg hover:bg-white/5 text-gray-400 
+                              hover:text-gray-200 transition-colors">
                 <MoreVertical size={18} />
               </button>
             </div>
           </div>
 
-          {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50">
-            {Object.keys(groupedMessages).map(date => (
-              <div key={date} className="space-y-4">
-                {/* Date separator */}
-                <div className="flex items-center justify-center">
-                  <div className="bg-gray-200 px-3 py-1 rounded-full text-xs font-medium text-gray-600">
-                    {new Date(date).toLocaleDateString([], {
-                      weekday: 'long',
-                      month: 'short',
-                      day: 'numeric'
-                    })}
-                  </div>
-                </div>
-                
-                {/* Messages for this date */}
-                {groupedMessages[date].map((msg, idx) => {
-                  const isCurrentUser = msg.sender._id === currentUser;
-                  const showSender = idx === 0 || 
-                    groupedMessages[date][idx - 1]?.sender._id !== msg.sender._id;
-                  
-                  return (
-                    <div key={msg._id || idx} className="space-y-1">
-                      {/* Show sender info only when speaker changes */}
-                      {showSender && !isCurrentUser && (
-                        <div className="flex items-center gap-2 ml-12 mb-1">
-                          <span className="font-medium text-gray-900 text-sm">
-                            {msg.sender.username || msg.sender.name}
-                          </span>
-                        </div>
-                      )}
-                      
-                      <div className={`flex items-end gap-2 ${isCurrentUser ? 'justify-end' : ''}`}>
-                        {/* Show avatar with first message from this sender */}
-                        {!isCurrentUser && showSender && (
-                          <img
-                            src={msg.sender.profilePicture || `https://ui-avatars.com/api/?name=${msg.sender.username || 'User'}&background=random`}
-                            alt={msg.sender.username || msg.sender.name}
-                            className="w-10 h-10 rounded-full object-cover border border-gray-200"
-                          />
-                        )}
-                        
-                        {/* Message body */}
-                        <div className={`group relative max-w-[75%] ${!isCurrentUser && !showSender ? 'ml-12' : ''}`}>
-                          <div className={`px-4 py-3 rounded-2xl shadow-sm
-                                         ${isCurrentUser ? 
-                                           'bg-indigo-600 text-white rounded-br-none' : 
-                                           'bg-white text-gray-800 rounded-bl-none'}`}
-                          >
-                            <p className="text-[15px] whitespace-pre-wrap">{msg.content}</p>
-                          </div>
-                          
-                          {/* Time */}
-                          <div className={`absolute bottom-0 ${isCurrentUser ? 'left-0 translate-x-[-110%]' : 'right-0 translate-x-[110%]'}
-                                         opacity-0 group-hover:opacity-100 transition-opacity`}>
-                            <span className="text-xs text-gray-500">
-                              {formatMessageTime(msg.createdAt)}
-                            </span>
-                          </div>
-                        </div>
+          {/* Enhanced Messages Area */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gradient-to-b 
+                        from-[#121212] to-black/95 relative">
+            {/* Add subtle gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/5 
+                          to-purple-500/5 pointer-events-none" />
+            
+            {isLoadingMessages ? (
+              <MessagesLoadingIndicator />
+            ) : (
+              <>
+                {Object.keys(groupedMessages).map(date => (
+                  <div key={date} className="space-y-4 relative z-10">
+                    {/* Enhanced Date Separator */}
+                    <div className="flex items-center justify-center">
+                      <div className="px-3 py-1 rounded-full text-xs font-medium
+                                  bg-gray-800/50 text-gray-300 border border-gray-700/30
+                                  shadow-sm backdrop-blur-sm">
+                        {new Date(date).toLocaleDateString([], {
+                          weekday: 'long',
+                          month: 'short',
+                          day: 'numeric'
+                        })}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            ))}
-            <div ref={messagesEndRef} />
-            
-            {/* Empty state */}
-            {messages.length === 0 && (
-              <div className="h-full flex flex-col items-center justify-center text-center p-6">
-                <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
-                  <Users className="text-indigo-500" size={24} />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No messages yet</h3>
-                <p className="text-gray-500 max-w-sm">
-                  Start a conversation by sending the first message to this group.
-                </p>
-              </div>
+                    
+                    {/* Enhanced Messages */}
+                    {groupedMessages[date].map((msg, idx) => {
+                      const isCurrentUser = msg.sender._id === currentUser;
+                      const showSender = idx === 0 || 
+                        groupedMessages[date][idx - 1]?.sender._id !== msg.sender._id;
+                      
+                      return (
+                        <div key={msg._id || idx} 
+                             className={`space-y-1 ${isCurrentUser ? 'ml-12' : 'mr-12'}`}>
+                          {showSender && !isCurrentUser && (
+                            <div className="flex items-center gap-2 ml-12 mb-1">
+                              <span className="text-gray-300 text-sm font-medium">
+                                {msg.sender.username || msg.sender.name}
+                              </span>
+                            </div>
+                          )}
+                          
+                          <div className={`flex items-end gap-2 ${isCurrentUser ? 'justify-end' : ''}`}>
+                            {!isCurrentUser && showSender && (
+                              <div className="relative flex-shrink-0">
+                                <img
+                                  src={msg.sender.profilePicture || 
+                                      `https://ui-avatars.com/api/?name=${msg.sender.username || 'User'}`}
+                                  alt={msg.sender.username || msg.sender.name}
+                                  className="w-8 h-8 rounded-full object-cover ring-2 ring-gray-800"
+                                />
+                                <span className="absolute bottom-0 right-0 w-2 h-2 
+                                             bg-green-500 rounded-full ring-2 ring-[#121212]" />
+                              </div>
+                            )}
+                            
+                            <div className={`group relative max-w-[75%] ${!isCurrentUser && !showSender ? 'ml-12' : ''}`}>
+                              <div className={`px-4 py-2.5 rounded-2xl shadow-sm
+                                          ${isCurrentUser ? 
+                                            'bg-gradient-to-br from-indigo-600 to-indigo-700 text-white rounded-br-sm' : 
+                                            'bg-[#1e1e1e] text-gray-100 rounded-bl-sm'}`}>
+                                <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
+                                  {msg.content}
+                                </p>
+                              </div>
+                              
+                              <span className={`absolute bottom-1 ${isCurrentUser ? '-left-12' : '-right-12'}
+                                            text-xs text-gray-500 opacity-0 group-hover:opacity-100 
+                                            transition-opacity duration-200`}>
+                                {formatMessageTime(msg.createdAt)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+                
+                {/* Enhanced Empty State */}
+                {messages.length === 0 && (
+                  <div className="h-full flex flex-col items-center justify-center text-center p-6 relative z-10">
+                    <div className="w-16 h-16 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 
+                                rounded-xl flex items-center justify-center mb-4 
+                                shadow-xl shadow-indigo-500/10">
+                      <Users className="text-indigo-400" size={24} />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-200 mb-2">No messages yet</h3>
+                    <p className="text-gray-400 max-w-sm">
+                      Start a conversation by sending the first message to this group.
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -644,7 +695,7 @@ const ChatComponent = () => {
           </div>
 
           {/* Message Input */}
-          <div className="px-4 py-3 bg-white border-t border-gray-200">
+          <div className="px-4 py-3 bg-[#121212] border-t border-gray-800/40">
             <form onSubmit={handleSendMessage} className="flex items-center gap-2">
               <div className="flex-1 relative">
                 <input
@@ -652,9 +703,9 @@ const ChatComponent = () => {
                   value={newMessage}
                   onChange={handleMessageChange}
                   placeholder="Type your message..."
-                  className="w-full px-4 py-3 pr-12 bg-gray-50 border border-gray-300 rounded-full 
-                           focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
-                           placeholder-gray-400 text-gray-900"
+                  className="w-full px-4 py-3 pr-12 bg-[#1A1A1A] border border-gray-800/40 rounded-full 
+                           focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent
+                           placeholder-gray-500 text-gray-200"
                 />
               </div>
               
@@ -662,8 +713,8 @@ const ChatComponent = () => {
                 type="submit"
                 disabled={!newMessage.trim() || !socket}
                 className="p-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700
-                        disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors
-                        flex items-center justify-center shadow-sm"
+                        disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed 
+                        transition-colors flex items-center justify-center shadow-sm"
               >
                 <Send size={18} />
               </button>
@@ -726,10 +777,7 @@ const ChatComponent = () => {
 const TypingIndicator = ({ users }) => {
   if (Object.keys(users).length === 0) return null;
   
-  // Get the usernames of people typing
   const typingUsernames = Object.values(users).map(u => u.username);
-  
-  // Limit to showing max 2 users typing
   const displayNames = typingUsernames.slice(0, 2);
   const text = displayNames.length === 1 
     ? `${displayNames[0]} is typing...` 
@@ -738,14 +786,34 @@ const TypingIndicator = ({ users }) => {
       : `${displayNames[0]}, ${displayNames[1]} and ${typingUsernames.length - 2} others are typing...`;
       
   return (
-    <div className="flex items-center gap-2 text-sm text-gray-500 mt-1 ml-12">
+    <div className="flex items-center gap-2 text-sm text-gray-400 mt-1 ml-12">
       <div className="flex space-x-1">
-        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0ms' }}></div>
-        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '150ms' }}></div>
-        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500/50 animate-bounce" 
+             style={{ animationDelay: '0ms' }}></div>
+        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500/50 animate-bounce" 
+             style={{ animationDelay: '150ms' }}></div>
+        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500/50 animate-bounce" 
+             style={{ animationDelay: '300ms' }}></div>
       </div>
-      <span>{text}</span>
+      <span className="text-gray-500">{text}</span>
     </div>
   );
 };
+
+const MessagesLoadingIndicator = () => {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center bg-black/95 space-y-4">
+      <div className="flex space-x-2">
+        <div className="w-3 h-3 rounded-full bg-indigo-500 animate-bounce" 
+             style={{ animationDelay: '0ms' }}></div>
+        <div className="w-3 h-3 rounded-full bg-indigo-600 animate-bounce" 
+             style={{ animationDelay: '150ms' }}></div>
+        <div className="w-3 h-3 rounded-full bg-indigo-700 animate-bounce" 
+             style={{ animationDelay: '300ms' }}></div>
+      </div>
+      <p className="text-gray-400 text-sm">Loading messages...</p>
+    </div>
+  );
+};
+
 export default ChatComponent;

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Quote, Moon, Sun, RefreshCw } from 'lucide-react';
 import { useTheme } from './context/themeContext';
+import Waves from './Pages/creative/linebc'; // Import the Waves component (you'll need to create this)
 
 const quotes = {
   humorous: [
@@ -74,19 +75,21 @@ const QuotesWidget = () => {
   const modeStyles = {
     humorous: {
       gradient: darkMode 
-        ? 'from-purple-600/30 via-indigo-600/20 to-blue-600/30' 
+        ? 'bg-black' 
         : 'from-purple-200 via-indigo-100 to-blue-200',
       icon: 'text-purple-400',
       border: darkMode ? 'border-purple-500/30' : 'border-purple-300',
-      highlight: darkMode ? 'text-purple-300' : 'text-purple-700'
+      highlight: darkMode ? 'text-purple-300' : 'text-purple-700',
+      waveColor: "rgba(180, 160, 255, 0.15)"  // Purple-tinted wave for humorous mode
     },
     serious: {
       gradient: darkMode 
-        ? 'from-blue-600/30 via-cyan-600/20 to-teal-600/30' 
+        ? 'bg-black' 
         : 'from-blue-200 via-cyan-100 to-teal-200',
       icon: 'text-blue-400',
       border: darkMode ? 'border-blue-500/30' : 'border-blue-300',
-      highlight: darkMode ? 'text-blue-300' : 'text-blue-700'
+      highlight: darkMode ? 'text-blue-300' : 'text-blue-700',
+      waveColor: "rgba(160, 200, 255, 0.15)"  // Blue-tinted wave for serious mode
     }
   };
 
@@ -104,13 +107,31 @@ const QuotesWidget = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
+      {/* Waves background component */}
+      <div className="absolute inset-0 z-0 overflow-hidden rounded-xl">
+        <Waves
+          lineColor={currentStyle.waveColor}
+          backgroundColor="transparent"
+          waveSpeedX={0.015}
+          waveSpeedY={0.008}
+          waveAmpX={50}
+          waveAmpY={25}
+          friction={0.95}
+          tension={0.02}
+          maxCursorMove={0.2}
+          xGap={16}
+          yGap={40}
+          style={{ mixBlendMode: 'overlay' }}
+        />
+      </div>
+      
       {/* Background decorative quote marks */}
-      <div className="absolute -bottom-3 -right-3 opacity-10 pointer-events-none">
+      <div className="absolute -bottom-3 -right-3 opacity-10 pointer-events-none z-10">
         <Quote className="w-16 h-16" />
       </div>
       
       {/* Header with controls */}
-      <div className="flex justify-between items-center mb-1 z-10">
+      <div className="flex justify-between items-center mb-1 z-20">
         {/* Mode toggle */}
         <button 
           onClick={toggleMode}
@@ -139,7 +160,7 @@ const QuotesWidget = () => {
       </div>
       
       {/* Quote content with animation */}
-      <div className="flex-1 flex flex-col justify-center min-h-0 z-10">
+      <div className="flex-1 flex flex-col justify-center min-h-0 z-20">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentQuote.text}

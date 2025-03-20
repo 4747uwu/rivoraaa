@@ -252,8 +252,11 @@ const TaskCard = React.memo(({
 
             {task.dueDate && (
               <span className="text-xs font-medium px-2.5 py-1 rounded-full 
-                           bg-gray-50 text-gray-600 border border-gray-200">
-                {new Date(task.dueDate).toLocaleDateString()}
+                          bg-gray-600 text-gray-100 border border-gray-800/80">
+                {new Date(task.dueDate).toLocaleDateString('en-US', {
+                  day: 'numeric',
+                  month: 'short'
+                }).replace(' ', ' ')}
               </span>
             )}
           </div>
@@ -447,12 +450,12 @@ const TaskCard = React.memo(({
 // Memoize the TaskControls component
 const TaskControls = React.memo(({ sortBy, setSortBy, sortOrder, setSortOrder, filterPriority, setFilterPriority,filterUser, setFilterUser, projectMembers }) => (
   <div className="flex items-center gap-4 pb-0">
-    <div className="flex items-center gap-2">
-      <span className="text-sm font-medium text-gray-700">Sort by:</span>
+    <div className="flex items-center gap-4">
+      <span className="text-m font-medium text-gray-100">Sort by:</span>
       <select
         value={sortBy}
         onChange={(e) => setSortBy(e.target.value)}
-        className="px-3 py-1 border border-gray-200 rounded-lg text-sm"
+        className="px-5 py-2 text-white border border-gray-800/80 rounded-lg bg-black text-sm"
       >
         <option value="createdAt">Created Date</option>
         <option value="dueDate">Due Date</option>
@@ -461,18 +464,18 @@ const TaskControls = React.memo(({ sortBy, setSortBy, sortOrder, setSortOrder, f
       </select>
       <button
         onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
-        className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+        className="p-1 bg-white hover:bg-gray-100 rounded-lg transition-colors"
       >
         {sortOrder === 'asc' ? <SortAsc size={18} /> : <SortDesc size={18} />}
       </button>
     </div>
 
     <div className="flex items-center gap-2">
-      <span className="text-sm font-medium text-gray-700">Priority:</span>
+      <span className="text-sm font-medium text-gray-100">Priority:</span>
       <select
         value={filterPriority}
         onChange={(e) => setFilterPriority(e.target.value)}
-        className="px-3 py-1 border border-gray-200 rounded-lg text-sm"
+        className="px-5 py-2 bg-black text-white border border-gray-800/80 rounded-lg text-sm"
       >
         <option value="all">All</option>
         <option value="high">High</option>
@@ -482,11 +485,11 @@ const TaskControls = React.memo(({ sortBy, setSortBy, sortOrder, setSortOrder, f
     </div>
 
     <div className="flex items-center gap-2">
-      <span className="text-sm font-medium text-gray-700">Assigned to:</span>
+      <span className="text-sm font-medium text-gray-100">Assigned to:</span>
       <select
         value={filterUser}
         onChange={(e) => setFilterUser(e.target.value)}
-        className="px-3 py-1 border border-gray-200 rounded-lg text-sm"
+        className="px-4 py-2 bg-black text-white border border-gray-800/80 rounded-lg text-sm"
         style={{ minWidth: "120px" }}
       >
         <option value="all">All Users</option>
@@ -931,10 +934,11 @@ const ProjectTasks = ({
       )}
 
       {/* Header Controls */}
-      <div className="flex flex-col gap-2 bg-[#121212] rounded-lg p-4 
+      <div className="flex flex-col gap-2 bg-black rounded-lg p-1 pl-4 pr-4 
                        border border-gray-800/40">
         {/* Tab Navigation */}
-        <div className="flex border-b border-gray-800/40">
+        <div className="flex justify-between border-b border-gray-800/40">
+        <div>
           <button
             onClick={() => setViewMode('board')}
             className={`px-4 py-3 font-medium text-sm ${
@@ -955,6 +959,24 @@ const ProjectTasks = ({
           >
             Performance Analytics
           </button>
+          </div>
+
+          <div className=''>
+
+          {isAdmin(currentUser, selectedProject) && (
+          <GenerateAITasks 
+            projectId={projectId}
+            projectName={selectedProject?.name}
+            projectDescription={selectedProject?.description}
+            teamMembers={projectMembers}
+            projectDeadline={selectedProject?.deadline}
+            onTasksGenerated={handleTasksGenerated}
+            className="px-4 py-2 bg-gradient-to-r from-purple-700 via-purple-600 to-indigo-600 text-white rounded-lg 
+            hover:from-purple-800 hover:to-indigo-700 transition-all duration-300 
+            flex items-center gap-2 mr-2 shadow-md"
+          />
+        )}
+        </div>
         </div>
 
         {/* Existing search and filters */}
@@ -984,17 +1006,7 @@ const ProjectTasks = ({
             setFilterUser={setFilterUser}
             projectMembers={projectMembers}
           />
-          <GenerateAITasks 
-            projectId={projectId}
-            projectName={selectedProject?.name}
-            projectDescription={selectedProject?.description}
-            teamMembers={projectMembers}
-            projectDeadline={selectedProject?.deadline}
-            onTasksGenerated={handleTasksGenerated}
-            className="px-4 py-2 bg-gradient-to-r from-gray-900 to-purple-900 text-white rounded-lg 
-            hover:from-gray-800 hover:to-purple-800 transition-all duration-300 
-            flex items-center gap-2 mr-2 shadow-md"
-          />
+          
         </div>
       </div>
 
@@ -1017,14 +1029,28 @@ const ProjectTasks = ({
               {/* Column Header with Task Count and Add Button */}
               <div className="flex justify-between items-center mb-4  top-0 bg-[#121212] z-0 pb-2 
                                 border-b-2 border-gray-800/40">
-                  <div className="flex items-center">
-                    <h2 className="font-semibold text-gray-200">{column.label}</h2>
-                    <span className="ml-2 px-2.5 py-0.5 bg-[#1A1A1A] rounded-full 
-                               text-xs font-medium text-gray-300 
-                               border border-gray-800/40">
-                      {filteredTasks.filter(task => task.status === column.id).length}
-                    </span>
-                  </div>
+                  <div className="flex items-center gap-2">
+                      <h2 className="font-semibold text-gray-200 p-3 pb-0 flex items-center gap-2">
+                        {column.label}
+                        <div className="relative">
+                          <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                          <span className="ml-0.5 px-2.5 py-1 bg-[#1A1A1A]/80 backdrop-filter backdrop-blur-sm rounded-full 
+                                      text-xs font-medium text-indigo-300 
+                                      border border-indigo-500/20 shadow-sm shadow-indigo-500/10
+                                      flex items-center justify-center min-w-[28px] transition-all">
+                            {filteredTasks.filter(task => task.status === column.id).length}
+                          </span>
+                        </div>
+                      </h2>
+                      
+                      {/* {column.id === 'completed' && filteredTasks.filter(task => task.status === column.id).length > 0 && (
+                        <div className="bg-green-500/10 px-2 py-0.5 rounded-full border border-green-500/20">
+                          <span className="text-[11px] font-medium text-green-400">
+                            {Math.round((filteredTasks.filter(task => task.status === column.id).length / filteredTasks.length) * 100)}% Complete
+                          </span>
+                        </div>
+                      )} */}
+                    </div>
                   
                   {/* Add Task Button - Moved to header */}
                   {isAdmin(currentUser, selectedProject) ? (

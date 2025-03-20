@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const ConnectionSchema = new mongoose.Schema({
-  followers: {
+  follower: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
@@ -39,7 +39,7 @@ const ConnectionSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-ConnectionSchema.index({ followers: 1, following: 1 }, { unique: true });
+ConnectionSchema.index({ follower: 1, following: 1 }, { unique: true });
 
 const Connection = mongoose.model('Connection', ConnectionSchema);
 

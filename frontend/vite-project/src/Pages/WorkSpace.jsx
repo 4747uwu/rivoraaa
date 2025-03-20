@@ -228,7 +228,7 @@ const WorkSpace = () => {
       </div>
       
       {/* Main Content Area */}
-      <div className="flex-1 bg-[#121212]">
+      <div className="flex-1 h-screen mb-0 bg-[#121212]">
         {activeComponent ? (
           <div className="h-full">
             {activeComponent}

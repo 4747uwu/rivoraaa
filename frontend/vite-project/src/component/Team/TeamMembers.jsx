@@ -489,7 +489,7 @@ const TeamManagement = ({ projectMembers = [], tasks = [], currentUser = {}, pro
       </div>
 
       {/* Table styles */}
-      <div className="flex-grow overflow-auto">
+      <div className="flex-grow h-[650px] overflow-auto">
         <table className="min-w-full divide-y divide-gray-800">
           <thead className="bg-gray-800/50">
             <tr>

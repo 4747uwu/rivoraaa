@@ -456,10 +456,10 @@ const ConnectionManager = () => {
                       >
                         <div className="flex items-center">
                           <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center overflow-hidden ring-2 ring-gray-700">
-                            {connection.user.profilePicture ? (
+                            {connection.user?.profilePicture ? (
                               <img 
-                                src={connection.user.profilePicture} 
-                                alt={connection.user.name} 
+                                src={connection.user?.profilePicture} 
+                                alt={connection.user?.name} 
                                 className="w-full h-full object-cover"
                               />
                             ) : (
@@ -472,9 +472,9 @@ const ConnectionManager = () => {
                                 {connection.user.name}
                               </h3>
                             </Link>
-                            <p className="text-sm text-gray-400">@{connection.user.username}</p>
+                            <p className="text-sm text-gray-400">@{connection.user?.username}</p>
                             {connection.user.profession && (
-                              <p className="text-xs text-gray-500">{connection.user.profession}</p>
+                              <p className="text-xs text-gray-500">{connection.user?.profession}</p>
                             )}
                           </div>
                         </div>
@@ -482,7 +482,7 @@ const ConnectionManager = () => {
                         <motion.button
                           whileHover={{ scale: 1.05, backgroundColor: "rgba(239, 68, 68, 0.3)" }}
                           whileTap={{ scale: 0.95 }}
-                          onClick={() => handleRemoveConnection(connection.user._id)}
+                          onClick={() => handleRemoveConnection(connection.user?._id)}
                           disabled={isLoadingRemoveLinkUp}
                           className="px-3 py-1 border border-gray-700 rounded text-sm text-gray-300 hover:bg-red-900/30 disabled:opacity-50 transition-colors group"
                         >
@@ -598,10 +598,10 @@ const ConnectionManager = () => {
                               >
                                 <div className="flex items-center">
                                   <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center overflow-hidden ring-2 ring-gray-700">
-                                    {request.user.profilePicture ? (
+                                    {request.user?.profilePicture ? (
                                       <img 
-                                        src={request.user.profilePicture} 
-                                        alt={request.user.name} 
+                                        src={request.user?.profilePicture} 
+                                        alt={request.user?.name} 
                                         className="w-full h-full object-cover"
                                       />
                                     ) : (
@@ -610,12 +610,12 @@ const ConnectionManager = () => {
                                   </div>
                                   
                                   <div className="ml-4">
-                                    <Link to={`/profile/${request.user._id}`} className="block">
+                                    <Link to={`/profile/${request.user?._id}`} className="block">
                                       <h3 className="font-medium text-gray-200 hover:text-blue-400 transition-colors">
                                         {request.user.name}
                                       </h3>
                                     </Link>
-                                    <p className="text-sm text-gray-400">@{request.user.username}</p>
+                                    <p className="text-sm text-gray-400">@{request.user?.username}</p>
                                     {request.message && (
                                       <motion.p 
                                         initial={{ opacity: 0 }}
@@ -623,7 +623,7 @@ const ConnectionManager = () => {
                                         transition={{ delay: 0.3 }}
                                         className="text-xs text-gray-500 mt-1 italic bg-gray-800/50 p-2 rounded"
                                       >
-                                        "{request.message}"
+                                        "{request?.message}"
                                       </motion.p>
                                     )}
                                   </div>
@@ -687,10 +687,10 @@ const ConnectionManager = () => {
                               >
                                 <div className="flex items-center">
                                   <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center overflow-hidden ring-2 ring-gray-700">
-                                    {request.user.profilePicture ? (
+                                    {request.user?.profilePicture ? (
                                       <img 
-                                        src={request.user.profilePicture} 
-                                        alt={request.user.name} 
+                                        src={request.user?.profilePicture} 
+                                        alt={request.user?.name} 
                                         className="w-full h-full object-cover"
                                       />
                                     ) : (
@@ -699,8 +699,8 @@ const ConnectionManager = () => {
                                   </div>
                                   
                                   <div className="ml-4">
-                                    <h3 className="font-medium text-gray-200">{request.user.name}</h3>
-                                    <p className="text-sm text-gray-400">@{request.user.username}</p>
+                                    <h3 className="font-medium text-gray-200">{request?.user.name}</h3>
+                                    <p className="text-sm text-gray-400">@{request?.user?.username}</p>
                                     <motion.span 
                                       initial={{ opacity: 0, scale: 0.8 }}
                                       animate={{ opacity: 1, scale: 1 }}

@@ -17,6 +17,10 @@ const Projects = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterPriority, setFilterPriority] = useState('');
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [totalProjects, setTotalProjects] = useState(0);
 
   useEffect(() => {
     fetchProjects();
@@ -58,6 +62,72 @@ const Projects = () => {
     setSearchTerm('');
     setFilterStatus('');
     setFilterPriority('');
+  };
+
+  const loadMoreProjects = async () => {
+    if (!hasMore || isLoadingMore) return;
+    
+    setIsLoadingMore(true);
+    try {
+      const response = await API.get(`/api/projects?page=${page + 1}&limit=10${
+        searchTerm ? `&search=${searchTerm}` : ''
+      }${filterStatus ? `&status=${filterStatus}` : ''
+      }${filterPriority ? `&priority=${filterPriority}` : ''}`);
+
+      if (response.data.success) {
+        const { projects: newProjects, pagination } = response.data;
+        
+        // Append new projects to existing ones
+        setProjects(prevProjects => [...prevProjects, ...newProjects]);
+        setPage(page + 1);
+        setHasMore(page < pagination.pages);
+        setTotalProjects(pagination.total);
+      }
+    } catch (error) {
+      console.error('Error loading more projects:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
+  const renderLoadMoreButton = () => {
+    if (!hasMore) return null;
+
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="col-span-full flex justify-center mt-6"
+      >
+        <button
+          onClick={loadMoreProjects}
+          disabled={isLoadingMore}
+          className="group relative px-6 py-3 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 
+                   border border-indigo-500/20 text-indigo-400 font-medium 
+                   transition-all duration-300 flex items-center gap-2"
+        >
+          {isLoadingMore ? (
+            <>
+              <div className="w-4 h-4 border-2 border-current border-t-transparent 
+                          rounded-full animate-spin"/>
+              Loading more...
+            </>
+          ) : (
+            <>
+              <span>Load More Projects</span>
+              <span className="text-xs text-indigo-500">
+                ({projects.length} of {totalProjects})
+              </span>
+            </>
+          )}
+          
+          {/* Gradient hover effect */}
+          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-indigo-600/0 
+                       via-indigo-600/10 to-indigo-600/0 opacity-0 
+                       group-hover:opacity-100 transition-opacity rounded-xl"/>
+        </button>
+      </motion.div>
+    );
   };
 
   return (
@@ -224,40 +294,47 @@ const Projects = () => {
           onCreateNew={() => setShowNewProjectModal(true)} 
         />
       ) : viewMode === 'grid' ? (
-        <AnimatePresence>
-          <div className="col-span-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProjects.map(project => (
-              <ProjectCard
-                key={project._id}
-                project={project}
-                onEdit={handleEditProject}
-                onDelete={handleDeleteProject}
-              />
-            ))}
-          </div>
-        </AnimatePresence>
+        <div className="space-y-6">
+          <AnimatePresence>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredProjects.map(project => (
+                <ProjectCard
+                  key={project._id}
+                  project={project}
+                  onEdit={handleEditProject}
+                  onDelete={handleDeleteProject}
+                />
+              ))}
+            </div>
+          </AnimatePresence>
+          {renderLoadMoreButton()}
+        </div>
       ) : viewMode === 'list' ? (
-        <div className="col-span-full">
+        <div className="space-y-6">
           <ProjectList
             projects={filteredProjects}
             onEdit={handleEditProject}
             onDelete={handleDeleteProject}
           />
+          {renderLoadMoreButton()}
         </div>
       ) : (
         // Zen Grid View
-        <AnimatePresence>
-          <div className="col-span-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
-            {filteredProjects.map(project => (
-              <ZenProjectCard
-                key={project._id}
-                project={project}
-                onEdit={handleEditProject}
-                onDelete={handleDeleteProject}
-              />
-            ))}
-          </div>
-        </AnimatePresence>
+        <div className="space-y-6">
+          <AnimatePresence>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+              {filteredProjects.map(project => (
+                <ZenProjectCard
+                  key={project._id}
+                  project={project}
+                  onEdit={handleEditProject}
+                  onDelete={handleDeleteProject}
+                />
+              ))}
+            </div>
+          </AnimatePresence>
+          {renderLoadMoreButton()}
+        </div>
       )}
 
       {/* Modals */}
