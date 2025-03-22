@@ -36,9 +36,11 @@ export const createProject = async (req, res) => {
             members: [{userId: req.user._id, role: 'admin'}]
         });
 
+        console.log(newProject);
+
          const defaultGroup = await Group.create({
           name: 'General',
-          projectId: project._id,
+          projectId: newProject._id,
           isDefault: true,
           members: [
             {
@@ -52,7 +54,7 @@ export const createProject = async (req, res) => {
         });
 
         // Add group reference to project
-        await Project.findByIdAndUpdate(project._id, {
+        await Project.findByIdAndUpdate(newProject._id, {
           $push: { groups: defaultGroup._id }
         });
 

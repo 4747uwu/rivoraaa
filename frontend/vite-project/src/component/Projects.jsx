@@ -869,7 +869,7 @@ const ProjectCard = ({ project, onEdit, onDelete }) => {
         </div>
         
         {/* Progress bar with animation */}
-        <div className="w-full h-2 bg-gray-800 rounded-full mb-4 overflow-hidden">
+        <div className="w-full h-1 bg-gray-800 rounded-full mb-4 overflow-hidden">
           <motion.div 
             initial={{ width: 0 }}
             animate={{ width: `${progressPercent}%` }}
