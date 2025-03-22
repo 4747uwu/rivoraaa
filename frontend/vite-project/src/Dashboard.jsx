@@ -169,167 +169,175 @@ const Dashboard = () => {
           themeClasses={themeClasses} 
         />
 
-        {/* Main Content Area */}
-        <main className="p-5 pt-2 space-y-4">
-          {/* ===== NEW USER PROFILE & ANALYTICS SECTION ===== */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-            {/* User Profile Compact Card */}
+        <main className="p-5 pt-2 space-y-4 sm:space-y-6">
+          {/* Two-row grid layout */}
+          <div className="grid grid-cols-1 gap-4 sm:gap-6">
+            {/* First Row: Two-column layout for user profile and quotes */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+              {/* User Profile Card */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`${themeClasses.card} rounded-xl border ${themeClasses.border} overflow-hidden backdrop-blur-sm shadow-lg`}
+              >
+                <div className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  {/* Left: User Info Section */}
+                  <div className="flex items-center gap-4">
+                    {/* User Avatar */}
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center border-2 border-indigo-500/30 shadow-lg">
+                      {user?.profilePicture ? (
+                        <img 
+                          src={user.profilePicture} 
+                          alt="Profile" 
+                          className="w-full h-full object-cover scale-150 object-center"
+                        />
+                      ) : (
+                        <span className="text-xl sm:text-2xl font-bold text-white">{user?.name?.charAt(0) || 'U'}</span>
+                      )}
+                    </div>
+                    
+                    {/* User Info with Animated Greeting */}
+                    <div className="">
+                      <h3 className="text-lg sm:text-xl font-bold text-gray-100">
+                        <div className="flex items-baseline gap-2">
+                          <div className="inline-block flex flex-col">
+                            <AnimatePresence mode="wait">
+                              <motion.span
+                                key={Math.random()}
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
+                                transition={{ duration: 0.5 }}
+                                className="inline-block"
+                              >
+                                <AnimatedGreeting />
+                              </motion.span>
+                            </AnimatePresence>
+                            <span className="text-gray-100">{user?.name || 'User'}!</span>
+                          </div>
+                        </div>
+                      </h3>
+                      <p className="text-xs sm:text-sm text-indigo-400 flex items-center gap-1">
+                        LinkUps- <div>
+                          <span className="text-gray-100 font-bold">{user.connections.linkUps.length || 0}</span>
+                        </div>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Center: Recent Trend - Only display on larger screens */}
+                  <div className="hidden md:flex flex-col items-center">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-sm font-medium text-gray-300 mr-2">Recent Trend</h4>
+                      <div className="flex items-center text-xs text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">
+                        <ArrowUp className="w-3 h-3 mr-1" /> 8%
+                      </div>
+                    </div>
+                    
+                    {/* Mini Chart */}
+                    <div className="h-10 flex items-end gap-1">
+                      {[35, 45, 30, 50, 65, 45, 70].map((height, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ height: 0 }}
+                          animate={{ height: `${height}%` }}
+                          transition={{ duration: 0.5, delay: i * 0.1 }}
+                          className="w-2 sm:w-3 rounded-t bg-gradient-to-t from-indigo-500/60 to-purple-500/60"
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Right: Stats Grid */}
+                  <div className="grid grid-cols-3 gap-1 sm:gap-2">
+                    {/* Total Projects */}
+                    <motion.div 
+                      whileHover={{ scale: 1.05 }}
+                      className="bg-indigo-500/10 rounded-lg p-1 sm:p-2 border border-indigo-500/20"
+                    >
+                      <div className="flex items-center justify-center mb-1">
+                        <FileText className="w-3 h-3 sm:w-4 sm:h-4 text-indigo-400" />
+                      </div>
+                      <div className="text-center">
+                        <h4 className="text-sm sm:text-base font-bold text-gray-200">{projects?.length || 0}</h4>
+                        <p className="text-[10px] sm:text-xs text-gray-400">Total</p>
+                      </div>
+                    </motion.div>
+                    
+                    {/* Other stat cards... */}
+                    {/* Completed */}
+                    <motion.div 
+                      whileHover={{ scale: 1.05 }}
+                      className="bg-green-500/10 rounded-lg p-1 sm:p-2 border border-green-500/20"
+                    >
+                      <div className="flex items-center justify-center mb-1">
+                        <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
+                      </div>
+                      <div className="text-center">
+                        <h4 className="text-sm sm:text-base font-bold text-gray-200">
+                          {projects?.filter(p => p.status === 'completed').length || 0}
+                        </h4>
+                        <p className="text-[10px] sm:text-xs text-gray-400">Complete</p>
+                      </div>
+                    </motion.div>
+                    
+                    {/* In Progress */}
+                    <motion.div 
+                      whileHover={{ scale: 1.05 }}
+                      className="bg-blue-500/10 rounded-lg p-1 sm:p-2 border border-blue-500/20"
+                    >
+                      <div className="flex items-center justify-center mb-1">
+                        <Activity className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400" />
+                      </div>
+                      <div className="text-center">
+                        <h4 className="text-sm sm:text-base font-bold text-gray-200">
+                          {projects?.filter(p => p.status === 'in_progress').length || 0}
+                        </h4>
+                        <p className="text-[10px] sm:text-xs text-gray-400">Active</p>
+                      </div>
+                    </motion.div>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Quotes Widget Card */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className={`${themeClasses.card} h-auto sm:h-[120px] lg:h-auto xl:h-[120px] rounded-xl border ${themeClasses.border} overflow-hidden backdrop-blur-sm shadow-lg flex items-center justify-between p-0`}
+              >
+                <QuotesWidget/>
+              </motion.div>
+            </div>
+
+            {/* Second Row: Full width timeline component */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`${themeClasses.card} rounded-xl border ${themeClasses.border} overflow-hidden backdrop-blur-sm shadow-lg`}
+              transition={{ delay: 0.2 }}
+              className="w-full  rounded-xl" 
             >
-              <div className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                {/* Left: User Info Section */}
-                <div className="flex items-center gap-4">
-                  {/* User Avatar */}
-                  <div className="w-20 h-20 rounded-xl overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center border-2 border-indigo-500/30 shadow-lg">
-                    {user?.profilePicture ? (
-                      <img 
-                        src={user.profilePicture} 
-                        alt="Profile" 
-                        className="w-full h-full object-cover scale-150 object-center"
-                      />
-                    ) : (
-                      <span className="text-2xl font-bold text-white">{user?.name?.charAt(0) || 'U'}</span>
-                    )}
-                  </div>
-                  
-                  {/* User Info with Animated Greeting */}
-                <div className="">
-                  <h3 className="text-xl font-bold text-gray-100">
-                    <div className="flex flex- items-baseline gap-2">
-                      <div className="inline-block flex flex-col">
-                        <AnimatePresence mode="wait">
-                          <motion.span
-                            key={Math.random()} // Force re-render for animation
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 10 }}
-                            transition={{ duration: 0.5 }}
-                            className="inline-block"
-                          >
-                            <AnimatedGreeting />
-                          </motion.span>
-                        </AnimatePresence>
-                         <span className="text-gray-100">{user?.name || 'User'}!</span>
-                      </div>
-                     
-                    </div>
-                  </h3>
-                  <p className="text-sm text-indigo-400 flex items-center gap-1">
-                    {/* <span className="w-2 h-2 rounded-full bg-green-500"></span> */}
-                    LinkUps- <div>
-                      <span className="text-gray-100 font-bold">{ user.connections.linkUps.length || 0}</span>
-                      </div>
-                  </p>
-                </div>
+              <div className={`${themeClasses.card} border ${themeClasses.border} rounded-xl  backdrop-blur-sm shadow-lg`}>
+                <ProjectTimelineBar />
               </div>
-
-                {/* Center: Recent Trend */}
-                <div className="flex flex-col sticky fixed  items-center">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-medium text-gray-300 mr-2">Recent Trend</h4>
-                    <div className="flex items-center text-xs text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">
-                      <ArrowUp className="w-3 h-3 mr-1" /> 8%
-                    </div>
-                  </div>
-                  
-                  {/* Mini Chart */}
-                  <div className="h-10 flex items-end gap-1">
-                    {[35, 45, 30, 50, 65, 45, 70].map((height, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ height: 0 }}
-                        animate={{ height: `${height}%` }}
-                        transition={{ duration: 0.5, delay: i * 0.1 }}
-                        className="w-3 rounded-t bg-gradient-to-t from-indigo-500/60 to-purple-500/60"
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                {/* Right: Stats Grid */}
-                <div className="grid grid-cols-3 gap-2">
-                  {/* Total Projects */}
-                  <motion.div 
-                    whileHover={{ scale: 1.05 }}
-                    className="bg-indigo-500/10 rounded-lg p-2 border border-indigo-500/20"
-                  >
-                    <div className="flex items-center justify-center mb-1">
-                      <FileText className="w-4 h-4 text-indigo-400" />
-                    </div>
-                    <div className="text-center">
-                      <h4 className="text-base font-bold text-gray-200">{projects?.length || 0}</h4>
-                      <p className="text-xs text-gray-400">Total</p>
-                    </div>
-                  </motion.div>
-                  
-                  {/* Completed */}
-                  <motion.div 
-                    whileHover={{ scale: 1.05 }}
-                    className="bg-green-500/10 rounded-lg p-2 border border-green-500/20"
-                  >
-                    <div className="flex items-center justify-center mb-1">
-                      <Check className="w-4 h-4 text-green-400" />
-                    </div>
-                    <div className="text-center">
-                      <h4 className="text-base font-bold text-gray-200">
-                        {projects?.filter(p => p.status === 'completed').length || 0}
-                      </h4>
-                      <p className="text-xs text-gray-400">Complete</p>
-                    </div>
-                  </motion.div>
-                  
-                  {/* In Progress */}
-                  <motion.div 
-                    whileHover={{ scale: 1.05 }}
-                    className="bg-blue-500/10 rounded-lg p-2 border border-blue-500/20"
-                  >
-                    <div className="flex items-center justify-center mb-1">
-                      <Activity className="w-4 h-4 text-blue-400" />
-                    </div>
-                    <div className="text-center">
-                      <h4 className="text-base font-bold text-gray-200">
-                        {projects?.filter(p => p.status === 'in_progress').length || 0}
-                      </h4>
-                      <p className="text-xs text-gray-400">Active</p>
-                    </div>
-                  </motion.div>
-                </div>
-              </div>
-
-              
-            </motion.div>
-
-
-            {/* Projects Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`${themeClasses.card} h-[120px] rounded-xl border ${themeClasses.border} overflow-hidden backdrop-blur-sm shadow-lg flex items-center justify-between p-0`}
-            >
-              <QuotesWidget/>
-              
-           
             </motion.div>
           </div>
-                      <ProjectTimelineBar />
 
-
-          {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Rest of your dashboard content */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
             {/* Projects Section (3/4 width) */}
-            <div className="lg:col-span-3 space-y-6">
-                <Projects darkMode={darkMode} />
+            <div className="lg:col-span-3 space-y-4 sm:space-y-6">
+              <Projects darkMode={darkMode} />
             </div>
 
             {/* Right Sidebar (1/4 width) */}
-            <div className="lg:col-span-1 space-y-6">
+            <div className="lg:col-span-1 space-y-4 sm:space-y-6">
               {/* Calendar Widget */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
                 className={`${themeClasses.card} rounded-xl border ${themeClasses.border} p-4 backdrop-blur-sm shadow-lg`}
               >
                 <CalendarWidget darkMode={darkMode} />
@@ -339,6 +347,7 @@ const Dashboard = () => {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
                 className={`${themeClasses.card} rounded-xl border ${themeClasses.border} p-4 backdrop-blur-sm shadow-lg`}
               >
                 <h3 className={`${themeClasses.text} font-semibold mb-4`}>Upcoming Tasks</h3>

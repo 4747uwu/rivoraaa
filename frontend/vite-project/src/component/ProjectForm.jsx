@@ -11,6 +11,48 @@ import API from '../api/api.js';
 import { useTeam } from '../context/teamContext';
 import { useAuth } from '../context/authContext';
 
+// Add these styles at the top of your file
+const formStyles = {
+  container: `fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 
+              p-2 sm:p-4 overflow-y-auto`,
+  formPanel: `bg-gradient-to-b from-gray-900 to-black rounded-2xl 
+              p-3 sm:p-4 md:p-6 w-full max-w-3xl relative my-2 sm:my-4
+              border border-white/10 shadow-xl`,
+  closeButton: `absolute top-2 right-2 sm:top-4 sm:right-4 
+                p-2 rounded-full hover:bg-white/5 
+                text-gray-400 hover:text-white transition-colors`,
+  inputField: `w-full bg-black/50 border border-white/10 rounded-lg 
+               px-3 sm:px-4 py-2.5 sm:py-3 text-gray-200 
+               focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50
+               hover:border-white/20 transition-colors placeholder-gray-500`,
+  textArea: `w-full bg-black/50 border border-white/10 rounded-lg 
+             px-3 sm:px-4 py-2.5 sm:py-3 text-gray-200 
+             focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50
+             hover:border-white/20 transition-colors placeholder-gray-500 
+             h-32 resize-none`,
+  label: `block text-gray-300 text-xs sm:text-sm font-medium mb-1.5 sm:mb-2`,
+  heading: `text-xl sm:text-2xl font-bold text-white mb-2`,
+  subHeading: `text-gray-400 text-sm sm:text-base`,
+  button: {
+    primary: `px-4 sm:px-5 py-2 sm:py-3 
+              bg-gradient-to-r from-indigo-600 to-purple-600 
+              hover:from-indigo-500 hover:to-purple-500 
+              text-white rounded-lg flex items-center gap-2 
+              shadow-lg shadow-indigo-500/20
+              transition-all duration-200`,
+    secondary: `px-3 sm:px-4 py-2 sm:py-3 
+                bg-white/5 hover:bg-white/10 
+                text-gray-300 hover:text-white rounded-lg 
+                flex items-center gap-2 
+                border border-white/10 hover:border-white/20
+                transition-all duration-200`
+  },
+  section: `space-y-4 sm:space-y-6`,
+  grid: `grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4`,
+  categoryTag: `px-3 py-1.5 rounded-md text-sm cursor-pointer transition-all
+                hover:scale-105 active:scale-95`
+};
+
 // Animation variants
 const pageVariants = {
   hidden: { opacity: 0, x: 20 },
@@ -29,8 +71,8 @@ const pageVariants = {
 // Step indicators component
 const StepIndicator = memo(({ currentStep, totalSteps, stepTitles }) => {
   return (
-    <div className="mb-8 pt-4">
-      <div className="flex justify-between px-2">
+    <div className="mb-4 sm:mb-6 pt-2 sm:pt-4">
+      <div className="flex justify-between px-1 sm:px-2">
         {stepTitles.map((title, i) => (
           <div 
             key={i} 
@@ -44,30 +86,38 @@ const StepIndicator = memo(({ currentStep, totalSteps, stepTitles }) => {
             style={{ width: `${100 / totalSteps}%` }}
           >
             <div className={`
-              h-8 w-8 rounded-full flex items-center justify-center mb-2
+              relative h-6 w-6 sm:h-8 sm:w-8 rounded-full 
+              flex items-center justify-center mb-1 sm:mb-2
+              before:absolute before:inset-0 before:rounded-full before:border-2
+              before:scale-110 before:opacity-50 before:animate-pulse
               ${i === currentStep 
-                ? 'bg-indigo-500/20 border-2 border-indigo-500' 
+                ? 'bg-indigo-500/20 before:border-indigo-500/50' 
                 : i < currentStep 
-                  ? 'bg-green-500/20 border-2 border-green-500' 
-                  : 'bg-gray-800 border-2 border-gray-700'}
+                  ? 'bg-green-500/20 before:border-green-500/50' 
+                  : 'bg-gray-800 before:border-gray-700'}
             `}>
               {i < currentStep ? (
-                <CheckCircle className="h-4 w-4" />
+                <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
               ) : (
-                <span className="text-sm">{i + 1}</span>
+                <span className="text-xs sm:text-sm">{i + 1}</span>
               )}
             </div>
-            <span className="text-xs text-center hidden md:block">{title}</span>
+            <span className="text-[10px] sm:text-xs text-center hidden sm:block">{title}</span>
+            {i === currentStep && (
+              <span className="text-[10px] block sm:hidden">{title}</span>
+            )}
           </div>
         ))}
       </div>
       
       <div className="relative mt-2">
-        <div className="absolute top-0 h-1 bg-gray-700 w-full"></div>
-        <div 
-          className="absolute top-0 h-1 bg-indigo-500 transition-all duration-300"
-          style={{ width: `${(currentStep / (totalSteps - 1)) * 100}%` }}
-        ></div>
+        <div className="absolute top-0 h-1 bg-gray-800/50 w-full rounded-full overflow-hidden">
+          <div 
+            className="absolute top-0 h-full bg-gradient-to-r from-indigo-500 to-purple-500 
+                       transition-all duration-300 rounded-full"
+            style={{ width: `${(currentStep / (totalSteps - 1)) * 100}%` }}
+          />
+        </div>
       </div>
     </div>
   );
@@ -112,16 +162,16 @@ const VisibilityOption = memo(({ value, selectedValue, onChange, title, descript
   </motion.div>
 ));
 
-// Category tag component
+// Update your CategoryTag component
 const CategoryTag = memo(({ category, isSelected, onSelect }) => (
   <motion.div
     whileHover={{ scale: 1.05 }}
     whileTap={{ scale: 0.95 }}
     onClick={() => onSelect(category)}
-    className={`px-3 py-1.5 rounded-md text-sm cursor-pointer transition-all ${
+    className={`${formStyles.categoryTag} ${
       isSelected 
-        ? 'bg-indigo-500/30 text-indigo-300 border border-indigo-500/50' 
-        : 'bg-gray-800/40 text-gray-400 border border-gray-700/50 hover:bg-gray-800/80'
+        ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/50' 
+        : 'bg-black/30 text-gray-400 border border-white/5 hover:bg-black/50'
     }`}
   >
     {category}
@@ -494,11 +544,9 @@ const CreateProjectForm = ({ onClose }) => {
       exit="exit"
       className="space-y-6"
     >
-      <div className="mb-4">
-        <h2 className="text-2xl font-bold text-gray-200 mb-2">
-          Create a New Project
-        </h2>
-        <p className="text-gray-400">
+      <div className={formStyles.section}>
+        <h2 className={formStyles.heading}>Create a New Project</h2>
+        <p className={formStyles.subHeading}>
           Let's start with the basic information for your project.
         </p>
       </div>
@@ -506,7 +554,7 @@ const CreateProjectForm = ({ onClose }) => {
       <div className="space-y-6">
         {/* Project Name */}
         <div>
-          <label className="block text-gray-300 text-sm font-medium mb-2">
+          <label className={formStyles.label}>
             Project Name<span className="text-red-500">*</span>
           </label>
           <input
@@ -515,7 +563,7 @@ const CreateProjectForm = ({ onClose }) => {
             value={projectData.name}
             onChange={handleInputChange}
             placeholder="Enter project name"
-            className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3 text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            className={formStyles.inputField}
           />
         </div>
         
@@ -594,7 +642,7 @@ const CreateProjectForm = ({ onClose }) => {
           onClick={handleNextClick}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="px-5 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-lg flex items-center gap-2"
+          className={formStyles.button.primary}
         >
           <span>Continue</span>
           <ArrowRight size={16} />
@@ -624,7 +672,7 @@ const CreateProjectForm = ({ onClose }) => {
       
       {/* Description */}
       <div>
-        <label className="block text-gray-300 text-sm font-medium mb-2">
+        <label className={formStyles.label}>
           Description<span className="text-red-500">*</span>
         </label>
         <textarea
@@ -632,7 +680,7 @@ const CreateProjectForm = ({ onClose }) => {
           value={projectData.description}
           onChange={handleInputChange}
           placeholder="Describe your project..."
-          className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3 text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 h-32 resize-none"
+          className={formStyles.textArea}
         />
       </div>
       
@@ -781,7 +829,7 @@ const CreateProjectForm = ({ onClose }) => {
           onClick={handleNextClick}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="px-5 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-lg flex items-center gap-2"
+          className={formStyles.button.primary}
         >
           <span>Continue</span>
           <ArrowRight size={16} />
@@ -964,7 +1012,7 @@ const CreateProjectForm = ({ onClose }) => {
           onClick={handleNextClick}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="px-5 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-lg flex items-center gap-2"
+          className={formStyles.button.primary}
         >
           <span>Continue</span>
           <ArrowRight size={16} />
@@ -1179,18 +1227,15 @@ const ReviewStep = useMemo(() => (
 ]);
   
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className={formStyles.container}>
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        className="bg-gray-800 rounded-xl p-6 w-full max-w-3xl relative"
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        className={formStyles.formPanel}
       >
-        <button
-          onClick={onClose} // Add onClick handler here
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-200"
-        >
-          <X className="w-6 h-6" />
+        <button onClick={onClose} className={formStyles.closeButton}>
+          <X className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
         
         <StepIndicator 
