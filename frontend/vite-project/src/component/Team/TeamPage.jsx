@@ -754,6 +754,8 @@ const renderTeamForm = () => (
               isLoadingLeaveTeam={isLoadingLeaveTeam}
               isLoadingRemoveMember={isLoadingRemoveMember}
               formatDate={formatDate}
+
+              // loading={loading}
               // Pass all your style constants
               glassCard={glassCard}
               textClass={textClass}
@@ -765,6 +767,8 @@ const renderTeamForm = () => (
               // Pass animation variants
               containerVariants={containerVariants}
               itemVariants={itemVariants}
+                  // loading={loading || !currentTeam} // Updated loading condition
+
             />
           ) : (
             <TeamsList
@@ -776,6 +780,7 @@ const renderTeamForm = () => (
               setPagination={setPagination}
               renderTeamForm={renderTeamForm}
               user={user}
+              loading={loading}
               // Pass all your style constants
               backgroundGradient={backgroundGradient}
               glassCard={glassCard}

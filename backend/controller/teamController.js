@@ -34,16 +34,16 @@ export const createTeam = asyncHandler(async (req, res, next) => {
       path: 'connections.linkUps',
       match: { status: 'accepted', connectionType: 'linkUps' },
       populate: {
-        path: 'followers following',
+        path: 'follower following',
         select: 'name email username profilePicture'
       }
     });
 
     // Get connected user IDs from LinkUps
     const connectedUserIds = user.connections.linkUps.map(conn => {
-      return conn.followers._id.toString() === userId.toString()
+      return conn.follower._id.toString() === userId.toString()
         ? conn.following._id.toString()
-        : conn.followers._id.toString();
+        : conn.follower._id.toString();
     });
 
     // Validate that all members are connections
@@ -438,14 +438,14 @@ export const addTeamMember = asyncHandler(async (req, res, next) => {
       status: 'accepted',
       connectionType: 'linkUps',
       $or: [
-        { followers: memberId },
+        { follower: memberId },
         { following: memberId }
       ]
     }
   });
 
   const isConnected = user.connections.linkUps.some(conn => 
-    (conn.followers._id.toString() === memberId) || 
+    (conn.follower._id.toString() === memberId) || 
     (conn.following._id.toString() === memberId)
   );
 
@@ -569,7 +569,7 @@ export const updateTeamMember = asyncHandler(async (req, res, next) => {
   });
 
   const isStillConnected = user.connections.linkUps.some(conn => 
-    (conn.followers._id.toString() === memberId) || 
+    (conn.follower._id.toString() === memberId) || 
     (conn.following._id.toString() === memberId)
   );
 
@@ -834,7 +834,7 @@ export const leaveTeam = asyncHandler(async (req, res, next) => {
 
 export const getAvailableConnections = asyncHandler(async (req, res, next) => {
   const { teamId } = req.params;
-  const userId = req.user._id; // Note: changed from req.user.id to req.user._id
+  const userId = req.user._id;
   const searchQuery = req.query.search || '';
   
   // Find the team with populated members
@@ -857,53 +857,70 @@ export const getAvailableConnections = asyncHandler(async (req, res, next) => {
   ];
 
   // Get the user with their LinkUps
-  const user = await User.findById(userId)
-    .populate({
-      path: 'connections.linkUps',
-      populate: {
-        path: 'followers following',
-        select: 'name email username profilePicture'
-      }
-    });
+  const user = await User.findById(userId);
 
   if (!user) {
     return next(new ErrorResponse('User not found', 404));
   }
 
-  // Get all accepted LinkUp connections
+  // Check if user has any linkUps
+  if (!user.connections || !user.connections.linkUps || user.connections.linkUps.length === 0) {
+    return res.status(200).json({
+      success: true,
+      count: 0,
+      data: []
+    });
+  }
+
+  // Get all LinkUp connections for this user
   const connections = await Connection.find({
     _id: { $in: user.connections.linkUps },
     status: 'accepted',
     connectionType: 'linkUps'
+  });
+  
+  console.log("Found Connection Documents:", connections.length);
+  
+  // Since the follower/following fields are empty, we'll need to look for connected users differently
+  // We'll use all other available users that have a connection with this user
+  
+  // First get all users with accepted linkUp connections
+  const connectedUsers = await User.find({
+    'connections.linkUps': { $in: user.connections.linkUps },
+    _id: { $ne: userId }  // Exclude current user
   })
-  .populate('followers following', 'name email username profilePicture');
-
-  // Map and filter connections to get available users
-  const availableConnections = connections
-    .map(conn => {
-      // Determine which user is the connection (not the current user)
-      const connectionUser = conn.followers._id.toString() === userId.toString()
-        ? conn.following
-        : conn.followers;
-
-      return {
-        _id: connectionUser._id,
-        name: connectionUser.name,
-        email: connectionUser.email,
-        username: connectionUser.username,
-        profilePicture: connectionUser.profilePicture,
-        connectionId: conn._id
-      };
-    })
-    // Filter out users who are already team members
-    .filter(conn => !currentMemberIds.includes(conn._id.toString()));
+  .select('name email username profilePicture')
+  .lean();
+  
+  console.log("Found Connected Users:", connectedUsers.length);
+  
+  // Add connection IDs to each user
+  const enrichedUsers = connectedUsers.map(connectedUser => {
+    // Find the connection that links these users
+    const connection = connections.find(conn => 
+      user.connections.linkUps.some(linkUpId => 
+        linkUpId.toString() === conn._id.toString()
+      )
+    );
+    
+    return {
+      ...connectedUser,
+      connectionId: connection ? connection._id : null
+    };
+  });
+  
+  // Filter out users who are already team members
+  const filteredByMembership = enrichedUsers.filter(user => 
+    !currentMemberIds.includes(user._id.toString())
+  );
 
   // Apply search filter if provided
   const filteredConnections = searchQuery 
-    ? availableConnections.filter(conn => 
-        conn.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        conn.username.toLowerCase().includes(searchQuery.toLowerCase()))
-    : availableConnections;
+    ? filteredByMembership.filter(user => 
+        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (user.username && user.username.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    : filteredByMembership;
 
   res.status(200).json({
     success: true,
@@ -914,20 +931,24 @@ export const getAvailableConnections = asyncHandler(async (req, res, next) => {
 
 // Add a new utility function to check connection status
 const checkLinkUpConnection = async (userId, targetUserId) => {
-  const user = await User.findById(userId).populate({
-    path: 'connections.linkUps',
-    match: { 
-      status: 'accepted',
-      connectionType: 'linkUps',
-      $or: [
-        { followers: targetUserId },
-        { following: targetUserId }
-      ]
-    }
-  });
-
-  return user.connections.linkUps.length > 0;
+  // Get both users
+  const user1 = await User.findById(userId);
+  const user2 = await User.findById(targetUserId);
+  
+  if (!user1 || !user2 || !user1.connections || !user2.connections) {
+    return false;
+  }
+  
+  // Check if they share any linkUp connection IDs
+  const user1LinkUps = user1.connections.linkUps.map(id => id.toString());
+  const user2LinkUps = user2.connections.linkUps.map(id => id.toString());
+  
+  // Find common linkUp connections
+  const commonLinkUps = user1LinkUps.filter(id => user2LinkUps.includes(id));
+  
+  return commonLinkUps.length > 0;
 };
+
 
 // Add a new function to get team statistics
 export const getTeamStats = asyncHandler(async (req, res, next) => {

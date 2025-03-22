@@ -180,11 +180,11 @@ const Dashboard = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className={`${themeClasses.card} rounded-xl border ${themeClasses.border} overflow-hidden backdrop-blur-sm shadow-lg`}
               >
-                <div className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                  {/* Left: User Info Section */}
-                  <div className="flex items-center gap-4">
-                    {/* User Avatar */}
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center border-2 border-indigo-500/30 shadow-lg">
+                <div className="p-3 sm:p-4 flex flex-col md:flex-row justify-between items-center md:items-center gap-3 sm:gap-4">
+                  {/* Left: User Info Section - Same arrangement, better responsive sizing */}
+                  <div className="flex items-center gap-3 sm:gap-4 w-full md:w-auto">
+                    {/* User Avatar - Responsive sizing */}
+                    <div className="w-14 h-14 xs:w-16 xs:h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center border-2 border-indigo-500/30 shadow-lg">
                       {user?.profilePicture ? (
                         <img 
                           src={user.profilePicture} 
@@ -192,13 +192,13 @@ const Dashboard = () => {
                           className="w-full h-full object-cover scale-150 object-center"
                         />
                       ) : (
-                        <span className="text-xl sm:text-2xl font-bold text-white">{user?.name?.charAt(0) || 'U'}</span>
+                        <span className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{user?.name?.charAt(0) || 'U'}</span>
                       )}
                     </div>
                     
-                    {/* User Info with Animated Greeting */}
-                    <div className="">
-                      <h3 className="text-lg sm:text-xl font-bold text-gray-100">
+                    {/* User Info with Animated Greeting - Preserved layout */}
+                    <div>
+                      <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-100">
                         <div className="flex items-baseline gap-2">
                           <div className="inline-block flex flex-col">
                             <AnimatePresence mode="wait">
@@ -219,37 +219,37 @@ const Dashboard = () => {
                       </h3>
                       <p className="text-xs sm:text-sm text-indigo-400 flex items-center gap-1">
                         LinkUps- <div>
-                          <span className="text-gray-100 font-bold">{user.connections.linkUps.length || 0}</span>
+                          <span className="text-gray-100 font-bold">{user?.connections?.linkUps?.length || 0}</span>
                         </div>
                       </p>
                     </div>
                   </div>
 
-                  {/* Center: Recent Trend - Only display on larger screens */}
+                  {/* Center: Recent Trend - Maintain the same breakpoint */}
                   <div className="hidden md:flex flex-col items-center">
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="text-sm font-medium text-gray-300 mr-2">Recent Trend</h4>
+                      <h4 className="text-xs lg:text-sm font-medium text-gray-300 mr-2">Recent Trend</h4>
                       <div className="flex items-center text-xs text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">
                         <ArrowUp className="w-3 h-3 mr-1" /> 8%
                       </div>
                     </div>
                     
-                    {/* Mini Chart */}
-                    <div className="h-10 flex items-end gap-1">
+                    {/* Mini Chart - Responsive sizing */}
+                    <div className="h-8 md:h-10 flex items-end gap-0.5 md:gap-1">
                       {[35, 45, 30, 50, 65, 45, 70].map((height, i) => (
                         <motion.div
                           key={i}
                           initial={{ height: 0 }}
                           animate={{ height: `${height}%` }}
                           transition={{ duration: 0.5, delay: i * 0.1 }}
-                          className="w-2 sm:w-3 rounded-t bg-gradient-to-t from-indigo-500/60 to-purple-500/60"
+                          className="w-1.5 md:w-2 lg:w-3 rounded-t bg-gradient-to-t from-indigo-500/60 to-purple-500/60"
                         />
                       ))}
                     </div>
                   </div>
 
-                  {/* Right: Stats Grid */}
-                  <div className="grid grid-cols-3 gap-1 sm:gap-2">
+                  {/* Right: Stats Grid - Same layout with responsive sizing */}
+                  <div className="grid grid-cols-3 gap-1 sm:gap-2 w-full md:w-auto mt-2 md:mt-0">
                     {/* Total Projects */}
                     <motion.div 
                       whileHover={{ scale: 1.05 }}
@@ -264,7 +264,6 @@ const Dashboard = () => {
                       </div>
                     </motion.div>
                     
-                    {/* Other stat cards... */}
                     {/* Completed */}
                     <motion.div 
                       whileHover={{ scale: 1.05 }}
@@ -305,7 +304,7 @@ const Dashboard = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className={`${themeClasses.card} h-auto sm:h-[120px] lg:h-auto xl:h-[120px] rounded-xl border ${themeClasses.border} overflow-hidden backdrop-blur-sm shadow-lg flex items-center justify-between p-0`}
+                className={`${themeClasses.card} h-auto  rounded-xl border ${themeClasses.border} overflow-hidden backdrop-blur-sm shadow-lg flex items-center justify-between p-0`}
               >
                 <QuotesWidget/>
               </motion.div>

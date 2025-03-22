@@ -31,7 +31,7 @@ router.patch('/projects/:projectId/members/:userId/role', authMiddlewareHybrid, 
 router.delete('/projects/:projectId/leave-project', authMiddlewareHybrid, leaveProject); 
 
 
-router.delete('/projects/:projectId/members/:userId', authMiddlewareHybrid, removeMember);
+router.delete('/projects/:projectId/:userId', authMiddlewareHybrid, removeMember);
 
 
 

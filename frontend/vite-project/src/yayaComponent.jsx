@@ -99,7 +99,7 @@ const QuotesWidget = () => {
     <motion.div 
       className={`
         bg-gradient-to-br ${currentStyle.gradient}
-        backdrop-blur-sm px-4 py-3 rounded-xl 
+        backdrop-blur-sm px-3 sm:px-4 py-2 sm:py-3 rounded-xl 
         border ${currentStyle.border}
         shadow-lg relative overflow-hidden
         h-full w-full flex flex-col
@@ -125,18 +125,18 @@ const QuotesWidget = () => {
         />
       </div>
       
-      {/* Background decorative quote marks */}
+      {/* Background decorative quote marks - adjust size for mobile */}
       <div className="absolute -bottom-3 -right-3 opacity-10 pointer-events-none z-10">
-        <Quote className="w-16 h-16" />
+        <Quote className="w-12 h-12 sm:w-16 sm:h-16" />
       </div>
       
-      {/* Header with controls */}
+      {/* Header with controls - improved responsiveness */}
       <div className="flex justify-between items-center mb-1 z-20">
-        {/* Mode toggle */}
+        {/* Mode toggle - responsive text and padding */}
         <button 
           onClick={toggleMode}
           className={`
-            p-1.5 rounded-full 
+            p-1 sm:p-1.5 rounded-full 
             ${mode === 'humorous' 
               ? 'bg-blue-500/20 hover:bg-blue-500/30' 
               : 'bg-purple-500/20 hover:bg-purple-500/30'} 
@@ -145,22 +145,32 @@ const QuotesWidget = () => {
           title={`Switch to ${mode === 'humorous' ? 'serious' : 'humorous'} quotes`}
         >
           {mode === 'humorous' 
-            ? <><Moon className="w-3 h-3 text-blue-400" /><span className="text-xs text-blue-300">Serious</span></> 
-            : <><Sun className="w-3 h-3 text-purple-400" /><span className="text-xs text-purple-300">Humor</span></>}
+            ? (
+              <>
+                <Moon className="w-3 h-3 text-blue-400" />
+                <span className="text-[10px] xs:text-xs text-blue-300 hidden xs:inline">Serious</span>
+              </>
+            ) : (
+              <>
+                <Sun className="w-3 h-3 text-purple-400" />
+                <span className="text-[10px] xs:text-xs text-purple-300 hidden xs:inline">Humor</span>
+              </>
+            )
+          }
         </button>
         
-        {/* Refresh quote button */}
+        {/* Refresh quote button - consistent size */}
         <button
           onClick={getNewQuote}
-          className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+          className="p-1 sm:p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
           title="New quote"
         >
           <RefreshCw className="w-3 h-3 text-white/70" />
         </button>
       </div>
       
-      {/* Quote content with animation */}
-      <div className="flex-1 flex flex-col justify-center min-h-0 z-20">
+      {/* Quote content with animation - better responsive layout */}
+      <div className="flex-1 flex flex-col justify-center min-h-0 z-20 my-1 sm:my-2">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentQuote.text}
@@ -172,9 +182,9 @@ const QuotesWidget = () => {
               stiffness: 300, 
               damping: 30
             }}
-            className="flex flex-col pl-5 justify-center h-full"
+            className="flex flex-col pl-2 xs:pl-4 sm:pl-5 justify-center h-full"
           >
-            <blockquote className="text-sm font-medium items-center flex justify-center leading-tight text-gray-100 italic line-clamp-2">
+            <blockquote className="text-xs xs:text-sm font-medium items-center flex justify-center leading-tight text-gray-100 italic line-clamp-2 sm:line-clamp-3">
               "{currentQuote.text}"
             </blockquote>
             
@@ -184,7 +194,7 @@ const QuotesWidget = () => {
               transition={{ delay: 0.2 }}
               className="text-right mt-1"
             >
-              <p className="text-xs font-medium text-white/80">
+              <p className="text-[10px] xs:text-xs font-medium text-white/80">
                 — {currentQuote.author}
               </p>
             </motion.div>

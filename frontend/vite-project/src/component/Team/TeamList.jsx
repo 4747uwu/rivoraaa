@@ -24,6 +24,43 @@ const EmptyState = memo(({ icon: Icon, title, description, actionButton, glassCa
   </div>
 ));
 
+// Add this component after the EmptyState component and before FilterButton component
+const LoadingScreen = memo(() => (
+  <div className="min-h-[60vh] flex flex-col items-center justify-center">
+    <motion.div
+      animate={{ 
+        rotate: 360,
+        scale: [1, 1.1, 1]
+      }}
+      transition={{ 
+        rotate: { repeat: Infinity, duration: 1.5, ease: "linear" },
+        scale: { repeat: Infinity, duration: 1.5, ease: "easeInOut" }
+      }}
+      className="mb-6"
+    >
+      <Loader size={48} className="text-indigo-400" />
+    </motion.div>
+    <h3 className="text-xl mb-2 text-gray-300">Loading teams...</h3>
+    <p className="text-gray-500">Preparing your collaboration spaces</p>
+
+    <div className="mt-8 w-full max-w-md">
+      <div className="space-y-4">
+        {[1, 2, 3].map((index) => (
+          <div key={index} className="bg-gradient-to-br from-gray-900 to-black border border-gray-800/50 rounded-lg p-4 animate-pulse">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-gray-800"></div>
+              <div className="flex-1">
+                <div className="h-4 bg-gray-800 rounded w-2/3 mb-2"></div>
+                <div className="h-3 bg-gray-800 rounded w-1/3"></div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+));
+
 // Update FilterButton component
 const FilterButton = memo(({ label, isActive, onClick }) => (
   <button 
@@ -466,25 +503,7 @@ const TeamsList = ({
 
   // Loading screen
   if (loading) {
-    return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center">
-        <motion.div
-          animate={{ 
-            rotate: 360,
-            scale: [1, 1.1, 1]
-          }}
-          transition={{ 
-            rotate: { repeat: Infinity, duration: 1.5, ease: "linear" },
-            scale: { repeat: Infinity, duration: 1.5, ease: "easeInOut" }
-          }}
-          className="mb-6"
-        >
-          <Loader size={48} className="text-indigo-400" />
-        </motion.div>
-        <h3 className={`text-xl mb-2 ${headingClass}`}>Loading teams...</h3>
-        <p className={subTextClass}>Preparing your collaboration spaces</p>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   // Team creation form

@@ -151,7 +151,7 @@ const TeamManagement = ({ projectMembers = [], tasks = [], currentUser = {}, pro
   // New mutation: Remove member from project
   const removeMemberMutation = useMutation({
     mutationFn: async ({ userId, projectId }) => {
-      const response = await API.delete(`/api/projects/${projectId}/members/${userId}`);
+      const response = await API.delete(`/api/projects/${projectId}/${userId}`);
       return response.data;
     },
     onSuccess: () => {
@@ -165,6 +165,7 @@ const TeamManagement = ({ projectMembers = [], tasks = [], currentUser = {}, pro
     }
   });
 
+  
   // Update the leave project mutation
   const leaveProjectMutation = useMutation({
     mutationFn: async () => {

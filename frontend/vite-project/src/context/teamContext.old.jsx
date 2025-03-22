@@ -1,12 +1,39 @@
 import React, { createContext, useContext, useState } from 'react';
 import { toast } from 'react-toastify';
 import API from '../api/api';
+import { 
+  useQuery, 
+  useMutation, 
+  useQueryClient, 
+  QueryClient, 
+  QueryClientProvider 
+} from '@tanstack/react-query';
 
 const TeamContext = createContext();
 const BASE_URL = '/api/teams';
 
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1
+    },
+  },
+});
+
+// Wrapper component for QueryClientProvider
+export const TeamQueryProvider = ({ children }) => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TeamProvider>{children}</TeamProvider>
+    </QueryClientProvider>
+  );
+};
+
 export const TeamProvider = ({ children }) => {
-  // Loading states
+  // Loading states (we'll still keep these for backward compatibility)
   const [isLoadingCreateTeam, setIsLoadingCreateTeam] = useState(false);
   const [isLoadingUpdateTeam, setIsLoadingUpdateTeam] = useState(false);
   const [isLoadingDeleteTeam, setIsLoadingDeleteTeam] = useState(false);
@@ -14,8 +41,11 @@ export const TeamProvider = ({ children }) => {
   const [isLoadingUpdateMember, setIsLoadingUpdateMember] = useState(false);
   const [isLoadingRemoveMember, setIsLoadingRemoveMember] = useState(false);
   const [isLoadingLeaveTeam, setIsLoadingLeaveTeam] = useState(false);
+  
+  // Get the query client for mutations
+  const queryClient = useQueryClient();
 
-  // ===== DATA FETCHING FUNCTIONS =====
+  // ===== DATA FETCHING FUNCTIONS (WITH REACT QUERY HOOKS) =====
 
   /**
    * Get all teams for current user
@@ -26,6 +56,7 @@ export const TeamProvider = ({ children }) => {
         params: { page, limit } 
       });
       const data = response.data;
+      console.log(data);
       
       return {
         ownedTeams: data?.ownedTeams || { count: 0, data: [], pagination: {} },
@@ -51,6 +82,7 @@ export const TeamProvider = ({ children }) => {
     try {
       const response = await API.get(`${BASE_URL}/${teamId}`);
       const data = response.data;
+      console.log("This ran 1")
       
       return {
         team: data?.data || null,
@@ -76,7 +108,6 @@ export const TeamProvider = ({ children }) => {
         params: { search }
       });
       const data = response.data;
-      console.log(data);
       
       return {
         connections: data?.data || [],
@@ -95,7 +126,7 @@ export const TeamProvider = ({ children }) => {
     }
   };
 
-  // ===== MUTATION FUNCTIONS =====
+  // ===== MUTATION FUNCTIONS (WITH REACT QUERY HOOKS) =====
 
   /**
    * Create a new team
@@ -104,6 +135,10 @@ export const TeamProvider = ({ children }) => {
     try {
       setIsLoadingCreateTeam(true);
       const response = await API.post(`${BASE_URL}`, teamData);
+      
+      // Invalidate and refetch teams list
+      queryClient.invalidateQueries(['myTeams']);
+      
       toast.success(response.data.message || "Team created successfully");
       return response.data;
     } catch (error) {
@@ -121,6 +156,11 @@ export const TeamProvider = ({ children }) => {
     try {
       setIsLoadingUpdateTeam(true);
       const response = await API.put(`${BASE_URL}/${teamId}`, teamData);
+      
+      // Update cache for this team and invalidate teams list
+      queryClient.invalidateQueries(['team', teamId]);
+      queryClient.invalidateQueries(['myTeams']);
+      
       toast.success(response.data.message || "Team updated successfully");
       return response.data;
     } catch (error) {
@@ -138,6 +178,11 @@ export const TeamProvider = ({ children }) => {
     try {
       setIsLoadingDeleteTeam(true);
       const response = await API.delete(`${BASE_URL}/${teamId}`);
+      
+      // Remove from cache and invalidate teams list
+      queryClient.removeQueries(['team', teamId]);
+      queryClient.invalidateQueries(['myTeams']);
+      
       toast.success(response.data.message || "Team deleted successfully");
       return response.data;
     } catch (error) {
@@ -157,6 +202,11 @@ export const TeamProvider = ({ children }) => {
       const response = await API.post(`${BASE_URL}/${teamId}/members`, { 
         memberId, role, permissions 
       });
+      
+      // Update team data
+      queryClient.invalidateQueries(['team', teamId]);
+      queryClient.invalidateQueries(['availableConnections', teamId]);
+      
       toast.success(response.data.message || "Member added successfully");
       return response.data;
     } catch (error) {
@@ -170,12 +220,14 @@ export const TeamProvider = ({ children }) => {
   /**
    * Update a team member's role or permissions
    */
-  const updateTeamMember = async (teamId, memberId, role, permissions) => {
+  const updateTeamMember = async (teamId, memberId, updates) => {
     try {
       setIsLoadingUpdateMember(true);
-      const response = await API.put(`${BASE_URL}/${teamId}/members/${memberId}`, { 
-        role, permissions 
-      });
+      const response = await API.put(`${BASE_URL}/${teamId}/members/${memberId}`, updates);
+      
+      // Update team data
+      queryClient.invalidateQueries(['team', teamId]);
+      
       toast.success(response.data.message || "Member updated successfully");
       return response.data;
     } catch (error) {
@@ -192,10 +244,34 @@ export const TeamProvider = ({ children }) => {
   const removeTeamMember = async (teamId, memberId) => {
     try {
       setIsLoadingRemoveMember(true);
+      
+      // Optimistic update - remove member locally first
+      const previousTeam = queryClient.getQueryData(['team', teamId]);
+      if (previousTeam) {
+        // Update team cache optimistically
+        queryClient.setQueryData(['team', teamId], old => ({
+          ...old,
+          team: {
+            ...old.team,
+            members: old.team.members.filter(m => m.user._id !== memberId)
+          }
+        }));
+      }
+      
       const response = await API.delete(`${BASE_URL}/${teamId}/members/${memberId}`);
+      
+      // In case of success, invalidate available connections too
+      queryClient.invalidateQueries(['team', teamId]);
+      queryClient.invalidateQueries(['availableConnections', teamId]);
+      
       toast.success(response.data.message || "Member removed successfully");
       return response.data;
     } catch (error) {
+      // Revert optimistic update on error
+      if (previousTeam) {
+        queryClient.setQueryData(['team', teamId], previousTeam);
+      }
+      
       toast.error(error.response?.data?.message || "Failed to remove member");
       throw error;
     } finally {
@@ -210,6 +286,11 @@ export const TeamProvider = ({ children }) => {
     try {
       setIsLoadingLeaveTeam(true);
       const response = await API.delete(`${BASE_URL}/${teamId}/leave`);
+      
+      // Update caches
+      queryClient.removeQueries(['team', teamId]);
+      queryClient.invalidateQueries(['myTeams']);
+      
       toast.success(response.data.message || "You left the team successfully");
       return response.data;
     } catch (error) {
@@ -220,13 +301,128 @@ export const TeamProvider = ({ children }) => {
     }
   };
 
+  // React Query custom hooks for components to use
+  const useMyTeams = (page = 1, limit = 10) => {
+    return useQuery({
+      queryKey: ['myTeams', page, limit],
+      queryFn: () => getMyTeams(page, limit),
+      keepPreviousData: true
+    });
+  };
+
+  const useTeamDetails = (teamId) => {
+    return useQuery({
+      queryKey: ['team', teamId], 
+      queryFn: () => getTeam(teamId),
+      enabled: !!teamId,
+      staleTime: 1000 * 60
+    });
+  };
+
+  const useAvailableConnections = (teamId, search = '') => {
+    return useQuery({
+      queryKey: ['availableConnections', teamId, search],
+      queryFn: () => getAvailableConnections(teamId, search),
+      enabled: !!teamId,
+      staleTime: search ? 0 : 1000 * 60 * 5 // No stale time for searches
+    });
+  };
+
+  // Mutation hooks
+  const useCreateTeam = () => {
+    return useMutation({
+      mutationFn: createTeam,
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['myTeams'] });
+      }
+    });
+  };
+
+  const useUpdateTeam = (teamId) => {
+    return useMutation({
+      mutationFn: (teamData) => updateTeam(teamId, teamData),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['team', teamId] });
+      }
+    });
+  };
+
+  const useDeleteTeam = () => {
+    return useMutation({
+      mutationFn: deleteTeam,
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['myTeams'] });
+      }
+    });
+  };
+
+  const useAddTeamMember = (teamId) => {
+    return useMutation({
+      mutationFn: ({ memberId, role, permissions }) => 
+        addTeamMember(teamId, memberId, role, permissions),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['team', teamId] });
+        queryClient.invalidateQueries({ queryKey: ['availableConnections', teamId] });
+      }
+    });
+  };
+
+  const useUpdateTeamMember = (teamId) => {
+    return useMutation({
+      mutationFn: ({ memberId, ...updates }) => updateTeamMember(teamId, memberId, updates),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['team', teamId] });
+      }
+    });
+  };
+
+  const useRemoveTeamMember = (teamId) => {
+    return useMutation({
+      mutationFn: (memberId) => removeTeamMember(teamId, memberId),
+      onMutate: async (memberId) => {
+        await queryClient.cancelQueries({ queryKey: ['team', teamId] });
+        const previousData = queryClient.getQueryData(['team', teamId]);
+        
+        if (previousData) {
+          queryClient.setQueryData(['team', teamId], old => ({
+            ...old,
+            team: {
+              ...old.team,
+              members: old.team.members.filter(m => m.user._id !== memberId)
+            }
+          }));
+        }
+        
+        return { previousData };
+      },
+      onError: (err, memberId, context) => {
+        if (context?.previousData) {
+          queryClient.setQueryData(['team', teamId], context.previousData);
+        }
+      },
+      onSettled: () => {
+        queryClient.invalidateQueries({ queryKey: ['team', teamId] });
+        queryClient.invalidateQueries({ queryKey: ['availableConnections', teamId] });
+      }
+    });
+  };
+
+  const useLeaveTeam = () => {
+    return useMutation({
+      mutationFn: leaveTeam,
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['myTeams'] });
+      }
+    });
+  };
+
   const contextValue = {
-    // Query functions
+    // Original query functions (preserved for compatibility)
     getMyTeams,
     getTeam,
     getAvailableConnections,
     
-    // Action methods
+    // Original action methods (preserved for compatibility)
     createTeam,
     updateTeam,
     deleteTeam,
@@ -234,6 +430,18 @@ export const TeamProvider = ({ children }) => {
     updateTeamMember,
     removeTeamMember,
     leaveTeam,
+    
+    // React Query hooks (new)
+    useMyTeams,
+    useTeamDetails,
+    useAvailableConnections,
+    useCreateTeam,
+    useUpdateTeam,
+    useDeleteTeam,
+    useAddTeamMember,
+    useUpdateTeamMember,
+    useRemoveTeamMember,
+    useLeaveTeam,
     
     // Loading states
     isLoadingCreateTeam,

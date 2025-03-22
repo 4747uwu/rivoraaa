@@ -389,9 +389,9 @@ const CalendarWidget = ({ darkMode = true, glassCard, textClass, subTextClass })
   };
 
   return (
-    <div className={`${glassCard} rounded-xl p-6 space-y-4`}>
-      {/* Header with sync button */}
-      <div className="flex justify-between items-center">
+    <div className={`${glassCard} rounded-xl p-3 sm:p-4 md:p-6 space-y-4 w-full max-w-full overflow-hidden`}>
+      {/* Header with sync button - improve responsiveness */}
+      <div className="flex flex-wrap justify-between items-center gap-2">
         <h2 className="text-lg font-bold bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent">
           Calendar
         </h2>
@@ -402,7 +402,7 @@ const CalendarWidget = ({ darkMode = true, glassCard, textClass, subTextClass })
                     text-white transition-all duration-300 shadow-md border border-indigo-500/40"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span className="text-xs font-medium">Event</span>
+            <span className="text-xs font-medium hidden xs:inline">Event</span>
           </button>
           
           <button
@@ -416,7 +416,7 @@ const CalendarWidget = ({ darkMode = true, glassCard, textClass, subTextClass })
             ) : (
               <CalendarIcon className="w-3.5 h-3.5" />
             )}
-            <span className="text-xs font-medium">Sync</span>
+            <span className="text-xs font-medium hidden xs:inline">Sync</span>
           </button>
         </div>
       </div>
@@ -467,20 +467,20 @@ const CalendarWidget = ({ darkMode = true, glassCard, textClass, subTextClass })
         </button>
       </div>
 
-      {/* Weekday headers */}
+      {/* Weekday headers - make responsive */}
       <div className="grid grid-cols-7 gap-1 mb-2">
         {weekdays.map(day => (
           <div 
             key={day} 
             className="text-center text-xs font-medium text-gray-500 py-1"
           >
-            {day}
+            {window.innerWidth < 400 ? day.charAt(0) : day}
           </div>
         ))}
       </div>
 
-      {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-1">
+      {/* Calendar grid - improve responsiveness */}
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
         {calendarDays.map((day, index) => {
           const dateStr = day.date.toISOString().split('T')[0];
           const hasEvent = eventsByDate[dateStr] !== undefined;
@@ -488,7 +488,7 @@ const CalendarWidget = ({ darkMode = true, glassCard, textClass, subTextClass })
           const isHovered = hoveredDay === dateStr;
           
           // Style classes based on day type
-          let dayClasses = "aspect-square flex flex-col items-center justify-center relative rounded-md transition-all duration-200";
+          let dayClasses = "aspect-square flex flex-col items-center justify-center relative rounded-md transition-all duration-200 p-0.5 sm:p-1";
           
           if (day.isCurrentMonth) {
             dayClasses += " hover:bg-indigo-500/20 cursor-pointer";
@@ -532,26 +532,27 @@ const CalendarWidget = ({ darkMode = true, glassCard, textClass, subTextClass })
                 }
               }}
             >
-              <div className={`text-sm ${isToday ? 'text-indigo-300' : 'text-gray-300'}`}>
+              <div className={`text-xs sm:text-sm ${isToday ? 'text-indigo-300' : 'text-gray-300'}`}>
                 {day.date.getDate()}
               </div>
               
               {/* Event indicator */}
               {hasEvent && (
-                <div className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
+                <div className="absolute bottom-1 w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-indigo-500"></div>
               )}
               
-              {/* Event tooltip */}
+              {/* Event tooltip - modify position calculation for better mobile experience */}
               <AnimatePresence>
                 {isHovered && hasEvent && (
                   <motion.div
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className="absolute top-full z-50 w-72 bg-gray-800/95 backdrop-blur-md p-3 border border-indigo-500/30 
+                    className="absolute top-full z-50 w-64 sm:w-72 bg-gray-800/95 backdrop-blur-md p-3 border border-indigo-500/30 
                               rounded-lg shadow-xl mt-2 text-xs text-gray-200"
                     style={{
-                      left: `${tooltipPosition.x - 120}px`, // Center tooltip
+                      left: `${Math.min(Math.max(tooltipPosition.x - 120, 10), window.innerWidth - 280)}px`,
+                      // Ensure tooltip stays on screen
                       zIndex: 1000
                     }}
                   >
@@ -625,7 +626,7 @@ const CalendarWidget = ({ darkMode = true, glassCard, textClass, subTextClass })
         })}
       </div>
       
-      {/* Upcoming events preview */}
+      {/* Upcoming events preview - improve responsiveness */}
       <div className="mt-4 pt-4 border-t border-indigo-500/20">
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-sm font-semibold text-indigo-300">Upcoming Events</h3>
@@ -693,14 +694,14 @@ const CalendarWidget = ({ darkMode = true, glassCard, textClass, subTextClass })
         )}
       </div>
       
-      {/* Event Form Modal */}
+      {/* Event Form Modal - improve responsiveness */}
       <AnimatePresence>
         {(isAddingEvent || isEditingEvent) && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
             onClick={closeEventForm}
           >
             <motion.div
@@ -708,11 +709,11 @@ const CalendarWidget = ({ darkMode = true, glassCard, textClass, subTextClass })
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ type: "spring", duration: 0.4 }}
-              className="bg-gray-900/95 border border-indigo-500/30 rounded-xl p-5 w-full max-w-md shadow-2xl"
+              className="bg-gray-900/95 border border-indigo-500/30 rounded-xl p-4 sm:p-5 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-center mb-5">
-                <h3 className="text-lg font-bold text-indigo-300">
+                <h3 className="text-base sm:text-lg font-bold text-indigo-300">
                   {isAddingEvent ? 'Add New Event' : 'Edit Event'}
                 </h3>
                 <button
@@ -773,7 +774,7 @@ const CalendarWidget = ({ darkMode = true, glassCard, textClass, subTextClass })
                   />
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="start" className="block text-sm font-medium text-gray-300 mb-1">
                       Start
@@ -785,7 +786,7 @@ const CalendarWidget = ({ darkMode = true, glassCard, textClass, subTextClass })
                       value={eventForm.start}
                       onChange={handleFormChange}
                       className="w-full py-2 px-3 bg-gray-800/70 border border-indigo-500/30 focus:border-indigo-500/70 
-                                rounded-lg text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500/30"
+                                rounded-lg text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 text-sm"
                       required
                     />
                   </div>
@@ -800,23 +801,23 @@ const CalendarWidget = ({ darkMode = true, glassCard, textClass, subTextClass })
                       value={eventForm.end}
                       onChange={handleFormChange}
                       className="w-full py-2 px-3 bg-gray-800/70 border border-indigo-500/30 focus:border-indigo-500/70 
-                                rounded-lg text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500/30"
+                                rounded-lg text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 text-sm"
                       required
                     />
                   </div>
                 </div>
                 
-                <div className="flex justify-end gap-2">
+                <div className="flex justify-end gap-2 pt-2">
                   <button
                     type="button"
                     onClick={closeEventForm}
-                    className="px-4 py-2 rounded-lg bg-gray-700/70 hover:bg-gray-700 text-gray-300 hover:text-gray-100 transition-all"
+                    className="px-3 sm:px-4 py-2 rounded-lg bg-gray-700/70 hover:bg-gray-700 text-gray-300 hover:text-gray-100 transition-all text-sm"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 rounded-lg bg-indigo-600/80 hover:bg-indigo-600 text-white transition-all"
+                    className="px-3 sm:px-4 py-2 rounded-lg bg-indigo-600/80 hover:bg-indigo-600 text-white transition-all text-sm"
                   >
                     {isEditingEvent ? 'Update' : 'Create'}
                   </button>
